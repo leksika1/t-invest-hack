@@ -39,7 +39,10 @@ frontend/                    Vite + React + TypeScript
   docker-compose.yml         сервис «Frontend» в Dokploy: только nginx
 docker-compose.yml           весь стек для локального запуска и CI
 docker-compose.e2e.yml       публикация портов для e2e и локальной работы
-.github/workflows/ci.yml     CI/CD
+scripts/ci.sh                локальный CI (полный или --fast / --no-e2e)
+scripts/setup-hooks.sh       установка pre-push хука
+.githooks/pre-push           проверки перед push в dev/main
+.github/workflows/ci.yml     резервный CI/CD при включённых GitHub Actions
 docs/                        документы команды
 ```
 
@@ -105,23 +108,89 @@ cd backend && E2E_BASE_URL=http://127.0.0.1:18080 pytest -q tests/e2e
 - Фронтенд проксирует `/api` в backend через сеть `dokploy-network` по имени `BACKEND_ALIAS`.
   Nginx стартует, даже если backend ещё не поднят: до его запуска `/api` отвечает 502.
 - Postgres доступен только backend (внутренняя сеть `data`), данные — в томе `pgdata` каждого проекта.
-- Автодеплой по push в Dokploy выключить: деплой запускает CI после зелёной сборки.
-  Webhook URL каждого сервиса (Dokploy → сервис → Deployments) положить в секреты GitHub:
-  Settings → Environments → `dev` / `prod` → `DOKPLOY_WEBHOOK_BACKEND`, `DOKPLOY_WEBHOOK_FRONTEND`.
 
-## CI/CD
+## Автодеплой
 
-`.github/workflows/ci.yml` запускается на push и pull request в `dev` и `main`:
+GitHub Actions для приватного репозитория выключены на аккаунте. Для деплоя после push настройте
+прямые вебхуки репозитория в Dokploy. Повторите для каждого из **четырёх** сервисов:
 
-1. **backend tests** — `pip-audit -r requirements.txt` и `pytest -q`. Новые тесты в `backend/tests/` подхватываются
-   сами; e2e без `E2E_BASE_URL` пропускаются.
-2. **frontend checks** — `npm ci`, `npm audit --audit-level=high` (с повторами, если сервис аудита недоступен),
-   `npm run lint`, `npm run typecheck`, `npm run build`. Место для `npm test` отмечено в workflow.
-3. **build** — проверка `backend/` и `frontend/docker-compose.yml` (`config -q`), сборка образов,
-   подъём стека `docker-compose.yml` + `docker-compose.e2e.yml`, `pytest tests/e2e` через nginx,
-   логи при падении, `down -v` всегда.
-4. **deploy** — только на push: вебхуки Dokploy для frontend и backend из окружения `prod` (ветка `main`)
-   или `dev` (ветка `dev`); шаг падает, если Dokploy ответил не 200.
+| Проект | Сервис | Ветка в настройках Dokploy |
+|---|---|---|
+| Dev | Backend | `dev` |
+| Dev | Frontend | `dev` |
+| PROD | Backend | `main` |
+| PROD | Frontend | `main` |
+
+1. В Dokploy: сервис → **Deployments → Webhook URL**, скопируйте URL этого сервиса.
+2. В GitHub: репозиторий → **Settings → Webhooks → Add webhook**.
+3. **Payload URL** = скопированный URL; **Content type** = `application/json`;
+   событие **Just the push event**. Сохраните вебхук.
+
+Dokploy сам сравнивает ветку события с настройкой сервиса: Dev деплоит `dev`, PROD — `main`.
+Без вебхуков используйте кнопку **Deploy** в Dokploy. Секреты GitHub Environments для прямых
+вебхуков не нужны. Push запускает деплой сразу; проверки до него обеспечивает локальный хук.
+
+В `.github/workflows/ci.yml` сохранён прежний пайплайн, включая `deploy`: он заработает при включении
+Actions. Перед включением отключите прямые вебхуки либо джобу `deploy`, чтобы не запускать деплой дважды.
+
+## Проверки перед вливанием
+
+Нужны Bash (на Windows — Git Bash), Python 3.12+, Node.js/npm (в workflow — Node.js 22)
+и запущенный Docker с Compose v2. Первый запуск устанавливает зависимости и собирает образы,
+поэтому ему нужен доступ к реестрам пакетов и образов.
+
+Один раз после clone подключите хук (на Windows выполняйте команды в Git Bash):
+
+```bash
+bash scripts/setup-hooks.sh
+```
+
+Это устанавливает `git config core.hooksPath .githooks` и права исполнения скриптов.
+Ручной запуск из корня репозитория:
+
+```bash
+bash scripts/ci.sh             # полный CI
+bash scripts/ci.sh --fast      # без аудитов и e2e
+bash scripts/ci.sh --no-e2e    # с аудитами, без e2e
+```
+
+Этапы выполняются по порядку; в конце выводится сводка со статусами и временем:
+
+1. **Backend:** создание `backend/.venv` при отсутствии (Windows `Scripts/`, Linux/macOS `bin/`),
+   тихий `pip install -r requirements-dev.txt` при изменении хеша requirements,
+   `pip-audit -r requirements.txt`, `pytest -q`. E2E здесь пропускаются без `E2E_BASE_URL`.
+2. **Frontend:** `npm ci` при отсутствии `node_modules` или изменении хеша `package-lock.json`,
+   `npm audit --audit-level=high`, lint, typecheck и build. Недоступность сервиса npm audit:
+   три попытки, затем предупреждение; найденные уязвимости проваливают CI.
+3. **Compose:** доступность Docker и `config -q` для обоих файлов Dokploy с заглушками
+   `POSTGRES_PASSWORD` / `BACKEND_ALIAS`. Этот этап остаётся и в `--fast` / `--no-e2e`.
+4. **E2E:** отдельный Compose-проект `tinvest-ci`, сборка, `up -d --wait`, `pytest -q tests/e2e`,
+   логи при падении, удаление стека и томов через `down -v` с обработчиком выхода (`trap`).
+   Другие Compose-проекты не затрагиваются.
+
+Для CI порты по умолчанию — `28080` (HTTP) и `55434` (БД), отдельно от обычного локального запуска.
+Перед стартом проверяется доступность портов. Переопределение:
+
+```bash
+E2E_PORT=28081 E2E_DB_PORT=55435 bash scripts/ci.sh
+```
+
+`--fast` пропускает аудиты и e2e, но при необходимости всё ещё устанавливает зависимости.
+Метки зависимостей хранятся внутри игнорируемых `.venv` / `node_modules`; удалить метку — повторить установку.
+Не меняйте зависимости вручную в этих каталогах в обход requirements / lock-файла.
+
+Хук читает все ref из stdin Git. Если push обновляет `refs/heads/dev` или `refs/heads/main`,
+он запускает полный `scripts/ci.sh` один раз; ненулевой код отменяет push.
+Для остальных веток и удаления ветки проверка не запускается. Проверяется текущая рабочая копия:
+перед push переключитесь на отправляемую ветку и закоммитьте изменения.
+Сознательный обход: `git push --no-verify`.
+
+Слияние PR через веб-интерфейс GitHub **не запускает локальный хук**. Вливайте локально
+(`git merge` + `git push`) или запускайте `bash scripts/ci.sh` на ветке PR перед merge;
+после изменения ветки повторяйте проверку.
+
+Этапы `.github/workflows/ci.yml` и `scripts/ci.sh` должны оставаться согласованными:
+при изменении проверок обновляйте оба файла.
 
 Работа идёт в `dev` → проверка на `dev.tinvest.leksika1.ru` → merge в `main` → прод.
 

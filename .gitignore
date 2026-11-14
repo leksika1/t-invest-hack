@@ -16,6 +16,10 @@ venv/
 node_modules/
 dist/
 
+# Метки локального CI (также покрыты правилами .venv/ и node_modules/ выше)
+.ci-requirements.sha256
+.ci-package-lock.sha256
+
 # Прочее
 .idea/
 .vscode/

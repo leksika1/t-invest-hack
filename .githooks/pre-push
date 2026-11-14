@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Перед пушем в dev или main гоняет полный локальный CI (scripts/ci.sh). Упал — пуш отменяется.
+# Пуши в другие ветки и удаление веток не проверяются.
+# Установка (один раз после clone): scripts/setup-hooks.sh. Обход: git push --no-verify
+#
+# stdin (формат git): <local ref> <local sha> <remote ref> <remote sha>, по строке на ref.
+
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+# Переопределение скрипта — только для проверки самого хука
+CI_SCRIPT="${PRE_PUSH_CI_SCRIPT:-$ROOT/scripts/ci.sh}"
+ZERO="0000000000000000000000000000000000000000"
+
+targets=()
+shas=()
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "${remote_ref:-}" ] && continue
+  case "$remote_ref" in
+    refs/heads/dev|refs/heads/main) ;;
+    *) continue ;;
+  esac
+  # Удаление ветки: local sha — нули
+  [ "$local_sha" = "$ZERO" ] && continue
+  targets+=("${remote_ref#refs/heads/}")
+  shas+=("$local_sha")
+done
+
+[ "${#targets[@]}" -eq 0 ] && exit 0
+
+echo "pre-push: пуш в ${targets[*]} — запускаю scripts/ci.sh (обход: git push --no-verify)"
+
+head_sha="$(git rev-parse HEAD)"
+for sha in "${shas[@]}"; do
+  if [ "$sha" != "$head_sha" ]; then
+    echo "pre-push: ВНИМАНИЕ — пушится $(git rev-parse --short "$sha"), а проверяется рабочая копия ($(git rev-parse --short HEAD))"
+  fi
+done
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "pre-push: ВНИМАНИЕ — есть незакоммиченные изменения, проверяется рабочая копия вместе с ними"
+fi
+
+# stdin хука уже прочитан; CI его не нужен
+if ! bash "$CI_SCRIPT" < /dev/null; then
+  echo
+  echo "pre-push: CI не пройден — пуш отменён. Исправьте ошибки или (на свой риск) git push --no-verify"
+  exit 1
+fi

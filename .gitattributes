@@ -1,0 +1,3 @@
+# Скрипты bash — всегда LF, иначе на Windows (core.autocrlf) они ломаются
+*.sh text eol=lf
+.githooks/* text eol=lf
