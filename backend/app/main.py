@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.cards.router import router as cards_router
 from app.config import get_settings
@@ -8,7 +9,21 @@ from app.llm.client import LLMClient
 
 settings = get_settings()
 
-app = FastAPI(title="Карточка облигации", version=settings.app_version)
+# Все маршруты под /api: Traefik в Dokploy передаёт путь /api/... без strip prefix
+app = FastAPI(
+    title="Карточка облигации",
+    version=settings.app_version,
+    docs_url="/api/docs",
+    redoc_url=None,
+    openapi_url="/api/openapi.json",
+)
+if settings.cors_origin_list:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origin_list,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 app.include_router(cards_router)
 app.include_router(iss_router)
 

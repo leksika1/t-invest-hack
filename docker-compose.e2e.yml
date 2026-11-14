@@ -1,0 +1,17 @@
+# Добавка к docker-compose.yml: публикует порты для e2e-тестов и локальной работы.
+#   docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
+#   cd backend && E2E_BASE_URL=http://127.0.0.1:18080 pytest -q tests/e2e
+# Если порты заняты: E2E_PORT (фронтенд, по умолчанию 18080), E2E_DB_PORT (Postgres, 55433).
+services:
+  frontend:
+    ports:
+      - "127.0.0.1:${E2E_PORT:-18080}:80"
+  db:
+    # Прямой доступ к базе для отладки и будущих тестов
+    ports:
+      - "127.0.0.1:${E2E_DB_PORT:-55433}:5432"
+
+networks:
+  # Публикация порта db не работает во внутренней сети
+  data:
+    internal: false

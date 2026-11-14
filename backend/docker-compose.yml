@@ -1,0 +1,78 @@
+# Сервис «Backend» в Dokploy: backend + PostgreSQL с pgvector (Compose Path: ./backend/docker-compose.yml).
+# Фронтенд — отдельный сервис (frontend/docker-compose.yml) — ходит сюда через общую сеть Dokploy
+# по имени BACKEND_ALIAS. База — только во внутренней сети, снаружи и фронтенду не видна.
+# Domains в Dokploy: тот же хост, что у фронтенда, Path /api, порт 8000 (без strip prefix —
+# все маршруты backend и так под /api).
+# Определения совпадают с корневым docker-compose.yml (локальный запуск и CI) — меняйте оба файла.
+#
+# Environment в Dokploy:
+#   POSTGRES_PASSWORD — обязательно; только латиница и цифры (входит в URL подключения)
+#   BACKEND_ALIAS     — обязательно; уникальное имя на сервере: tinvest-backend-dev / tinvest-backend-prod
+#   LLM_BASE_URL, LLM_API_KEY, LLM_MODEL — OpenAI-совместимый API; без ключа LLM не используется
+#   CORS_ORIGINS      — необязательно; домены фронтенда через запятую, если он ходит в API с другого домена
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  pids_limit: 256
+
+services:
+  backend:
+    <<: *hardening
+    build:
+      context: .
+    expose:
+      - "8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://bonds:${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD}@db:5432/bonds
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    mem_limit: 512m
+    cpus: 1.0
+    networks:
+      data: {}
+      shared:
+        aliases:
+          - ${BACKEND_ALIAS:?Задайте BACKEND_ALIAS (tinvest-backend-dev / tinvest-backend-prod)}
+
+  db:
+    <<: *hardening
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: bonds
+      POSTGRES_USER: bonds
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bonds -d bonds"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 1g
+    networks: [data]
+
+networks:
+  # backend ↔ PostgreSQL. Внутренняя: без выхода наружу
+  data:
+    internal: true
+  # Общая сеть Dokploy: через неё фронтенд находит backend по BACKEND_ALIAS, а backend выходит
+  # в интернет (MOEX ISS, LLM API)
+  shared:
+    external: true
+    name: ${SHARED_NETWORK:-dokploy-network}
+
+volumes:
+  pgdata:

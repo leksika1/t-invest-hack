@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     iss_base_url: str = "https://iss.moex.com/iss"
     iss_timeout: float = 10.0
 
+    # Через запятую; нужно, только если фронтенд ходит в API с другого домена
+    cors_origins: str = ""
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
 
 @lru_cache
 def get_settings() -> Settings:

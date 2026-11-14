@@ -1,38 +1,82 @@
+# Весь стек одной командой — для локального запуска и CI. В Dokploy — два сервиса из
+# backend/docker-compose.yml и frontend/docker-compose.yml (см. README, «Деплой в Dokploy").
+# Определения совпадают с backend/ и frontend/docker-compose.yml — меняйте оба. Отличие одно:
+# вместо внешней сети Dokploy здесь своя сеть edge, поэтому общая сеть на машине не нужна.
+#
+# Наружу порты не публикуются — их добавляет docker-compose.e2e.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
+# Переменные — в .env рядом (см. .env.example) или в окружении shell:
+#   POSTGRES_PASSWORD — обязательно, только латиница и цифры
+#   LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, CORS_ORIGINS — необязательно
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  pids_limit: 256
+
 services:
-  db:
-    image: pgvector/pgvector:pg16
-    restart: unless-stopped
+  frontend:
+    <<: *hardening
+    build:
+      context: ./frontend
+    expose:
+      - "80"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-bonds}
-      POSTGRES_USER: ${POSTGRES_USER:-bonds}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD в .env}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      BACKEND_UPSTREAM: http://backend:8000
+    depends_on:
+      - backend
+    mem_limit: 128m
+    networks: [edge]
 
   backend:
-    build: ./backend
-    restart: unless-stopped
+    <<: *hardening
+    build:
+      context: ./backend
+    expose:
+      - "8000"
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-bonds}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-bonds}
+      DATABASE_URL: postgresql+psycopg://bonds:${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD}@db:5432/bonds
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    mem_limit: 512m
+    cpus: 1.0
+    networks: [edge, data]
 
-  frontend:
-    build: ./frontend
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT:-80}:80"
-    depends_on:
-      - backend
+  db:
+    <<: *hardening
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: bonds
+      POSTGRES_USER: bonds
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bonds -d bonds"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 1g
+    networks: [data]
+
+networks:
+  # nginx ↔ backend; через неё же backend выходит в интернет (MOEX ISS, LLM API)
+  edge:
+  # backend ↔ PostgreSQL. Внутренняя: без выхода наружу, nginx в неё не входит
+  data:
+    internal: true
 
 volumes:
   pgdata:
