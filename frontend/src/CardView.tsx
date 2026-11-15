@@ -1,4 +1,5 @@
 import { CardSummary, SectionLink } from "./CardSummary";
+import { SecuritySticker } from "./art/Stickers";
 import {
   displayValue,
   quoteParts,
@@ -243,6 +244,7 @@ export function FieldCard({
               Цитаты и источники
               {field.evidence.length ? `; ${field.evidence.length + 1}` : ""}
             </summary>
+            {risk && field.quote && field.status === "extracted" && <SecuritySticker kind="quote" small />}
             {parts && (
               <blockquote>
                 {parts[0]}

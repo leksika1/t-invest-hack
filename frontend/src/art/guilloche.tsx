@@ -47,7 +47,7 @@ export function Rosette({
       aria-hidden="true"
     >
       {rosettePaths(seed).map((d, i) => (
-        <path d={d} key={i} />
+        <path d={d} key={i} pathLength="1" />
       ))}
       <circle cx="120" cy="120" r="32" />
       <circle cx="120" cy="120" r="35" />
@@ -102,14 +102,12 @@ export function PaperIllustration({
         </>
       ) : (
         <>
-          {kind === "documents" && (
-            <path d="M18 24H12v49h42v-6M24 18h-6v49h42v-6" />
-          )}
+          {kind === "documents" && <><path d="M18 24H12v49h42v-6M24 18h-6v49h42v-6" /><path d="M31 10v15l5-4 5 4V10" fill="currentColor" opacity=".22" /></>}
           <path d="M25 10h28l14 14v37H25zM53 10v14h14M33 32h24M33 37h18" />
           {kind === "upload" ? (
             <path d="M40 54V42m-5 5 5-5 5 5" />
           ) : (
-            <circle cx="45" cy="49" r="7" />
+            <><circle cx="47" cy="49" r="11" fill="var(--surface)" /><path d="m55 57 12 12M41 45h11M41 49h8" /></>
           )}
         </>
       )}

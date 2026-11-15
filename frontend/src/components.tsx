@@ -1,4 +1,5 @@
 import { Rosette, GuillocheBorder } from "./art/guilloche";
+import { FoilSurface } from "./art/FoilSurface";
 import { useEffect, useId, useState } from "react";
 import type { FormEvent } from "react";
 import { errorMessage, safeUrl } from "./api";
@@ -151,7 +152,7 @@ export function IssueHeader({
   fetchedAt?: string | null;
 }) {
   return (
-    <section className="panel issue-header" aria-label="Параметры выпуска">
+    <FoilSurface as="section" className="panel issue-header" label="Параметры выпуска">
       <GuillocheBorder seed={isin} />
       <Rosette seed={isin} className="issue-rosette" />
       <div className="issue-identifier">
@@ -199,7 +200,7 @@ export function IssueHeader({
       {fetchedAt && (
         <p className="caption">Снимок MOEX ISS: {formatDate(fetchedAt)}</p>
       )}
-    </section>
+    </FoilSurface>
   );
 }
 export function CouponBrief({ value }: { value: Json | undefined }) {

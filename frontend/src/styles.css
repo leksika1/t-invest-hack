@@ -10,12 +10,12 @@
   font-family: "Golos Text", sans-serif;
   font-synthesis: none;
   color-scheme: light dark;
-  --paper: #f5f6f2;
+  --paper: #f3f5fa;
   --surface: #ffffff;
-  --ink: #18222d;
-  --ink-muted: #5a6673;
-  --rule: #d9ddd6;
-  --intaglio: #27496d;
+  --ink: #0e1a2b;
+  --ink-muted: #5b6577;
+  --rule: #dde2ec;
+  --intaglio: #1f3a8a;
   --guilloche: #8fa9c4;
   --good: #2f7a55;
   --danger: #b42318;
@@ -25,14 +25,14 @@
   --danger-bg: #fdf0ee;
   --warn-bg: #fbf3e5;
   --info-bg: #edf1f6;
-  --neutral-bg: #eceeea;
+  --neutral-bg: #edf0f6;
   --panel: var(--surface);
   --text: var(--ink);
   --muted: var(--ink-muted);
   --border: var(--rule);
   --accent: var(--intaglio);
   --info: var(--intaglio);
-  --accent-hover: #1a3654;
+  --accent-hover: #14285f;
   --accent-text: #fff;
   --soft: var(--paper);
   color: var(--ink);
@@ -1132,15 +1132,15 @@ details[open] > summary {
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #16202a;
-    --surface: #1d2935;
-    --ink: #e6eaee;
-    --ink-muted: #9aa7b4;
-    --rule: #2c3a47;
-    --intaglio: #8db0d8;
-    --guilloche: #3e5873;
+    --paper: #0a1020;
+    --surface: #111a2e;
+    --ink: #e8ecf5;
+    --ink-muted: #a4afc4;
+    --rule: #2b3752;
+    --intaglio: #a6bdff;
+    --guilloche: #5c72ad;
     --accent-hover: #b4cce8;
-    --accent-text: #16202a;
+    --accent-text: #0a1020;
     --good: #91d3ac;
     --danger: #ffb0a8;
     --warn: #e9bc74;

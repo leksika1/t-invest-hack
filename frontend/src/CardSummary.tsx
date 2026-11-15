@@ -2,6 +2,7 @@ import { CouponBrief } from "./components";
 import { displayValue, riskSummary, shortValue } from "./cardPresentation";
 import { formatDate, isObject } from "./fields";
 import type { Card } from "./types";
+import { SecuritySticker } from "./art/Stickers";
 
 export function jumpTo(id: string) {
   const target = document.getElementById(id);
@@ -64,6 +65,10 @@ export function CardSummary({ card }: { card: Card }) {
             </span>
           ))}
         </div>
+      </div>
+      <div className="summary-stickers">
+        {Object.values(card.iss_fields).some(field => field?.status === "verified_iss") && <SecuritySticker kind="moex" />}
+        {risks.some(field => field.quote && field.status === "extracted") && <SecuritySticker kind="quote" />}
       </div>
       <dl className="key-facts">
         <div>

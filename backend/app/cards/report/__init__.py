@@ -17,12 +17,12 @@ from reportlab.platypus import Flowable, KeepTogether, LongTable, Paragraph, Sim
 from app.cards.export import REASONS
 from app.cards.schema import DISCLAIMER, SPECS
 
-INK = colors.HexColor('#18222d')
-MUTED = colors.HexColor('#5a6673')
-RULE = colors.HexColor('#d9ddd6')
-PAPER = colors.HexColor('#f5f6f2')
-BLUE = colors.HexColor('#27496d')
-STATUS = {'verified_iss': ('Сверено с ISS', '#2f7a55'), 'extracted': ('Извлечено', '#27496d'),
+INK = colors.HexColor('#0e1a2b')
+MUTED = colors.HexColor('#5b6577')
+RULE = colors.HexColor('#dde2ec')
+PAPER = colors.white
+BLUE = colors.HexColor('#1f3a8a')
+STATUS = {'verified_iss': ('Сверено с ISS', '#2f7a55'), 'extracted': ('Извлечено', '#1f3a8a'),
           'mismatch_iss': ('Расхождение с ISS', '#b42318'), 'not_found': ('Не найдено', '#5a6673'),
           'needs_review': ('Нужна проверка', '#946014')}
 LABELS = {'date': 'Дата', 'amount': 'Сумма', 'currency': 'Валюта', 'type': 'Тип', 'description': 'Описание',
@@ -84,7 +84,7 @@ class Rosette(Flowable):
         canvas.translate(0, self.height)
         canvas.scale(1, -1)
         canvas.scale(self.width / 240, self.height / 240)
-        canvas.setStrokeColor(colors.HexColor('#8fa9c4'))
+        canvas.setStrokeColor(colors.HexColor('#728bc3'))
         canvas.setLineWidth(.65)
         for layer in range(5):
             points = rosette_points(self.seed, layer)
@@ -96,6 +96,25 @@ class Rosette(Flowable):
             canvas.drawPath(path)
         canvas.circle(120, 120, 32)
         canvas.circle(120, 120, 35)
+        canvas.restoreState()
+
+
+class FactStamp(Flowable):
+    """Small monochrome security stamp, suitable for office printing."""
+    def __init__(self):
+        super().__init__()
+        self.width, self.height = 168, 38
+
+    def draw(self):
+        canvas = self.canv
+        canvas.saveState()
+        canvas.setStrokeColor(BLUE)
+        canvas.setFillColor(BLUE)
+        canvas.setLineWidth(.6)
+        canvas.roundRect(1, 3, 166, 30, 15)
+        canvas.roundRect(4, 6, 160, 24, 12)
+        canvas.setFont('Golos', 8)
+        canvas.drawCentredString(84, 15, 'Факты, не рекомендация')
         canvas.restoreState()
 
 
@@ -158,7 +177,7 @@ def source(field, documents):
         parts = urlsplit(url or '')
         if parts.scheme in ('http', 'https') and parts.netloc:
             url = urlunsplit(parts._replace(fragment=f"page={field['page']}" if field.get('page') else parts.fragment))
-            return f'<link href="{escape(url, quote=True)}" color="#27496d">{escape(label)}</link>'
+            return f'<link href="{escape(url, quote=True)}" color="#1f3a8a">{escape(label)}</link>'
     except ValueError:
         pass
     return escape(label)
@@ -330,7 +349,7 @@ def render_pdf(card, generated_at=None):
         story.append(p(REASONS.get(warning, warning), 'SmallRu'))
     for error in journal.get('errors') or []:
         story.append(p(error.get('message', 'Ошибка сборки'), 'SmallRu'))
-    story.extend([Spacer(1, 16), p(DISCLAIMER, 'SmallRu')])
+    story.extend([Spacer(1, 16), KeepTogether([FactStamp(), p(DISCLAIMER, 'SmallRu')])])
 
     output = BytesIO()
     def footer(canvas, document):

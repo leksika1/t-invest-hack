@@ -1,4 +1,6 @@
 import { Rosette, PaperIllustration } from "./art/guilloche";
+import { HolographicHeader } from "./art/HolographicHeader";
+import { BondComposition, FactStamp, SecuritySticker } from "./art/Stickers";
 import { useEffect, useState } from "react";
 import { api, errorMessage } from "./api";
 import { CardPage } from "./CardView";
@@ -7,6 +9,7 @@ import { formatDate, validIsin } from "./fields";
 import type { CardSummary, Health } from "./types";
 import { Workspace } from "./Workspace";
 import "./styles.css";
+import "./design3.css";
 
 export const DISCLAIMER =
   "Факты из документов эмитента, не инвестиционная рекомендация";
@@ -14,6 +17,7 @@ function Home() {
   return (
     <>
       <div className="home-layout">
+        <HolographicHeader />
         <div className="home-content">
           <div className="hero">
             <h1>
@@ -47,9 +51,7 @@ function Home() {
             </div>
           </section>
         </div>
-        <div className="home-art">
-          <Rosette seed="RU000A10CS75" />
-        </div>
+        <div className="home-art"><BondComposition /></div>
       </div>
       <div className="intro-grid">
         {[
@@ -141,6 +143,7 @@ function HistoryPage({ isin }: { isin: string }) {
           <Skeleton label="Загружаем историю карточек" />
         ) : !items.length && !error ? (
           <div className="empty-state">
+            <SecuritySticker kind="coupon" decorative />
             <p>Карточек пока нет</p>
             <p className="caption">
               {isin
@@ -297,7 +300,8 @@ export default function App() {
       >
         К содержимому
       </a>
-      <header className="app-header">
+      <header className={`app-header${!parts.length ? " home-header" : ""}`}>
+        {parts.length > 0 && <HolographicHeader />}
         <div className="header-inner">
           <a
             className="brand"
@@ -328,7 +332,7 @@ export default function App() {
           </span>
         </div>
       </header>
-      <main id="main-content" tabIndex={-1}>
+      <main id="main-content" className={!parts.length ? "home-page" : undefined} tabIndex={-1}>
         <ErrorNotice
           message={error}
           retry={() => setHealthRevision((n) => n + 1)}
@@ -350,6 +354,7 @@ export default function App() {
         {page}
       </main>
       <footer className="app-footer">
+        <FactStamp />
         <strong>{DISCLAIMER}</strong>
         <span>Данные и документы выпуска</span>
       </footer>

@@ -12,6 +12,7 @@ export function CouponRibbon({
   today?: string;
 }) {
   const nextRef = useRef<HTMLLIElement>(null);
+  const ribbonRef = useRef<HTMLOListElement>(null);
   const payments =
     isObject(schedule) && Array.isArray(schedule.payments)
       ? schedule.payments.filter(isObject)
@@ -21,6 +22,20 @@ export function CouponRibbon({
       ? rate.periods.filter(isObject)
       : [];
   const next = payments.find((p) => String(p.payment_date) >= today);
+  const hasPayments = payments.length > 0;
+  useEffect(() => {
+    const node = ribbonRef.current;
+    if (!node) return;
+    if (typeof IntersectionObserver === "undefined") { node.dataset.printed = "true"; return; }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        node.dataset.printed = "true";
+        observer.disconnect();
+      }
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasPayments]);
   useEffect(() => {
     const node = nextRef.current;
     if (node?.parentElement)
@@ -59,6 +74,7 @@ export function CouponRibbon({
         </p>
       </div>
       <ol
+        ref={ribbonRef}
         className="coupon-ribbon"
         tabIndex={0}
         aria-label="График выплат, прокручивается стрелками"

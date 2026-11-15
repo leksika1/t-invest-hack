@@ -548,9 +548,7 @@ export function Workspace({ isin }: { isin: string }) {
                 if (!locked) choose(Array.from(e.dataTransfer.files));
               }}
             >
-              <span className="upload-icon" aria-hidden="true">
-                ↑
-              </span>
+              <PaperIllustration kind="upload" />
               <h3>PDF или ZIP с e-disclosure — можно загружать как есть</h3>
               <p className="muted">
                 Перетащите сюда документы или выберите файлы
