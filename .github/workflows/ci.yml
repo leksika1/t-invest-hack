@@ -4,6 +4,8 @@
 # Этапы ci.yml и scripts/ci.sh держать согласованными — меняете один, меняйте и другой.
 # Деплой — джоба deploy через секреты DOKPLOY_WEBHOOK_* в окружениях dev/prod.
 # Прямые вебхуки GitHub → Dokploy в Settings → Webhooks не добавлять — будут двойные деплои.
+# Репозиторий публичный: PR из форков на раннере не запускаются (условие if у джоб), для workflow из форков
+# включено ручное одобрение, а открывать PR/issues могут только коллабораторы (interaction limits).
 name: CI/CD
 
 on:
@@ -23,6 +25,8 @@ concurrency:
 jobs:
   backend-tests:
     name: backend tests
+    # Публичный репозиторий + self-hosted раннер: код из форков на раннере не выполняем.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, tinvest]
     services:
       postgres:
@@ -57,6 +61,8 @@ jobs:
 
   frontend-checks:
     name: frontend checks
+    # Публичный репозиторий + self-hosted раннер: код из форков на раннере не выполняем.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, tinvest]
     defaults:
       run:
