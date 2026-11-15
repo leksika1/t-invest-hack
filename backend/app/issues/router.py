@@ -20,8 +20,23 @@ TYPES = {"decision", "prospectus", "amendment", "material_fact", "other"}
 
 
 def database():
-    with get_sessionmaker().begin() as session:
+    # Коммит после обработчика. Эндпоинты, которые отдают id новой задачи, коммитят сами до ответа
+    # (commit_and_return): иначе клиент может запросить /api/jobs/{id} раньше коммита и получить 404.
+    session = get_sessionmaker()()
+    try:
         yield session
+        session.commit()
+    except BaseException:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def commit_and_return(session, payload):
+    """Фиксирует транзакцию до отправки ответа и возвращает уже материализованный payload."""
+    session.commit()
+    return payload
 
 
 def isin_value(isin):
@@ -84,7 +99,7 @@ def collect_issue(isin: str, session: Session = Depends(database)):
     job = last_collect(session, issue)
     if job is None or job.status not in ("queued", "running"):
         job = new_job(session, "collect", {"issue_id": str(issue.id)})
-    return {"isin": issue.isin, "job_id": job.id, "status": job.status}
+    return commit_and_return(session, {"isin": issue.isin, "job_id": job.id, "status": job.status})
 
 
 @router.get("/issues/{isin}/documents")
@@ -136,7 +151,7 @@ def upload_documents(isin: str, files: list[UploadFile] = File(...), document_ty
             from datetime import timezone
             job.status, job.step, job.progress = "succeeded", "finalize", 100
             job.finished_at = datetime.now(timezone.utc)
-        return {"isin": issue.isin, "documents": result, "job_id": job.id}
+        return commit_and_return(session, {"isin": issue.isin, "documents": result, "job_id": job.id})
     finally:
         for upload in files:
             upload.file.close()

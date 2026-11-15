@@ -278,6 +278,7 @@ run_stage "frontend: npm ci" frontend_deps
 if [ "$FAST" -eq 0 ]; then run_stage "frontend: npm audit" frontend_audit; else skip_stage "frontend: npm audit" "--fast"; fi
 run_stage "frontend: lint" npm_run lint
 run_stage "frontend: typecheck" npm_run typecheck
+run_stage "frontend: tests" npm_run test
 run_stage "frontend: build" npm_run build
 
 run_stage "docker: доступен" docker_check

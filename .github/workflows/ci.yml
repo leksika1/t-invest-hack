@@ -84,8 +84,7 @@ jobs:
           echo "::warning::npm audit не выполнен: сервис аудита npm недоступен. Уязвимости проверит следующий запуск."
       - run: npm run lint
       - run: npm run typecheck
-      # Когда появятся тесты фронтенда — добавить скрипт "test" в package.json и шаг здесь:
-      # - run: npm test
+      - run: npm test
       - run: npm run build
 
   # Собирает образы, поднимает весь стек (nginx → backend → Postgres)

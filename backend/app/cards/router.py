@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.cards.export import render_markdown
 from app.cards.schema import CardRequest, FIELDS, Review, validate_value
 from app.cards.service import card_json, create_card, field_json
-from app.issues.router import database
+from app.issues.router import commit_and_return, database
 from app.models import Card, CardField, Issue
 
 router = APIRouter(prefix='/api/cards', tags=['cards'])
@@ -26,7 +26,7 @@ def required(session, identifier):
 @router.post('', status_code=202)
 def build_card(req: CardRequest, session: Session = Depends(database)):
     card, job = create_card(session, req.isin)
-    return {'card_id': card.id, 'job_id': job.id, 'status': job.status}
+    return commit_and_return(session, {'card_id': card.id, 'job_id': job.id, 'status': job.status})
 
 
 @router.get('')

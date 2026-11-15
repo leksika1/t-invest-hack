@@ -1,6 +1,6 @@
 # Эксплуатация: Dokploy, CI и хуки
 
-Этапы 2–3: реализованные настройки и команды. Проверки текущего этапа перечислены в DEVELOPMENT; живой OpenRouter не вызывался. Docker daemon в текущей сессии недоступен, поэтому свежий полный прогон PostgreSQL/e2e и деплой не заявляются. Переменные — в [README](../README.md).
+Этапы 2–4: реализованные настройки и команды. Проверки текущего этапа перечислены в DEVELOPMENT; живой OpenRouter не вызывался. Docker daemon в текущей сессии недоступен, поэтому свежий полный прогон PostgreSQL/e2e и деплой не заявляются. Переменные — в [README](../README.md).
 
 Остановить локальный стек без удаления данных:
 
@@ -82,7 +82,7 @@ bash scripts/ci.sh --no-e2e    # с аудитами, без e2e
    тихий `pip install -r requirements-dev.txt` при изменении хеша requirements,
    `pip-audit -r requirements.txt`, `pytest -q`. E2E здесь пропускаются без `E2E_BASE_URL`.
 2. **Frontend:** `npm ci` при отсутствии `node_modules` или изменении хеша `package-lock.json`,
-   `npm audit --audit-level=high`, lint, typecheck и build. Недоступность сервиса npm audit:
+   `npm audit --audit-level=high`, lint, typecheck, `npm test` (Vitest, без watch) и build. Недоступность сервиса npm audit:
    три попытки, затем предупреждение; найденные уязвимости проваливают CI.
 3. **Compose:** доступность Docker и `config -q` для обоих файлов Dokploy с заглушками
    `POSTGRES_PASSWORD` / `BACKEND_ALIAS`. Этот этап остаётся и в `--fast` / `--no-e2e`.
@@ -203,6 +203,18 @@ python -m venv .venv
 ```bash
 cd frontend
 npm install
-npm run dev          # npm run lint, npm run typecheck — те же проверки, что в CI
+npm run dev
+npm test             # Vitest + Testing Library, локальные fixtures, без внешней сети
+npm run lint
+npm run typecheck
+npm run build
 ```
+
+Нужен Node.js 22.13+ (или современный 24 LTS); workflow/Docker используют 22. Для воспроизводимой установки после clone — npm ci. Vitest подключён к Vite config, jsdom и @testing-library/jest-dom; [Vitest](https://vitest.dev/guide/), [Testing Library](https://testing-library.com/docs/react-testing-library/setup/).
+
+Для временной проверки против Dev без изменения .env: Bash — `DEV_API_TARGET=https://dev.tinvest.leksika1.ru npm run dev`; PowerShell — `$env:DEV_API_TARGET='https://dev.tinvest.leksika1.ru'; npm run dev`. Прокси применяется только к Vite dev server, браузер обращается на тот же origin /api. Локальный фронтенд должен работать с backend этапа 3; старый синхронный POST карточки этапа 2 несовместим. Ни модельные ключи, ни admin-токен вводить в UI не требуется.
+
+Клавиатура: ссылка «К содержимому», подписанные inputs, Tab/Enter, раскрываемые quotes/journal, видимый фокус. Исправления — формы для дат/Decimal-строк/списков, сервер валидирует value; машинные поля не подменяются. Экспорт получает Markdown через fetch/blob. Новая версия карточки создаётся только явным нажатием кнопки. Хранимые PDF нельзя скачать через несуществующий локальный маршрут: ссылки открывают только исходные HTTP(S) URL при наличии origins.
+
+В frontend/Dockerfile сохранены try_files и multipart-лимит 160m; style-src теперь только 'self' (локальный внешний CSS, без inline-стилей). Проверка production bundle с таким же CSP выполнена в локальном Chromium на тестовых ответах API, не в nginx/Docker. Развёрнутый nginx и полный стек проверяются общим CI.
 
