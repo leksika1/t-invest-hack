@@ -149,12 +149,14 @@ def result_template(code, iss_value=None):
             'evidence': [], 'reason': 'not_in_documents'}
 
 
-def degraded_field(code, iss_value, iss_url):
+def degraded_field(code, iss_value, iss_url, reason='llm_not_configured'):
     result = result_template(code, iss_value)
     if FIELDS[code].iss and (value := project_iss(code, iss_value)) is not None:
         result.update(value=value, status='extracted', not_found=False, reason='iss_only', source={'kind': 'moex_iss', 'name': 'MOEX ISS', 'url': iss_url})
     else:
-        result['reason'] = 'iss_unavailable' if FIELDS[code].iss else 'llm_not_configured'
+        result['reason'] = 'iss_unavailable' if FIELDS[code].iss else reason
+        if not FIELDS[code].iss and reason != 'llm_not_configured':
+            result.update(status='needs_review', not_found=False)
     return result
 
 

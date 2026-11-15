@@ -43,7 +43,7 @@
 {"status":"ok","db":"ok","llm":"not_configured","version":"0.1.0"}
 ```
 
-При ошибке БД HTTP пока остаётся 200, тело `status=degraded, db=error`. `llm=configured` проверяет наличие ключа, не доступность провайдера.
+При ошибке БД HTTP пока остаётся 200, тело `status=degraded, db=error`. `llm=configured` означает наличие непустого ключа и обоих тарифов выбранной модели, включая defaults Gemini Flash. Без ключа/тарифов — `llm=not_configured`. Health не вызывает провайдера и не проверяет его доступность или остаток бюджета.
 
 `GET /api/iss/RU000A10AXF7`: текущий ответ `{secid,description}`, ключи description зависят от ISS. Неверный secid → 422, пустое описание → 404, ошибка сети/формата ISS → 502. Bondization будет внутренней частью issue-сервиса, текущий прокси не объявляется его реализацией.
 
@@ -195,7 +195,7 @@ Document DTO пока не содержит размер сохранённог�
 | Условие не найдено | `value=null`, `not_found=true`, `status=not_found`, `reason=not_in_documents` |
 | Нет ключа LLM, текстовое поле | `value=null`, `status=not_found`, `reason=llm_not_configured` |
 | Прямой ISS без PDF | `status=extracted`, `source.kind=moex_iss`, source.url — путь снимка ISS, quote/document_id/page/clause/confidence = null; value из ISS |
-| Лимит/таймаут LLM | `status=needs_review`, reason `budget_exceeded/llm_timeout`; не делать вывод об отсутствии условия |
+| Отказ LLM: тарифы, лимит, таймаут, провайдер | Поля 1–8: доступное ISS-значение `extracted/moex_iss`, иначе `not_found/iss_unavailable`. Поля 9–15: `value=null`, `status=needs_review`, reason — код отказа; он также в `journal.warnings`. Не делать вывод об отсутствии условия |
 
 У ready-карточки дополнительно `documents`: снимок фактически использованных документов с filename/type/sha256/origins (включая даты/URL и upload). Кнопка источника поля связывается с этим snapshot, не с будущей редакцией документа. Имена файлов, страницы и пункты сохраняются как прежде.
 

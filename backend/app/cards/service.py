@@ -142,6 +142,10 @@ def build_card(factory, job, gateway_factory=LLMGateway):
                             'warnings': list(dict.fromkeys(warnings)), 'prepared': True}
                 card.input_snapshot = json_safe(snapshot)
         documents = [uuid.UUID(identifier) for identifier in snapshot['document_ids']]
+        iss_url = settings.iss_base_url.rstrip('/') + '/securities/' + (snapshot.get('secid') or snapshot['isin']) + '.json'
+        configuration_error = settings.llm_configuration_error
+        if configuration_error:
+            warnings.append(configuration_error)
         with factory() as session:
             pages = {(str(p.document_id), p.number): p.text for p in session.scalars(select(Page).where(Page.document_id.in_(documents)))}
         for index, spec in enumerate(SPECS):
@@ -151,8 +155,8 @@ def build_card(factory, job, gateway_factory=LLMGateway):
             if done:
                 continue  # persisted fields survive worker restart without another paid call
             iss_value = snapshot.get('iss_fields', {}).get(spec.code) if spec.iss else None
-            if not settings.llm_api_key:
-                result = degraded_field(spec.code, iss_value, settings.iss_base_url.rstrip('/') + '/securities/' + (snapshot.get('secid') or snapshot['isin']) + '.json')
+            if configuration_error:
+                result = degraded_field(spec.code, iss_value, iss_url, reason=configuration_error)
             else:
                 gateway = gateway_factory(factory=factory, settings=settings, job_id=job.id, field_id=field_id)
                 context, retrieval_warnings = retrieve(factory, issue_id, documents, spec.hints, settings, gateway)
@@ -162,15 +166,15 @@ def build_card(factory, job, gateway_factory=LLMGateway):
                     if snapshot.get('failed_document_ids'):
                         result.update(status='needs_review', reason='document_processing_failed')
                     elif not documents and spec.iss:
-                        result = degraded_field(spec.code, iss_value, settings.iss_base_url.rstrip('/') + '/securities/' + (snapshot.get('secid') or snapshot['isin']) + '.json')
+                        result = degraded_field(spec.code, iss_value, iss_url)
                         warnings.append('iss_only_no_documents')
                 else:
                     try:
                         extracted = gateway.extract(spec.code, prompts.messages(spec, context), extraction_model(spec.code))
                         result = verify(spec.code, extracted, pages, context, settings, iss_value)
                     except GatewayError as exc:
-                        result = result_template(spec.code, iss_value)
-                        result.update(status='needs_review', reason=exc.code, not_found=False)
+                        warnings.append(exc.code)
+                        result = degraded_field(spec.code, iss_value, iss_url, reason=exc.code)
                 if result['status'] == 'not_found' and snapshot.get('failed_document_ids'):
                     result.update(status='needs_review', reason='document_processing_failed')
             if result.get('source', {}).get('kind') == 'document':

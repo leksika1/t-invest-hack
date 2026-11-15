@@ -71,6 +71,6 @@ def health() -> dict:
     return {
         "status": "ok" if db_ok else "degraded",
         "db": "ok" if db_ok else "error",
-        "llm": "configured" if settings.llm_api_key else "not_configured",
+        "llm": "configured" if settings.llm_configuration_error is None else "not_configured",
         "version": settings.app_version,
     }

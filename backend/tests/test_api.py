@@ -42,6 +42,23 @@ def test_health_db_down(monkeypatch):
     assert body["db"] == "error"
 
 
+@pytest.mark.parametrize('key,model,prices,expected', [
+    ('', 'google/gemini-2.5-flash', ('', ''), 'not_configured'),
+    ('fake', 'google/gemini-2.5-flash', ('', ''), 'configured'),
+    ('fake', 'other/model', ('', ''), 'not_configured'),
+    ('fake', 'other/model', ('1', ''), 'not_configured'),
+    ('fake', 'other/model', ('0', '0'), 'configured'),
+])
+def test_health_requires_key_and_both_model_prices(monkeypatch, key, model, prices, expected):
+    from app.config import Settings
+    monkeypatch.setattr(main, 'check_db', lambda: True)
+    monkeypatch.setattr(main, 'settings', Settings(llm_api_key=key, llm_model=model,
+                        llm_input_price_per_1m_usd=prices[0], llm_output_price_per_1m_usd=prices[1], _env_file=None))
+    body = client.get('/api/health').json()
+    assert set(body) == {'status', 'db', 'llm', 'version'}
+    assert body['llm'] == expected
+
+
 @pytest.mark.parametrize("isin", ["RU000A10AXF7", "ru000a10axf7", " RU000A0JX0J2 "])
 def test_card_valid_isin(isin):
     from app.cards.schema import CardRequest, FIELDS

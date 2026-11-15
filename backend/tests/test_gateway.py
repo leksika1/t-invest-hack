@@ -144,9 +144,49 @@ def test_malformed_provider_envelope_is_logged_and_repaired():
     assert len(transport.calls)==2
 
 
-def test_retry_after_and_blank_prices():
+def test_retry_after():
     failure=http_error(429); failure.response.headers['retry-after']='3'
     sleeps=[]
     extract(LLMGateway(settings=settings(),ledger=MemoryLedger(),transport=FakeTransport([failure,response()]),sleep=sleeps.append))
     assert sleeps==[3]
-    assert Settings(llm_input_price_per_1m_usd='',_env_file=None).llm_input_price_per_1m_usd is None
+
+
+@pytest.mark.parametrize('value', [None, '', '   '])
+def test_default_model_blank_env_prices_use_defaults(monkeypatch, value):
+    monkeypatch.setenv('LLM_MODEL', 'google/gemini-2.5-flash')
+    for name in ('LLM_INPUT_PRICE_PER_1M_USD', 'LLM_OUTPUT_PRICE_PER_1M_USD'):
+        if value is None:
+            monkeypatch.delenv(name, raising=False)
+        else:
+            monkeypatch.setenv(name, value)
+    configured = Settings(llm_api_key='fake', _env_file=None)
+    assert configured.llm_input_price_per_1m_usd == Decimal('0.30')
+    assert configured.llm_output_price_per_1m_usd == Decimal('2.50')
+    ledger, transport = MemoryLedger(), FakeTransport([response()])
+    extract(LLMGateway(settings=configured, ledger=ledger, transport=transport))
+    assert len(transport.calls) == 1 and ledger.records[0]['reserve'] > 0
+    assert ledger.records[0]['cost_source'] == 'provider'
+    assert ledger.records[0]['cost'] == Decimal('.0002')
+
+
+def test_other_model_without_prices_is_blocked_before_transport():
+    configured = Settings(llm_api_key='fake', llm_model='other/model',
+                          llm_input_price_per_1m_usd='', llm_output_price_per_1m_usd='', _env_file=None)
+    assert configured.llm_input_price_per_1m_usd is None
+    assert configured.llm_output_price_per_1m_usd is None
+    ledger, transport = MemoryLedger(), FakeTransport([])
+    with pytest.raises(GatewayError) as error:
+        extract(LLMGateway(settings=configured, ledger=ledger, transport=transport))
+    assert error.value.code == 'llm_prices_not_configured'
+    assert not ledger.records and not transport.calls
+
+
+def test_price_overrides_and_embedding_price_stay_independent():
+    configured = Settings(llm_model='other/model', llm_input_price_per_1m_usd='0',
+                          llm_output_price_per_1m_usd='4', embedding_input_price_per_1m_usd='', _env_file=None)
+    assert configured.llm_input_price_per_1m_usd == 0
+    assert configured.llm_output_price_per_1m_usd == 4
+    assert configured.embedding_input_price_per_1m_usd is None
+    configured = Settings(llm_input_price_per_1m_usd='0.8', llm_output_price_per_1m_usd='', _env_file=None)
+    assert configured.llm_input_price_per_1m_usd == Decimal('.8')
+    assert configured.llm_output_price_per_1m_usd == Decimal('2.50')

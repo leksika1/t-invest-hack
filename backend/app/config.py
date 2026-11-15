@@ -5,6 +5,17 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# OpenRouter, USD / 1M tokens. Проверить актуальность на openrouter.ai/models.
+# Defaults apply only to this exact model; other models require explicit prices.
+DEFAULT_LLM_MODEL = 'google/gemini-2.5-flash'
+DEFAULT_LLM_PRICES = {
+    DEFAULT_LLM_MODEL: {
+        'llm_input_price_per_1m_usd': Decimal('0.30'),
+        'llm_output_price_per_1m_usd': Decimal('2.50'),
+    },
+}
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -13,7 +24,7 @@ class Settings(BaseSettings):
 
     llm_base_url: str = "https://openrouter.ai/api/v1"
     llm_api_key: str = ""
-    llm_model: str = "google/gemini-2.5-flash"
+    llm_model: str = DEFAULT_LLM_MODEL
     public_base_url: str = ""
     llm_daily_budget_usd: Decimal = Field(Decimal("1"), ge=0)
     llm_input_price_per_1m_usd: Decimal | None = Field(None, ge=0)
@@ -34,8 +45,12 @@ class Settings(BaseSettings):
 
     @field_validator('llm_input_price_per_1m_usd', 'llm_output_price_per_1m_usd', 'embedding_input_price_per_1m_usd', mode='before')
     @classmethod
-    def blank_price(cls, value):
-        return None if value == '' else value
+    def blank_price(cls, value, info):
+        if isinstance(value, str) and not value.strip():
+            value = None
+        if value is None:
+            return DEFAULT_LLM_PRICES.get(info.data.get('llm_model'), {}).get(info.field_name)
+        return value
 
     iss_base_url: str = "https://iss.moex.com/iss"
     iss_timeout: float = 10.0
@@ -71,6 +86,14 @@ class Settings(BaseSettings):
 
     # Через запятую; нужно, только если фронтенд ходит в API с другого домена
     cors_origins: str = ""
+
+    @property
+    def llm_configuration_error(self) -> str | None:
+        if not self.llm_api_key.strip():
+            return 'llm_not_configured'
+        if self.llm_input_price_per_1m_usd is None or self.llm_output_price_per_1m_usd is None:
+            return 'llm_prices_not_configured'
+        return None
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -121,7 +121,7 @@ class LLMGateway:
 
     @property
     def configured(self):
-        return bool(self.settings.llm_api_key)
+        return bool(self.settings.llm_api_key.strip())
 
     def extract(self, code, messages, output_model):
         if not self.configured:
@@ -141,7 +141,7 @@ class LLMGateway:
         input_price = self.settings.embedding_input_price_per_1m_usd if embedding else self.settings.llm_input_price_per_1m_usd
         output_price = Decimal(0) if embedding else self.settings.llm_output_price_per_1m_usd
         if input_price is None or output_price is None:
-            raise GatewayError('llm_prices_not_configured', 'Не настроены тарифы для резервирования бюджета')
+            raise GatewayError('llm_prices_not_configured', f"Не настроены тарифы для резервирования бюджета модели {payload['model']}")
         retries, repairs, attempt = 0, 0, 0
         while True:
             attempt += 1

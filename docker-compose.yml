@@ -42,6 +42,8 @@ services:
       LLM_MODEL: ${LLM_MODEL:-google/gemini-2.5-flash}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       LLM_DAILY_BUDGET_USD: ${LLM_DAILY_BUDGET_USD:-1}
+      # Пусто -> Settings выбирает тариф по LLM_MODEL (Gemini Flash: 0.30/2.50).
+      # Числовой fallback здесь присвоил бы эти тарифы также другой модели.
       LLM_INPUT_PRICE_PER_1M_USD: ${LLM_INPUT_PRICE_PER_1M_USD:-}
       LLM_OUTPUT_PRICE_PER_1M_USD: ${LLM_OUTPUT_PRICE_PER_1M_USD:-}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-45}

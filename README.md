@@ -51,7 +51,7 @@ curl http://127.0.0.1:18080/api/health
 | `LLM_API_KEY` | Backend, сейчас | Ключ OpenRouter; без ключа целевой MVP работает в деградированном режиме |
 | `PUBLIC_BASE_URL` | Backend, этап 3 | URL сайта для HTTP-Referer; X-Title: Bond Card MVP |
 | `LLM_DAILY_BUDGET_USD` | Backend, этап 3 | 1 USD/UTC-день по умолчанию; 0 блокирует модель. Учитываются расходы и незакрытые резервы |
-| `LLM_INPUT_PRICE_PER_1M_USD`, `LLM_OUTPUT_PRICE_PER_1M_USD` | Backend, этап 3 | Тарифы для резерва/fallback: задать явно по выбранной модели; пусто → платный вызов заблокирован |
+| `LLM_INPUT_PRICE_PER_1M_USD`, `LLM_OUTPUT_PRICE_PER_1M_USD` | Backend, этап 3 | USD/1 млн токенов для резерва/fallback. Для `google/gemini-2.5-flash` пропущено/пусто → `0.30`/`2.50`; явные значения переопределяют тарифы. Для другой модели нужны оба тарифа, иначе `llm_prices_not_configured`. Проверить актуальность на [openrouter.ai/models](https://openrouter.ai/models) |
 | `LLM_TIMEOUT_SECONDS`, `LLM_MAX_RETRIES`, `LLM_MAX_OUTPUT_TOKENS` | Backend, этап 3 | 45 с, 2 повтора временной ошибки, 4096 выходных токенов |
 | `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`, `EMBEDDING_DIM` | Backend, этап 3 | Опционально, base/key наследуют LLM; DIM=1024 (1–2000), не настроено/ошибка → FTS |
 | `EMBEDDING_INPUT_PRICE_PER_1M_USD` | Backend, этап 3 | Явный тариф эмбеддингов для общего бюджета; /embeddings конкретной модели проверить |
