@@ -180,7 +180,7 @@ def test_direct_connection_errors_keep_their_reason(proxy, expected):
 
 @pytest.mark.parametrize('failure,expected', [
     (httpx.ReadTimeout('provider timeout'), 'llm_timeout'),
-    (http_error(403, PROXY), 'llm_http_error'),
+    (http_error(403, PROXY), 'llm_access_denied'),
     (http_error(407, PROXY), 'llm_proxy_error'),
 ])
 def test_proxy_does_not_hide_provider_failures(failure, expected):

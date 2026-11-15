@@ -84,6 +84,7 @@ def prepared_build(monkeypatch):
 @pytest.mark.parametrize('reason', [
     'llm_not_configured', 'llm_prices_not_configured', 'budget_exceeded', 'llm_timeout',
     'llm_http_error', 'llm_transport_error', 'invalid_json', 'llm_client_error', 'llm_proxy_error',
+    'llm_schema_rejected', 'llm_auth_error', 'llm_insufficient_credits',
 ])
 def test_build_gateway_failure_preserves_all_eight_iss_fields(prepared_build, monkeypatch, reason):
     factory, job, card, fields, iss = prepared_build

@@ -244,6 +244,8 @@ curl http://127.0.0.1:18080/api/admin/stats -H "X-Admin-Token: ${ADMIN_TOKEN}"
 
 Числа иллюстративны. Stats не включает ключи/промпты. При неизвестных ценах нельзя объявлять остаток бюджета достоверным.
 
+У ошибки попытки дополнительно возможны `http_status`, `openrouter_message`, `provider_name`, `provider_message`, `provider_status`. Это ограниченные и очищенные выжимки, полный `metadata.raw`/тело запроса не возвращается. Русские причины полей включают `llm_schema_rejected`, `llm_auth_error`, `llm_insufficient_credits`, `llm_access_denied`, `llm_model_not_found`, `llm_request_too_large`, `llm_request_rejected`, `llm_rate_limited`. HTTP 4xx без usage имеет cost_source=request_rejected, cost_usd="0", state=failed и освобождённый резерв; unknown означает, что стоимость не установлена.
+
 ## Ошибки
 
 Бизнес-ошибки могут иметь вид `{"detail":{"code":"collection_in_progress","message":"Дождитесь завершения текущего автосбора"}}`. Стандартный FastAPI 422 сохраняет массив detail; фронт обязан обрабатывать оба формата. Текущие маршруты также могут возвращать detail строкой.

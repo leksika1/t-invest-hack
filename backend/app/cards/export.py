@@ -3,6 +3,7 @@ import json
 import re
 
 from app.cards.schema import DISCLAIMER, SPECS
+from app.llm.diagnostics import PROVIDER_REASONS
 
 REASONS = {'llm_not_configured': 'LLM не настроена', 'quote_not_verified': 'Цитата не подтверждена',
            'budget_exceeded': 'Дневной бюджет LLM исчерпан', 'not_in_documents': 'Не найдено в переданных документах',
@@ -15,7 +16,7 @@ REASONS = {'llm_not_configured': 'LLM не настроена', 'quote_not_verif
            'ambiguous_value': 'Неоднозначное значение', 'iss_comparison_incomplete': 'Недостаточно данных для полной сверки с ISS',
            'value_not_supported_by_quote': 'Значение не подтверждается параметрами цитаты', 'incomplete_evidence': 'Недостаточно цитат для всех элементов',
            'document_processing_failed': 'Часть документов не удалось распознать', 'processing': 'Поле обрабатывается',
-           'conflicting_sources': 'Противоречие источников или неоднозначная редакция'}
+           'conflicting_sources': 'Противоречие источников или неоднозначная редакция', **PROVIDER_REASONS}
 
 
 def escape(value):

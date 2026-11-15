@@ -106,7 +106,10 @@ def test_retry_and_error_logs(failure):
     transport = FakeTransport([failure, response()])
     extract(LLMGateway(settings=settings(), ledger=ledger, transport=transport, sleep=sleeps.append))
     assert len(ledger.records) == 2 and ledger.records[0]['error'] and sleeps == [1]
-    assert ledger.records[0]['cost'] is None  # retain reservation on uncertain failure
+    if isinstance(failure, httpx.HTTPStatusError) and failure.response.status_code == 429:
+        assert ledger.records[0]['cost'] == 0 and ledger.records[0]['cost_source'] == 'request_rejected'
+    else:
+        assert ledger.records[0]['cost'] is None  # retain reservation on uncertain failure
 
 
 def test_embedding_gateway_and_dimension_validation():

@@ -13,6 +13,7 @@ from sqlalchemy import Numeric, cast, func, select, text
 from app.config import get_settings
 from app.errors import ProcessingError
 from app.llm.client import LLMClient
+from app.llm.diagnostics import http_diagnostics
 from app.models import LLMCall
 
 
@@ -112,6 +113,45 @@ def strict_schema(schema):
     return schema
 
 
+def provider_schema(model):
+    """A small JSON Schema for providers; the full model still validates replies."""
+    original = model.model_json_schema()
+    definitions = original.get('$defs', {})
+
+    def simplify(node, references=()):
+        if '$ref' in node:
+            reference = node['$ref']
+            if not reference.startswith('#/$defs/') or reference in references:
+                raise ValueError('Provider schema requires non-recursive local references')
+            name = reference.removeprefix('#/$defs/').replace('~1', '/').replace('~0', '~')
+            return simplify({**definitions[name], **{k: v for k, v in node.items() if k != '$ref'}}, (*references, reference))
+        if 'anyOf' in node:
+            alternatives = node['anyOf']
+            present = [item for item in alternatives if item.get('type') != 'null']
+            if len(present) != 1 or len(alternatives) != 2:
+                raise ValueError('Provider schema supports only nullable unions')
+            result = simplify({**present[0], **{k: v for k, v in node.items() if k != 'anyOf'}}, references)
+            kind = result['type']
+            result['type'] = [kind, 'null'] if isinstance(kind, str) else list(dict.fromkeys([*kind, 'null']))
+            if 'enum' in result:
+                result['enum'] = [*result['enum'], None]
+            return result
+        # Allow structure/short hints, never provider-side format/range/length limits.
+        result = {key: node[key] for key in ('type', 'enum') if key in node}
+        if 'properties' in node:
+            result['properties'] = {key: simplify(value, references) for key, value in node['properties'].items()}
+        if 'items' in node:
+            result['items'] = simplify(node['items'], references)
+        description = ' '.join(node.get('description', '').split())
+        if node.get('format') in ('date', 'date-time', 'uuid'):
+            description = {'date': 'ISO date: YYYY-MM-DD', 'date-time': 'ISO date-time', 'uuid': 'UUID string'}[node['format']]
+        if description:
+            result['description'] = description[:160]
+        return result
+
+    return strict_schema(simplify(original))
+
+
 class LLMGateway:
     def __init__(self, factory=None, settings=None, transport=None, ledger=None, job_id=None, field_id=None, sleep=time.sleep):
         self.settings = settings or get_settings()
@@ -126,7 +166,7 @@ class LLMGateway:
     def extract(self, code, messages, output_model):
         if not self.configured:
             raise GatewayError('llm_not_configured', 'LLM не настроена')
-        schema = strict_schema(output_model.model_json_schema())
+        schema = provider_schema(output_model)
         return self._call('extraction', {'model': self.settings.llm_model, 'messages': messages,
                           'temperature': 0, 'max_tokens': self.settings.llm_max_output_tokens,
                           'response_format': {'type': 'json_schema', 'json_schema': {'name': code, 'strict': True, 'schema': schema}}}, output_model)
@@ -171,22 +211,11 @@ class LLMGateway:
                     parsed = output_model.model_validate_json(response['choices'][0]['message']['content'])
             except httpx.HTTPStatusError as exc:
                 status = exc.response.status_code
-                try:
-                    body = exc.response.json()
-                    usage = body.get('usage', {}) if isinstance(body, dict) else {}
-                    if not isinstance(usage, dict):
-                        usage = {}
-                except ValueError:
-                    usage = {}
+                error, usage = http_diagnostics(exc.response, payload, self.settings)
                 try:
                     retry_after = float(exc.response.headers.get('retry-after', ''))
                 except ValueError:
                     pass
-                # Do not expose provider bodies: they may echo credentials or context.
-                unsupported = status in (400, 422) and any(word in exc.response.text.lower() for word in ('json_schema', 'response_format')) and payload.get('response_format', {}).get('type') == 'json_schema'
-                error = {'code': 'structured_output_unsupported' if unsupported else 'llm_http_error', 'message': f'Провайдер вернул HTTP {status}'}
-                if status == 407 and self.settings.llm_proxy_url:
-                    error = proxy_error
             except httpx.ProxyError:
                 error = proxy_error
             except httpx.ConnectError:
@@ -201,14 +230,15 @@ class LLMGateway:
                 error = {'code': 'invalid_embedding' if embedding else 'invalid_json', 'message': 'Ответ модели не соответствует схеме'}
             except Exception:
                 error = {'code': 'llm_client_error', 'message': 'Ошибка клиента модели'}
+            rejected_without_usage = status is not None and 400 <= status < 500 and not usage
             usage = sanitized_usage(usage)
             cost, source = usage_cost(usage, input_price, output_price)
-            if error and error['code'] == 'structured_output_unsupported' and not usage:
+            if rejected_without_usage:
                 cost, source = Decimal(0), 'request_rejected'
             self.ledger.complete(identifier, usage, cost, source, int((time.monotonic() - started) * 1000), error, response.get('id'))
             if not error:
                 return parsed
-            if error['code'] == 'structured_output_unsupported':
+            if error['code'] == 'llm_schema_rejected' and payload.get('response_format', {}).get('type') == 'json_schema':
                 schema_text = json.dumps(payload['response_format']['json_schema']['schema'], ensure_ascii=False)
                 payload = {**payload, 'response_format': {'type': 'json_object'},
                            'messages': [*payload['messages'], {'role': 'user', 'content': 'Верни JSON по этой схеме: ' + schema_text}]}
