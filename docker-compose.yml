@@ -37,10 +37,10 @@ services:
       - "8000"
     environment:
       DATABASE_URL: postgresql+psycopg://bonds:${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD}@db:5432/bonds
-      LLM_BASE_URL: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_PROXY_URL: ${LLM_PROXY_URL:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
-      LLM_MODEL: ${LLM_MODEL:-google/gemini-2.5-flash}
+      LLM_MODEL: ${LLM_MODEL:-}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       LLM_DAILY_BUDGET_USD: ${LLM_DAILY_BUDGET_USD:-10}
       # Пусто -> Settings выбирает тариф по LLM_MODEL (Gemini Flash: 0.30/2.50).

@@ -2,19 +2,37 @@ from functools import lru_cache
 from decimal import Decimal
 from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# OpenRouter, USD / 1M tokens. Проверить актуальность на openrouter.ai/models.
-# Defaults apply only to this exact model; other models require explicit prices.
+# USD / 1M tokens. Проверить актуальность: openrouter.ai/models и ai.google.dev/gemini-api/docs/pricing.
+# Defaults apply only to these exact models; other models require explicit prices.
 DEFAULT_LLM_MODEL = 'google/gemini-2.5-flash'
-DEFAULT_LLM_PRICES = {
-    DEFAULT_LLM_MODEL: {
-        'llm_input_price_per_1m_usd': Decimal('0.30'),
-        'llm_output_price_per_1m_usd': Decimal('2.50'),
-    },
+_GEMINI_FLASH_PRICES = {
+    'llm_input_price_per_1m_usd': Decimal('0.30'),
+    'llm_output_price_per_1m_usd': Decimal('2.50'),
 }
+DEFAULT_LLM_PRICES = {
+    DEFAULT_LLM_MODEL: _GEMINI_FLASH_PRICES,   # OpenRouter
+    'gemini-2.5-flash': _GEMINI_FLASH_PRICES,  # Google AI Studio (платный тариф; на бесплатном фактически 0)
+}
+
+# Провайдер по виду ключа, если LLM_BASE_URL / LLM_MODEL не заданы явно:
+# ключ Google AI Studio начинается с «AIza», ключ OpenRouter — с «sk-or-».
+LLM_PROVIDER_PRESETS = (
+    ('AIza', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-2.5-flash'),
+    ('sk-or-', 'https://openrouter.ai/api/v1', DEFAULT_LLM_MODEL),
+)
+DEFAULT_LLM_BASE_URL = 'https://openrouter.ai/api/v1'
+
+
+def llm_preset(api_key: str):
+    key = (api_key or '').strip()
+    for prefix, base_url, model in LLM_PROVIDER_PRESETS:
+        if key.startswith(prefix):
+            return base_url, model
+    return DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL
 
 
 class Settings(BaseSettings):
@@ -23,7 +41,8 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     database_url: str = "postgresql+psycopg://bonds:bonds@db:5432/bonds"
 
-    llm_base_url: str = "https://openrouter.ai/api/v1"
+    # Пусто -> выбирается по виду LLM_API_KEY (см. LLM_PROVIDER_PRESETS)
+    llm_base_url: str = DEFAULT_LLM_BASE_URL
     llm_api_key: str = ""
     # Credentials may be present: exclude the URL from repr/serialization.
     llm_proxy_url: str = Field('', repr=False, exclude=True)
@@ -46,6 +65,23 @@ class Settings(BaseSettings):
     rate_limit_cards: int = Field(5, ge=1)
     rate_limit_uploads: int = Field(10, ge=1)
     rate_limit_collect: int = Field(5, ge=1)
+
+    @model_validator(mode='before')
+    @classmethod
+    def provider_defaults(cls, data):
+        if not isinstance(data, dict):
+            return data
+        lowered = {str(k).lower(): k for k in data}
+        def raw(name):
+            key = lowered.get(name)
+            value = data.get(key) if key is not None else None
+            return value.strip() if isinstance(value, str) else value
+        base_url, model = llm_preset(raw('llm_api_key') or '')
+        if not raw('llm_base_url'):
+            data[lowered.get('llm_base_url', 'llm_base_url')] = base_url
+        if not raw('llm_model'):
+            data[lowered.get('llm_model', 'llm_model')] = model
+        return data
 
     @field_validator('llm_proxy_url')
     @classmethod
