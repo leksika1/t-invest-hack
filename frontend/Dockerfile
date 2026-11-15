@@ -37,7 +37,8 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    client_max_body_size 1m;
+    # Stage 2: five PDF files of 30 MiB plus multipart overhead.
+    client_max_body_size 160m;
 
     # Заголовки безопасности. style-src 'unsafe-inline' — React пишет стили в атрибут style
     add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;

@@ -31,7 +31,7 @@ def test_card_valid_isin(isin):
     assert body["isin"] == isin.strip().upper()
     fields = list(body["iss_fields"].values()) + list(body["risk_fields"].values())
     assert len(fields) == 16
-    assert all(f["status"] == "not_implemented" for f in fields)
+    assert all(f["status"] == "not_found" and f["reason"] == "extraction_pending_stage3" for f in fields)
 
 
 @pytest.mark.parametrize(

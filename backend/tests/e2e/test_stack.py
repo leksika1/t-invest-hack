@@ -13,7 +13,7 @@ def test_card_valid_isin(http):
     assert body["isin"] == "RU000A10AXF7"
     fields = list(body["iss_fields"].values()) + list(body["risk_fields"].values())
     assert fields
-    assert all(f["status"] == "not_implemented" for f in fields)
+    assert all(f["status"] == "not_found" for f in fields)
 
 
 def test_card_invalid_isin(http):

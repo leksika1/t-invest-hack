@@ -24,11 +24,22 @@ jobs:
   backend-tests:
     name: backend tests
     runs-on: [self-hosted, tinvest]
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: bonds_test
+          POSTGRES_USER: bonds
+          POSTGRES_PASSWORD: ci
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U bonds -d bonds_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
     defaults:
       run:
         working-directory: backend
-    # Unit-тесты базе не нужны. Когда появятся тесты с Postgres — добавить сюда services: postgres
-    # (pgvector/pgvector:pg16) и передать адрес через env
+    # Same PostgreSQL/pgvector db tests as scripts/ci.sh, using an ephemeral host port.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,6 +52,8 @@ jobs:
       - run: pip-audit -r requirements.txt
       # Все тесты из backend/tests подхватываются сами; e2e без E2E_BASE_URL пропускаются (их гоняет build)
       - run: pytest -q
+        env:
+          TEST_DATABASE_URL: postgresql+psycopg://bonds:ci@127.0.0.1:${{ job.services.postgres.ports[5432] }}/bonds_test
 
   frontend-checks:
     name: frontend checks

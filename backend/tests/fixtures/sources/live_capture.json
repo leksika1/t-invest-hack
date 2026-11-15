@@ -1,0 +1,48 @@
+[
+  {
+    "isin": "RU000A10ATW2",
+    "issuer": "общество с ограниченной ответственностью \"Балтийский лизинг\"",
+    "inn": "7826705374",
+    "source": "prime",
+    "title": "4 Решение о выпуске ценных бумаг 4B02-15-36442-R-001P ПАО Московская биржа 04.02.2025 05.02.2025 05.02.2025 Загрузить (171,44 Кб)",
+    "source_url": "https://disclosure.1prime.ru/Portal/Default.aspx?emId=7826705374",
+    "download_url": "https://disclosure.1prime.ru/Portal/GetDocument.aspx?emId=7826705374&docId=4cb600a4761e4316866f903828009967",
+    "published_at": "2025-02-05",
+    "type": "decision",
+    "requires_review": false,
+    "bytes": 175558,
+    "sha256": "a32112916d7ad6935b3e8d5f66fbffa3e09cd05180634fa236d4883af5cd6a99",
+    "pages": 11,
+    "checked_at": "2026-11-15",
+    "parse": {
+      "sha256": "a32112916d7ad6935b3e8d5f66fbffa3e09cd05180634fa236d4883af5cd6a99",
+      "parsed_pages": 11,
+      "ocr_pages": 0,
+      "parse_errors": [],
+      "chunks": 50
+    }
+  },
+  {
+    "isin": "RU000A10CS75",
+    "issuer": "Публичное акционерное общество \"Аэрофлот – российские авиалинии\"",
+    "inn": "7712040126",
+    "source": "skrin",
+    "title": "Решение о выпуске 4B02-02-00010-A-002P от 22 авг 2025 ,  ПАО Московская Биржа 22 августа 2025 18 сентября 2025 Скачать ЭЦП Решение о выпуске_Аэрофлот П02-БО-02 KC.pdf",
+    "source_url": "https://disclosure.skrin.ru/disclosure/7712040126/6?page=1",
+    "download_url": "https://disclosure.skrin.ru/disclosure_docs/7712040126/99f2eca52f6844498128ceca4bdf00ce/Решение о выпуске_Аэрофлот П02-БО-02 KC.pdf",
+    "published_at": "2025-09-18",
+    "type": "decision",
+    "requires_review": false,
+    "bytes": 322151,
+    "sha256": "c5c79bdf8a453a225406333a73463bfa351e38b3590c810f0b12dad81438c94e",
+    "pages": 13,
+    "checked_at": "2026-11-15",
+    "parse": {
+      "sha256": "c5c79bdf8a453a225406333a73463bfa351e38b3590c810f0b12dad81438c94e",
+      "parsed_pages": 13,
+      "ocr_pages": 0,
+      "parse_errors": [],
+      "chunks": 46
+    }
+  }
+]

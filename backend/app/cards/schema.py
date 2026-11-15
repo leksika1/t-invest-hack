@@ -17,7 +17,7 @@ class FieldStatus(str, Enum):
     mismatch_iss = "mismatch_iss"
     not_found = "not_found"
     needs_review = "needs_review"
-    not_implemented = "not_implemented"
+    extracted = "extracted"
 
 
 class Source(BaseModel):
@@ -30,7 +30,8 @@ class CardField(BaseModel):
     value: str | None = None
     quote: str | None = Field(None, description="Дословная цитата из документа")
     source: Source = Field(default_factory=Source)
-    status: FieldStatus = FieldStatus.not_implemented
+    status: FieldStatus = FieldStatus.not_found
+    reason: str | None = "extraction_pending_stage3"
 
 
 def _field(description: str):

@@ -138,7 +138,20 @@ backend_audit() {
 
 backend_tests() {
   # e2e без E2E_BASE_URL пропускаются сами
-  (cd backend && env -u E2E_BASE_URL "$(venv_bin)/python" -m pytest -q)
+  (cd backend && env -u E2E_BASE_URL -u TEST_DATABASE_URL "$(venv_bin)/python" -m pytest -q)
+}
+
+DB_TESTS_STARTED=0
+DB_COMPOSE=(docker compose -p tinvest-dbtests -f docker-compose.db-tests.yml)
+backend_db_tests() {
+  DB_TESTS_STARTED=1
+  "${DB_COMPOSE[@]}" up -d --wait || return 1
+  (cd backend && env -u E2E_BASE_URL TEST_DATABASE_URL="postgresql+psycopg://bonds:ci@127.0.0.1:${TEST_DB_PORT:-55435}/bonds_test" \
+    "$(venv_bin)/python" -m pytest -q -m db)
+  local result=$?
+  "${DB_COMPOSE[@]}" down -v || result=1
+  DB_TESTS_STARTED=0
+  return "$result"
 }
 
 # ── Frontend ─────────────────────────────────────────────────────────────────
@@ -224,6 +237,10 @@ PY
 
 STACK_UP=0
 stack_down() {
+  if [ "$DB_TESTS_STARTED" -eq 1 ]; then
+    "${DB_COMPOSE[@]}" down -v || return 1
+    DB_TESTS_STARTED=0
+  fi
   if [ "$STACK_UP" -eq 1 ]; then
     echo
     echo "${BOLD}━━━ Остановка e2e-стека ━━━${RESET}"
@@ -265,6 +282,7 @@ run_stage "frontend: build" npm_run build
 
 run_stage "docker: доступен" docker_check
 run_stage "compose: файлы Dokploy" compose_config
+run_stage "backend: PostgreSQL tests" backend_db_tests
 
 if [ "$E2E" -eq 1 ]; then
   run_stage "e2e: сборка и подъём стека" e2e_up
