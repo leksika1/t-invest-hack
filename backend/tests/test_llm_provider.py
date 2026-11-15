@@ -40,3 +40,15 @@ def test_new_google_key_format_aq():
     assert s.llm_base_url == 'https://generativelanguage.googleapis.com/v1beta/openai'
     assert s.llm_model == 'gemini-3.5-flash'
     assert s.llm_configuration_error is None
+
+
+def test_openai_key_selects_openai():
+    s = make(llm_api_key='sk-proj-TEST', llm_base_url='', llm_model='')
+    assert s.llm_base_url == 'https://api.openai.com/v1'
+    assert s.llm_model == 'gpt-4.1-mini'
+    assert s.llm_configuration_error is None
+
+
+def test_openrouter_prefix_checked_before_openai():
+    s = make(llm_api_key='sk-or-v1-TEST', llm_base_url='', llm_model='')
+    assert s.llm_base_url == 'https://openrouter.ai/api/v1'

@@ -14,6 +14,7 @@ _GEMINI_FLASH_PRICES = {
     'llm_output_price_per_1m_usd': Decimal('2.50'),
 }
 DEFAULT_LLM_PRICES = {
+    'gpt-4.1-mini': {'llm_input_price_per_1m_usd': Decimal('0.40'), 'llm_output_price_per_1m_usd': Decimal('1.60')},  # OpenAI, проверить
     DEFAULT_LLM_MODEL: _GEMINI_FLASH_PRICES,   # OpenRouter
     # Google AI Studio. Google не возвращает стоимость в ответе, расход считается по этим ставкам.
     # Тариф gemini-3.5-flash проверить на ai.google.dev/gemini-api/docs/pricing; на бесплатном ключе фактически 0.
@@ -30,6 +31,8 @@ LLM_PROVIDER_PRESETS = (
     ('AIza', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-3.5-flash'),
     ('AQ.', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-3.5-flash'),
     ('sk-or-', 'https://openrouter.ai/api/v1', DEFAULT_LLM_MODEL),
+    # OpenAI API (platform.openai.com; баланс API отдельный от подписки ChatGPT). Проверять после «sk-or-».
+    ('sk-', 'https://api.openai.com/v1', 'gpt-4.1-mini'),
 )
 DEFAULT_LLM_BASE_URL = 'https://openrouter.ai/api/v1'
 
