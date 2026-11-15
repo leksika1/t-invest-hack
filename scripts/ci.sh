@@ -203,7 +203,9 @@ docker_check() {
 
 compose_config() {
   docker compose -f backend/docker-compose.yml config -q && echo "backend/docker-compose.yml: ok" &&
-  docker compose -f frontend/docker-compose.yml config -q && echo "frontend/docker-compose.yml: ok"
+  docker compose -f frontend/docker-compose.yml config -q && echo "frontend/docker-compose.yml: ok" &&
+  LLM_NETWORK=tinvest-backend-ci-llm docker compose -f deploy/llm-proxy/docker-compose.yml config -q &&
+  echo "deploy/llm-proxy/docker-compose.yml: ok (сеть при config не создаётся)"
 }
 
 check_e2e_ports() {

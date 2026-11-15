@@ -16,6 +16,7 @@ services:
     environment:
       ISS_BASE_URL: http://iss-fixture:8000/iss
       LLM_API_KEY: ""
+      LLM_PROXY_URL: ""
       EMBEDDING_API_KEY: ""
       EMBEDDING_MODEL: ""
       ADMIN_TOKEN: ci-admin

@@ -1,0 +1,42 @@
+# Альтернатива mihomo: deploy/llm-proxy/alternatives/compose.gluetun.yml.
+# Запускать вместо основного прокси, только в выделенной LLM-сети.
+# Проверить выбранный tag/digest и VPN-профиль перед запуском; latest — пример.
+# Секреты задаются только в Environment Dokploy / файле на сервере, не в Git.
+services:
+  llm-proxy-gluetun:
+    image: ${GLUETUN_IMAGE:-qmcgaw/gluetun:latest}
+    restart: unless-stopped
+    cap_add: [NET_ADMIN]
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      VPN_SERVICE_PROVIDER: custom
+      VPN_TYPE: wireguard
+      HTTPPROXY: "on"
+      HTTPPROXY_LOG: "off"
+      HTTPPROXY_LISTENING_ADDRESS: ":8888"
+      HTTPPROXY_USER: ${LLM_PROXY_USER:?Задайте логин прокси в Dokploy}
+      HTTPPROXY_PASSWORD: ${LLM_PROXY_PASSWORD:?Задайте пароль прокси в Dokploy}
+      FIREWALL_INPUT_PORTS: "8888"
+    volumes:
+      - type: bind
+        # Например /opt/tinvest-llm-proxy/wg0.conf; файл получить у своего VPN.
+        source: ${WG_CONFIG_PATH:?Задайте абсолютный путь к WireGuard-конфигу на сервере}
+        target: /gluetun/wireguard/wg0.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    # Для OpenVPN: VPN_TYPE=openvpn, OPENVPN_CUSTOM_CONFIG=/gluetun/custom.conf,
+    # заменить bind на свой .ovpn -> /gluetun/custom.conf:ro;
+    # если провайдер требует, добавить OPENVPN_USER / OPENVPN_PASSWORD через Dokploy.
+    expose: ["8888"]
+    # ports отсутствует: не публиковать прокси и не назначать домен/Traefik-маршрут.
+    networks:
+      llm:
+        aliases:
+          - tinvest-llm-proxy
+
+networks:
+  llm:
+    external: true
+    name: ${LLM_NETWORK:?Задайте выделенную LLM_NETWORK для Dev или PROD}

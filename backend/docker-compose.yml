@@ -27,6 +27,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://bonds:${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD}@db:5432/bonds
       LLM_BASE_URL: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      LLM_PROXY_URL: ${LLM_PROXY_URL:-http://tinvest-llm-proxy:7890}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-google/gemini-2.5-flash}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
@@ -94,6 +95,7 @@ services:
     cpus: 1.0
     networks:
       data: {}
+      llm: {}
       shared:
         aliases:
           - ${BACKEND_ALIAS:?Задайте BACKEND_ALIAS (tinvest-backend-dev / tinvest-backend-prod)}
@@ -116,11 +118,15 @@ services:
     networks: [data]
 
 networks:
+  # Только backend ↔ LLM proxy текущего окружения; создать заранее на сервере.
+  llm:
+    external: true
+    name: ${BACKEND_ALIAS}-llm
   # backend ↔ PostgreSQL. Внутренняя: без выхода наружу
   data:
     internal: true
   # Общая сеть Dokploy: через неё фронтенд находит backend по BACKEND_ALIAS, а backend выходит
-  # в интернет (MOEX ISS, LLM API)
+  # в интернет (MOEX ISS и коллекторы; LLM идёт в отдельный прокси)
   shared:
     external: true
     name: ${SHARED_NETWORK:-dokploy-network}

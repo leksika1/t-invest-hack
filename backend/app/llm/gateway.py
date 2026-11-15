@@ -143,6 +143,7 @@ class LLMGateway:
         if input_price is None or output_price is None:
             raise GatewayError('llm_prices_not_configured', f"Не настроены тарифы для резервирования бюджета модели {payload['model']}")
         retries, repairs, attempt = 0, 0, 0
+        proxy_error = {'code': 'llm_proxy_error', 'message': 'Прокси LLM недоступен'}
         while True:
             attempt += 1
             # UTF-8 byte count is a conservative token bound, including schema/messages.
@@ -184,6 +185,14 @@ class LLMGateway:
                 # Do not expose provider bodies: they may echo credentials or context.
                 unsupported = status in (400, 422) and any(word in exc.response.text.lower() for word in ('json_schema', 'response_format')) and payload.get('response_format', {}).get('type') == 'json_schema'
                 error = {'code': 'structured_output_unsupported' if unsupported else 'llm_http_error', 'message': f'Провайдер вернул HTTP {status}'}
+                if status == 407 and self.settings.llm_proxy_url:
+                    error = proxy_error
+            except httpx.ProxyError:
+                error = proxy_error
+            except httpx.ConnectError:
+                error = proxy_error if self.settings.llm_proxy_url else {'code': 'llm_transport_error', 'message': 'Ошибка соединения с моделью'}
+            except httpx.ConnectTimeout:
+                error = proxy_error if self.settings.llm_proxy_url else {'code': 'llm_timeout', 'message': 'Истекло время ожидания модели'}
             except (httpx.TimeoutException, TimeoutError):
                 error = {'code': 'llm_timeout', 'message': 'Истекло время ожидания модели'}
             except httpx.TransportError:
@@ -208,7 +217,7 @@ class LLMGateway:
                 repairs += 1
                 payload = {**payload, 'messages': [*payload['messages'], {'role': 'user', 'content': 'Ответ не прошёл валидацию. Верни только JSON строго по схеме поля; не добавляй факты.'}]}
                 continue
-            transient = status == 429 or (status is not None and status >= 500) or error['code'] in ('llm_timeout', 'llm_transport_error')
+            transient = status == 429 or (status is not None and status >= 500) or error['code'] in ('llm_timeout', 'llm_transport_error', 'llm_proxy_error')
             if transient and retries < self.settings.llm_max_retries:
                 if retry_after is not None and (not math.isfinite(retry_after) or retry_after > 60):
                     raise GatewayError(error['code'], error['message'])

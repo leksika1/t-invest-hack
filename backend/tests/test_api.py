@@ -30,7 +30,7 @@ def test_health(monkeypatch):
     r = client.get("/api/health")
     assert r.status_code == 200
     body = r.json()
-    assert set(body) == {"status", "db", "llm", "version"}
+    assert set(body) == {"status", "db", "llm", "version", "llm_proxy", "llm_proxy_scheme"}
     assert body["status"] == "ok"
     assert body["db"] == "ok"
 
@@ -55,7 +55,7 @@ def test_health_requires_key_and_both_model_prices(monkeypatch, key, model, pric
     monkeypatch.setattr(main, 'settings', Settings(llm_api_key=key, llm_model=model,
                         llm_input_price_per_1m_usd=prices[0], llm_output_price_per_1m_usd=prices[1], _env_file=None))
     body = client.get('/api/health').json()
-    assert set(body) == {'status', 'db', 'llm', 'version'}
+    assert set(body) == {'status', 'db', 'llm', 'version', 'llm_proxy', 'llm_proxy_scheme'}
     assert body['llm'] == expected
 
 

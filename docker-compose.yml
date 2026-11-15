@@ -38,6 +38,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://bonds:${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD}@db:5432/bonds
       LLM_BASE_URL: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      LLM_PROXY_URL: ${LLM_PROXY_URL:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-google/gemini-2.5-flash}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}

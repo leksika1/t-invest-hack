@@ -5,6 +5,8 @@ export type Health = {
   status: string;
   db: string;
   llm: string;
+  llm_proxy?: "configured" | "none";
+  llm_proxy_scheme?: "http" | "https" | "socks5" | "socks5h" | null;
   version: string;
 };
 export type Page<T> = {

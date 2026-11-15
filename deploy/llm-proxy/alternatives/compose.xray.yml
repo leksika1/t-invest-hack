@@ -1,0 +1,32 @@
+# Альтернатива mihomo: deploy/llm-proxy/alternatives/compose.xray.yml.
+# Запускать вместо основного прокси, только в выделенной LLM-сети.
+# Проверить tag/digest и config через xray run -test до запуска.
+# Скопировать config.xray.example.json на сервер и заменить ВСЕ плейсхолдеры.
+services:
+  llm-proxy-xray:
+    image: ${XRAY_IMAGE:-ghcr.io/xtls/xray-core:latest}
+    command: ["run", "-config", "/usr/local/etc/xray/config.json"]
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - type: bind
+        # Например /opt/tinvest-llm-proxy/xray.json; секретный файл вне репозитория.
+        source: ${XRAY_CONFIG_PATH:?Задайте абсолютный путь к конфигу Xray на сервере}
+        target: /usr/local/etc/xray/config.json
+        read_only: true
+        bind:
+          create_host_path: false
+    expose: ["1080", "8080"]
+    # ports отсутствует: доступ только из общей Docker-сети, без домена Dokploy.
+    networks:
+      llm:
+        aliases:
+          - tinvest-llm-proxy
+
+networks:
+  llm:
+    external: true
+    name: ${LLM_NETWORK:?Задайте выделенную LLM_NETWORK для Dev или PROD}

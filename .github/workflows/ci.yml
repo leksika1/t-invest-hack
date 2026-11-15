@@ -108,9 +108,11 @@ jobs:
       - name: Validate Dokploy compose files
         env:
           BACKEND_ALIAS: tinvest-backend-ci
+          LLM_NETWORK: tinvest-backend-ci-llm
         run: |
           docker compose -f backend/docker-compose.yml config -q
           docker compose -f frontend/docker-compose.yml config -q
+          docker compose -f deploy/llm-proxy/docker-compose.yml config -q
 
       - name: Build images
         run: $COMPOSE build

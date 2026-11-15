@@ -25,6 +25,7 @@ docker compose -f docker-compose.yml -f docker-compose.e2e.yml down
 |---|---|---|---|
 | Backend | `./backend/docker-compose.yml` | хост проекта, Path `/api`, порт 8000, сервис `backend` | `POSTGRES_PASSWORD`, `BACKEND_ALIAS`, `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, при необходимости `CORS_ORIGINS` |
 | Frontend | `./frontend/docker-compose.yml` | хост проекта, Path `/`, порт 80, сервис `frontend` | `BACKEND_ALIAS` (то же значение, что у Backend) |
+| LLM proxy | `deploy/llm-proxy/docker-compose.yml` | без домена и опубликованных портов | `SUBSCRIPTION_URL`, `LLM_NETWORK` своего Dev/PROD |
 
 - Backend отвечает по путям `/api/...` как есть, поэтому strip prefix в домене не включать.
 - Фронтенд проксирует `/api` в backend через сеть `dokploy-network` по имени `BACKEND_ALIAS`.
@@ -84,8 +85,8 @@ bash scripts/ci.sh --no-e2e    # с аудитами, без e2e
 2. **Frontend:** `npm ci` при отсутствии `node_modules` или изменении хеша `package-lock.json`,
    `npm audit --audit-level=high`, lint, typecheck, `npm test` (Vitest, без watch) и build. Недоступность сервиса npm audit:
    три попытки, затем предупреждение; найденные уязвимости проваливают CI.
-3. **Compose:** доступность Docker и `config -q` для обоих файлов Dokploy с заглушками
-   `POSTGRES_PASSWORD` / `BACKEND_ALIAS`. Этот этап остаётся и в `--fast` / `--no-e2e`.
+3. **Compose:** доступность Docker и `config -q` для Backend, Frontend и LLM proxy с заглушками
+   `POSTGRES_PASSWORD` / `BACKEND_ALIAS` / `LLM_NETWORK`. Внешние сети при config не нужны. Этот этап остаётся и в `--fast` / `--no-e2e`.
 4. **PostgreSQL:** `docker-compose.db-tests.yml`, изолированный проект `tinvest-dbtests`, БД `bonds_test` в tmpfs, порт `TEST_DB_PORT` (55435). `pytest -q -m db` с TEST_DATABASE_URL, затем down -v. Шаг выполняется и в --fast/--no-e2e; trap удаляет только этот тестовый проект. В workflow тот же pgvector:pg16 через services с динамическим портом; основной pytest там запускает unit + db.
 5. **E2E:** отдельный Compose-проект `tinvest-ci`, сборка, `up -d --wait`, `pytest -q tests/e2e`,
    логи при падении, удаление стека и томов через `down -v` с обработчиком выхода (`trap`).
@@ -166,7 +167,7 @@ Defaults кода и обоих Compose: LLM_BASE_URL=https://openrouter.ai/api/
 
 Для другой LLM_MODEL автоматического тарифа нет: задать оба значения явно, иначе шлюз откажет с `llm_prices_not_configured` до резерва/запроса. Оба Compose намеренно передают пустую строку при отсутствии env: Settings разрешает её по имени модели. Числовой `${VAR:-0.30}` в Compose ошибочно назначил бы тариф Gemini другой модели. Эмбеддингам по-прежнему нужен отдельный EMBEDDING_INPUT_PRICE_PER_1M_USD; цена генерации на них не переносится. Фактическое валидное `usage.cost` OpenRouter имеет приоритет над расчётом по токенам.
 
-`GET /api/health` возвращает прежние поля: `llm=configured` только при наличии непустого ключа и обоих тарифов. При отсутствии одного из них — `llm=not_configured`, и существующий фронтенд показывает баннер. Health не вызывает провайдера и не проверяет остаток дневного бюджета или работоспособность ключа.
+`GET /api/health` возвращает `llm=configured` только при наличии непустого ключа и обоих тарифов. При отсутствии одного из них — `llm=not_configured`, и существующий фронтенд показывает баннер. Дополнительные `llm_proxy`/`llm_proxy_scheme` описаны ниже. Health не вызывает провайдера и не проверяет остаток дневного бюджета или работоспособность ключа.
 
 Резерв до каждой попытки: верхняя оценка UTF-8 байтов входного payload + 1024 служебных токена, плюс max_tokens выхода, умноженные на тарифы / 1M. PostgreSQL advisory-lock UTC-дня сериализует проверку расходов и незакрытых резервов генерации/эмбеддингов. Стоимость ответа: валидное usage.cost (включая 0), иначе токены/тарифы; неизвестное сохраняет резерв. Не суммировать provider cost и fallback. Дата бюджета — дата создания попытки UTC. Это ограничение по заданным верхним тарифам, не гарантия цены при ошибочно заниженном конфиге; фактическая usage.cost всё равно записывается.
 
@@ -177,6 +178,73 @@ JSON: сначала json_schema, при 400/422 с явным указание�
 Admin: ADMIN_TOKEN, заголовок X-Admin-Token, secrets.compare_digest. Пустой серверный токен → 503, отсутствующий/неверный → 401. GET /api/admin/llm-calls и /api/admin/stats показывают UTC-расходы/резервы/ошибки. Тарифы и дневной лимит не доступны для записи через открытый API.
 
 Rate limiter: таблица rate_limit_events, окно 60 с; cards 5, uploads 10, collect 5 на ASGI-адрес клиента. Проверка общая между процессами, 429 + Retry-After; недоступна БД → 503. Поддельный X-Forwarded-For сам не используется. За прокси адрес может быть общим для нескольких пользователей; доверенные proxy-адреса Uvicorn нужно согласовать с реальной топологией, не включать доверие всем заголовкам без проверки.
+
+## LLM через прокси
+
+Основная схема Dev/PROD — **mihomo по URL подписки**, отдельный Compose service «LLM proxy» в Dokploy. Причина — наблюдавшийся на Dev ответ OpenRouter/Cloudflare `403 Access denied by security policy` с российского IP дата-центра. Выход из подписки нужно проверить на доступ к OpenRouter: успешное TCP-соединение не гарантирует, что провайдер принимает этот IP.
+
+### Сети и порядок развёртывания
+
+| Окружение | BACKEND_ALIAS в Backend | LLM_NETWORK в LLM proxy |
+|---|---|---|
+| Dev | `tinvest-backend-dev` | `tinvest-backend-dev-llm` |
+| PROD | `tinvest-backend-prod` | `tinvest-backend-prod-llm` |
+
+Обе внешние bridge-сети уже созданы вручную. Если одна отсутствует, создать **только нужную** на сервере:
+
+```bash
+docker network create tinvest-backend-dev-llm
+# Для PROD, если отсутствует:
+# docker network create tinvest-backend-prod-llm
+```
+
+Порядок: **создать/проверить сеть → задеплоить LLM proxy → задеплоить Backend**. Существующие сети, Compose Path и переменные сервисов Dokploy менять не требуется.
+
+1. В сервисе **LLM proxy** оставить Compose Path `deploy/llm-proxy/docker-compose.yml`. В его Environment вставить реальный `SUBSCRIPTION_URL` и соответствующий `LLM_NETWORK` из таблицы. URL должен отдавать совместимую с Clash/mihomo подписку с узлами; правила, DNS и controller из удалённой подписки не импортируются. Секретный URL в репозитории не хранить, в shell-команды не вставлять.
+2. Запустить LLM proxy. Файл [docker-compose.yml](../deploy/llm-proxy/docker-compose.yml) подключает **только** выделенную сеть с alias `tinvest-llm-proxy`. Нет `dokploy-network`, host network, опубликованных портов, TUN и NET_ADMIN. Порт 7890 доступен backend по приватной сети; домен и Traefik-маршрут сервису не назначать.
+3. Задеплоить Backend с прежним `BACKEND_ALIAS`. Его Compose автоматически подключает сеть `<BACKEND_ALIAS>-llm` и по умолчанию задаёт `LLM_PROXY_URL=http://tinvest-llm-proxy:7890`. Не задавать `SUBSCRIPTION_URL` в Backend — он ему не нужен. Настройки ключа, модели и тарифов LLM остаются отдельными.
+
+Frontend и PostgreSQL к LLM-сети не подключены. Другие проекты не имеют в неё доступа, пока администратор явно не подключит их контейнеры; не добавлять их в эти сети. Одинаковый alias в Dev и PROD разрешается в своей сети, поскольку backend подключён только к LLM-сети своего окружения. Права администратора Docker дают доступ к секретам контейнеров, сама сеть их не ограничивает.
+
+Корневой `docker-compose.yml` для локальной разработки использует прямой доступ (`LLM_PROXY_URL` пуст по умолчанию) и не требует внешних сетей. CI overlay дополнительно принудительно очищает `LLM_PROXY_URL`. `config -q` проверяет конфигурацию без создания/проверки наличия внешней сети — это не доказательство успешного запуска. В `scripts/ci.sh` и `.github/workflows/ci.yml` добавлена одинаковая проверка Compose LLM proxy с фиктивным `LLM_NETWORK`.
+
+### Версия и конфигурация mihomo
+
+Закреплён `metacubex/mihomo:v1.19.33` с manifest digest `sha256:9211361a3ed85305383288d38c05e85862d6d5a590c10007c37fc059cca82e9c`. [GitHub release](https://github.com/MetaCubeX/mihomo/releases/tag/v1.19.33) опубликован **21.10.2026**, [тег Docker Hub](https://hub.docker.com/r/metacubex/mihomo/tags?name=v1.19.33) — в тот же день; проверено 15.11.2026, возраст больше двух недель. Это фиксированный образ, не latest/Alpha. [Dockerfile этой версии](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/Dockerfile) использует Alpine с `/bin/sh` и BusyBox: renderer/healthcheck используют sh, awk и cat, установка envsubst/curl/nc при старте не нужна.
+
+[Шаблон](../deploy/llm-proxy/config.template.yaml) задаёт mixed-port 7890, allow-lan, bind-address `*`, log-level warning, rule mode и единственное правило `MATCH,LLM`. HTTP provider обновляет подписку раз в 3600 секунд, принимает до 8 МиБ. URL-test выбирает узел через запрос `https://openrouter.ai/api/v1/models`, ожидает HTTP 200; проверки выполняются раз в 300 секунд. API/controller выключен, DNS-listener/hijack и TUN выключены. Пустая группа использует `empty-fallback: REJECT`, а узлы типа direct исключены: отсутствующая подписка не включает прямой COMPATIBLE/DIRECT. Поля сверены с [proxy-providers](https://wiki.metacubex.one/en/config/proxy-providers/), [url-test](https://wiki.metacubex.one/en/config/proxy-groups/url-test/) и [парсером групп закреплённой версии](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/adapter/outboundgroup/parser.go).
+
+[render-config.sh](../deploy/llm-proxy/render-config.sh) читает URL из окружения, экранирует одинарные кавычки и вставляет **один YAML scalar**. Нет eval, выполнения shell-подстановок и URL в аргументах процесса. Управляющие символы/пустое значение отклоняются с безопасным сообщением. Отсутствующий SUBSCRIPTION_URL не блокирует `config -q`, но контейнер завершится с понятной ошибкой до запуска mihomo.
+
+[entrypoint.sh](../deploy/llm-proxy/entrypoint.sh) создаёт конфиг с umask 077, удаляет SUBSCRIPTION_URL из окружения дочернего процесса, выполняет `/mihomo -t`, затем запускает mihomo. Root FS read-only; рабочая папка `/root/.config/mihomo` с конфигом/кэшем подписки — tmpfs 32 МиБ, `/tmp` — tmpfs 8 МиБ. При пересоздании кэш исчезает и подписка загружается заново. Лимиты сервиса: 128 МиБ RAM, 0.5 CPU, 64 PID, no-new-privileges, все capabilities удалены.
+
+Ошибки mihomo могут содержать URL подписки. Поэтому stdout/stderr самой программы, включая `-t`, направлены в `/dev/null`; в Dokploy остаются только общие сообщения entrypoint без URL. Не включать `set -x`, debug-логирование и вывод сгенерированного конфига. Если нужна диагностика, использовать HTTP-проверку ниже и безопасные health/admin-поля. В Docker inspect и Environment Dokploy подписка доступна администраторам — считать её секретом.
+
+[Healthcheck](../deploy/llm-proxy/healthcheck.sh) читает `/proc/net/tcp{,6}` и проверяет TCP LISTEN на 7890. Он подтверждает **только открытый порт**, не загрузку подписки и не работоспособность узла. В этой сессии Docker-контейнер и реальная подписка не запускались; их проверяет владелец на сервере.
+
+### Проверка, отказ и ротация
+
+После запуска проверить из контейнера Backend (заменить только имя контейнера; ключ OpenRouter и URL подписки не нужны):
+
+```bash
+docker exec <backend-container> python -c 'import httpx; from app.config import get_settings; s=get_settings(); r=httpx.get("https://openrouter.ai/api/v1/models", proxy=s.llm_proxy_url or None, trust_env=False, timeout=30); print("OpenRouter HTTP", r.status_code); r.raise_for_status()'
+```
+
+Ожидается HTTP 200. Вывод не содержит тела ответа, SUBSCRIPTION_URL или proxy URL. Эта публичная проверка не является платным вызовом генерации. Затем проверить `/api/health`: `llm_proxy=configured`, `llm_proxy_scheme=http`; это только настройки. Для проверки извлечения собрать новую версию карточки явным действием и смотреть journal/models/tokens/errors. Ключ, тарифы и дневной бюджет должны быть настроены отдельно.
+
+Нет контейнера/сети, DNS-имя `tinvest-llm-proxy` не разрешается, соединение отказано или истёк connect timeout → `llm_proxy_error` / «Прокси LLM недоступен». Backend остаётся доступен, поля 1–8 сохраняют доступное ISS-значение как extracted/moex_iss, текстовые 9–15 получают needs_review с причиной; код есть в journal.warnings и журнале попыток. Сбой туннеля может быть между прокси и провайдером — по одному коду точный участок не определить. Read timeout после подключения остаётся `llm_timeout`, HTTP 403 провайдера — `llm_http_error`. Повторы и резервы бюджета остаются прежними, неизвестная стоимость не считается нулевой. Эмбеддинги при отказе сохраняют fallback на FTS. Автоматического прямого обхода заданного прокси нет.
+
+Для ротации заменить SUBSCRIPTION_URL **в Environment нужного LLM proxy** и выполнить Redeploy/recreate контейнера: простой restart не применяет новое окружение. Tmpfs очистится, новая подписка будет загружена немедленно. Backend перезапускать не нужно, если alias/порт не меняются. Повторить публичную HTTP-проверку, затем собрать новую карточку; готовые прежние версии автоматически не пересчитываются. При изменении состава узлов по тому же URL provider обновляет их раз в час.
+
+LLM_PROXY_URL по-прежнему поддерживает `http://`, `https://`, `socks5://`, `socks5h://` и авторизацию в userinfo. Схема https означает TLS до самого прокси, а HTTPS-модель через обычный HTTP-прокси использует CONNECT. Спецсимволы credentials кодировать (`@` → `%40`, `:` → `%3A`, `%` → `%25`). HTTPX настроен с `trust_env=False`: глобальные HTTP_PROXY/HTTPS_PROXY/ALL_PROXY/NO_PROXY не меняют маршрутизацию; ISS/коллекторы остаются прямыми. Health/admin stats показывают только состояние и схему, без endpoint/userinfo. Для намеренного прямого доступа использовать Compose override с `LLM_PROXY_URL: ""`; пустая переменная Environment без override выбирает серверный default прокси. На этом сервере прямой OpenRouter заблокирован, штатный режим — mihomo.
+
+### Альтернативы Gluetun/Xray
+
+Сохранены в [alternatives/compose.gluetun.yml](../deploy/llm-proxy/alternatives/compose.gluetun.yml) и [alternatives/compose.xray.yml](../deploy/llm-proxy/alternatives/compose.xray.yml), JSON-шаблон Xray — [config.xray.example.json](../deploy/llm-proxy/alternatives/config.xray.example.json). Это отдельные альтернативы **вместо mihomo**; не запускать их вместе с ним с тем же alias. Обе также требуют выделенную LLM_NETWORK, к dokploy-network не подключаются и не публикуют порты.
+
+Gluetun: свой WireGuard-профиль вне Git, WG_CONFIG_PATH, LLM_PROXY_USER/PASSWORD в Environment; HTTP proxy с авторизацией на `tinvest-llm-proxy:8888`. Для OpenVPN заменить VPN_TYPE/mount на свой `.ovpn`, задать OPENVPN_CUSTOM_CONFIG и нужные OPENVPN_USER/PASSWORD. Проверить версию образа и профиль по [официальной документации Gluetun](https://github.com/qdm12/gluetun-wiki/blob/main/setup/providers/custom.md).
+
+Xray: свой серверный JSON из шаблона, XRAY_CONFIG_PATH, проверить tag/digest, UUID/endpoint/SNI/transport, чтение файла UID/GID образа (официальный nonroot 65532). HTTP на 8080 или SOCKS на 1080 с авторизацией; LLM_PROXY_URL задать явно, например `socks5h://PROXY_USER:PROXY_PASSWORD@tinvest-llm-proxy:1080`. Шаблон — TCP+TLS, для REALITY/WS/gRPC нужен конфиг своего провайдера. Реальные секреты в Git не добавлять. Документация: [образ Xray](https://github.com/XTLS/Xray-core/blob/main/.github/docker/Dockerfile), [SOCKS inbound](https://xtls.github.io/en/config/inbounds/socks.html), [VLESS outbound](https://xtls.github.io/en/config/outbounds/vless.html).
 
 ## Асинхронная карточка и проверки
 

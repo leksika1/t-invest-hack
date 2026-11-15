@@ -83,7 +83,7 @@ def prepared_build(monkeypatch):
 
 @pytest.mark.parametrize('reason', [
     'llm_not_configured', 'llm_prices_not_configured', 'budget_exceeded', 'llm_timeout',
-    'llm_http_error', 'llm_transport_error', 'invalid_json', 'llm_client_error',
+    'llm_http_error', 'llm_transport_error', 'invalid_json', 'llm_client_error', 'llm_proxy_error',
 ])
 def test_build_gateway_failure_preserves_all_eight_iss_fields(prepared_build, monkeypatch, reason):
     factory, job, card, fields, iss = prepared_build
@@ -133,3 +133,32 @@ def test_build_fake_llm_still_verifies_document_fields(prepared_build, monkeypat
         assert fields[code].status == 'extracted'
     assert fields['cross_default'].value is None
     assert fields['cross_default'].reason == 'quote_not_verified'
+
+
+def test_real_gateway_proxy_error_reaches_build_fallback(prepared_build, monkeypatch):
+    import httpx
+    from app.llm.gateway import LLMGateway
+    from tests.test_gateway import FakeTransport, MemoryLedger
+    factory, job, card, fields, iss = prepared_build
+    proxy = 'http://fake-user:fake-secret@proxy.internal:8888'
+    configured = Settings(llm_api_key='fake', llm_proxy_url=proxy, llm_max_retries=0, _env_file=None)
+    monkeypatch.setattr(service, 'get_settings', lambda: configured)
+    transport = FakeTransport([httpx.ProxyError('Cannot connect: ' + proxy) for _ in SPECS])
+    ledger = MemoryLedger()
+
+    def gateway_factory(**kwargs):
+        return LLMGateway(**kwargs, transport=transport, ledger=ledger)
+
+    service.build_card(factory, job, gateway_factory=gateway_factory)
+    assert card.status == 'ready' and 'llm_proxy_error' in card.journal['warnings']
+    assert len(ledger.records) == 15
+    assert all(record['error']['code'] == 'llm_proxy_error' for record in ledger.records)
+    for spec in SPECS:
+        if spec.iss:
+            assert fields[spec.code].status == 'extracted'
+            assert fields[spec.code].value == project_iss(spec.code, iss[spec.code])
+            assert fields[spec.code].source['kind'] == 'moex_iss'
+        else:
+            assert fields[spec.code].status == 'needs_review'
+            assert fields[spec.code].reason == 'llm_proxy_error'
+    assert 'fake-secret' not in (str(ledger.records) + str(card.journal))

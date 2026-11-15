@@ -72,5 +72,6 @@ def health() -> dict:
         "status": "ok" if db_ok else "degraded",
         "db": "ok" if db_ok else "error",
         "llm": "configured" if settings.llm_configuration_error is None else "not_configured",
+        **settings.llm_proxy_info,
         "version": settings.app_version,
     }

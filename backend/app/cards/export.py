@@ -10,6 +10,7 @@ REASONS = {'llm_not_configured': 'LLM не настроена', 'quote_not_verif
            'llm_prices_not_configured': 'Не настроены тарифы LLM', 'llm_timeout': 'Истекло время ожидания модели',
            'llm_http_error': 'Ошибка ответа провайдера модели', 'llm_transport_error': 'Ошибка соединения с моделью',
            'llm_client_error': 'Ошибка клиента модели',
+           'llm_proxy_error': 'Прокси LLM недоступен',
            'invalid_json': 'Ответ модели не соответствует схеме', 'low_confidence': 'Низкая уверенность модели',
            'ambiguous_value': 'Неоднозначное значение', 'iss_comparison_incomplete': 'Недостаточно данных для полной сверки с ISS',
            'value_not_supported_by_quote': 'Значение не подтверждается параметрами цитаты', 'incomplete_evidence': 'Недостаточно цитат для всех элементов',

@@ -43,10 +43,13 @@ curl http://127.0.0.1:18080/api/health
 | `DEV_API_TARGET` | Только локальный Vite dev server | По умолчанию http://localhost:8000; можно задать в shell https://dev.tinvest.leksika1.ru. Не попадает в bundle и не нужен в Compose |
 | `DATABASE_URL` | Backend, сейчас | Compose формирует URL БД bonds; для запуска без Docker задать явно |
 | `BACKEND_ALIAS` | Backend + Frontend, Dokploy | `tinvest-backend-dev` / `tinvest-backend-prod` |
+| `LLM_NETWORK` | Отдельный сервис LLM proxy | Внешняя сеть `tinvest-backend-dev-llm` / `tinvest-backend-prod-llm`; Backend вычисляет имя как `<BACKEND_ALIAS>-llm` |
+| `SUBSCRIPTION_URL` | Только LLM proxy | Секретный URL Clash/mihomo-подписки в Environment Dokploy; обязателен при запуске прокси, в Git не хранится |
 | `SHARED_NETWORK` | Dokploy, сейчас | Общая сеть, по умолчанию `dokploy-network` |
 | `CORS_ORIGINS` | Backend, сейчас | Домены через запятую, если API на другом origin |
 | `ISS_BASE_URL`, `ISS_TIMEOUT` | Backend, этап 2 | `https://iss.moex.com/iss`, 10 с |
 | `LLM_BASE_URL` | Backend, этап 3 | По умолчанию `https://openrouter.ai/api/v1` |
+| `LLM_PROXY_URL` | Backend | Серверный `backend/docker-compose.yml`: default `http://tinvest-llm-proxy:7890`; локальный корневой Compose и Settings: пусто → напрямую. HTTP/HTTPS/SOCKS5/SOCKS5H, только LLM и эмбеддинги; ISS/коллекторы напрямую. Mihomo и изолированные сети — [OPERATIONS](docs/OPERATIONS.md#llm-через-прокси) |
 | `LLM_MODEL` | Backend, этап 3 | По умолчанию `google/gemini-2.5-flash` |
 | `LLM_API_KEY` | Backend, сейчас | Ключ OpenRouter; без ключа целевой MVP работает в деградированном режиме |
 | `PUBLIC_BASE_URL` | Backend, этап 3 | URL сайта для HTTP-Referer; X-Title: Bond Card MVP |

@@ -5,7 +5,8 @@ pydantic-settings==2.16.3
 sqlalchemy==2.1.8
 psycopg[binary]==3.3.9
 openai==3.51.0
-httpx==0.28.1
+httpx[socks]==0.28.1
+socksio==1.0.0
 alembic==1.20.1
 PyMuPDF==1.26.7
 pgvector==0.5.1

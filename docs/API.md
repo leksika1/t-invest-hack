@@ -40,10 +40,12 @@
 `GET /api/health` (формат уже реализован):
 
 ```json
-{"status":"ok","db":"ok","llm":"not_configured","version":"0.1.0"}
+{"status":"ok","db":"ok","llm":"not_configured","llm_proxy":"none","llm_proxy_scheme":null,"version":"0.1.0"}
 ```
 
 При ошибке БД HTTP пока остаётся 200, тело `status=degraded, db=error`. `llm=configured` означает наличие непустого ключа и обоих тарифов выбранной модели, включая defaults Gemini Flash. Без ключа/тарифов — `llm=not_configured`. Health не вызывает провайдера и не проверяет его доступность или остаток бюджета.
+
+`llm_proxy` — `configured` или `none`; `llm_proxy_scheme` — `http`, `https`, `socks5`, `socks5h` либо `null`. Хост, логин, пароль и полный URL не возвращаются. Это конфигурация, а не проверка соединения с прокси. Ошибка установки соединения/туннеля прокси даёт `llm_proxy_error` с reason_message «Прокси LLM недоступен»; сохраняются доступные ISS-поля, текстовые поля получают needs_review. Код есть в journal.warnings и журнале попыток LLM.
 
 `GET /api/iss/RU000A10AXF7`: текущий ответ `{secid,description}`, ключи description зависят от ISS. Неверный secid → 422, пустое описание → 404, ошибка сети/формата ISS → 502. Bondization будет внутренней частью issue-сервиса, текущий прокси не объявляется его реализацией.
 
@@ -237,7 +239,7 @@ curl http://127.0.0.1:18080/api/admin/stats -H "X-Admin-Token: ${ADMIN_TOKEN}"
 `GET /api/admin/stats?date=2026-11-15` (date по умолчанию текущий UTC-день):
 
 ```json
-{"date":"2026-11-15","timezone":"UTC","spent_usd":"0.002000","reserved_usd":"0.010000","daily_budget_usd":"1.00","unknown_cost_calls":1,"calls":3,"errors":1,"jobs":{"queued":0,"running":1,"succeeded":1,"failed":0}}
+{"date":"2026-11-15","timezone":"UTC","spent_usd":"0.002000","reserved_usd":"0.010000","daily_budget_usd":"1.00","llm_proxy":"configured","llm_proxy_scheme":"socks5h","unknown_cost_calls":1,"calls":3,"errors":1,"jobs":{"queued":0,"running":1,"succeeded":1,"failed":0}}
 ```
 
 Числа иллюстративны. Stats не включает ключи/промпты. При неизвестных ценах нельзя объявлять остаток бюджета достоверным.

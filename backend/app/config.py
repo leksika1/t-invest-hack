@@ -1,5 +1,6 @@
 from functools import lru_cache
 from decimal import Decimal
+from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,13 +18,15 @@ DEFAULT_LLM_PRICES = {
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     app_version: str = "0.1.0"
     database_url: str = "postgresql+psycopg://bonds:bonds@db:5432/bonds"
 
     llm_base_url: str = "https://openrouter.ai/api/v1"
     llm_api_key: str = ""
+    # Credentials may be present: exclude the URL from repr/serialization.
+    llm_proxy_url: str = Field('', repr=False, exclude=True)
     llm_model: str = DEFAULT_LLM_MODEL
     public_base_url: str = ""
     llm_daily_budget_usd: Decimal = Field(Decimal("1"), ge=0)
@@ -42,6 +45,24 @@ class Settings(BaseSettings):
     rate_limit_cards: int = Field(5, ge=1)
     rate_limit_uploads: int = Field(10, ge=1)
     rate_limit_collect: int = Field(5, ge=1)
+
+    @field_validator('llm_proxy_url')
+    @classmethod
+    def valid_llm_proxy(cls, value):
+        value = value.strip()
+        if not value:
+            return ''
+        try:
+            parsed = urlsplit(value)
+            valid = (parsed.scheme in ('http', 'https', 'socks5', 'socks5h') and parsed.hostname
+                     and parsed.path in ('', '/') and not parsed.query and not parsed.fragment
+                     and not any(char.isspace() for char in value)
+                     and (parsed.port is None or 1 <= parsed.port <= 65535))
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ValueError('LLM_PROXY_URL: нужен http/https/socks5/socks5h URL с хостом, без пути, query и fragment') from None
+        return value
 
     @field_validator('llm_input_price_per_1m_usd', 'llm_output_price_per_1m_usd', 'embedding_input_price_per_1m_usd', mode='before')
     @classmethod
@@ -86,6 +107,12 @@ class Settings(BaseSettings):
 
     # Через запятую; нужно, только если фронтенд ходит в API с другого домена
     cors_origins: str = ""
+
+    @property
+    def llm_proxy_info(self) -> dict:
+        # Never return host, userinfo or the original URL in public diagnostics.
+        return {'llm_proxy': 'configured' if self.llm_proxy_url else 'none',
+                'llm_proxy_scheme': urlsplit(self.llm_proxy_url).scheme if self.llm_proxy_url else None}
 
     @property
     def llm_configuration_error(self) -> str | None:

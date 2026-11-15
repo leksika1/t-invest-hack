@@ -50,12 +50,14 @@ def calls(job_id: uuid.UUID | None = None, date: date | None = None, error: bool
 
 @router.get('/stats')
 def stats(date: date | None = None, session: Session = Depends(database)):
+    settings = get_settings()
     start, end = utc_bounds(date)
     rows = session.scalars(select(LLMCall).where(LLMCall.created_at >= start, LLMCall.created_at < end)).all()
     spent = sum((finite_decimal(c.cost_usd) or Decimal(0)) for c in rows)
     held = sum((c.reserved_usd or Decimal(0)) for c in rows if c.cost_usd is None)
     jobs = dict(session.execute(select(Job.status, func.count()).where(Job.created_at >= start, Job.created_at < end).group_by(Job.status)).all())
     return {'date': start.date(), 'timezone': 'UTC', 'spent_usd': str(spent), 'reserved_usd': str(held),
-            'daily_budget_usd': str(get_settings().llm_daily_budget_usd), 'unknown_cost_calls': sum(c.cost_usd is None for c in rows),
+            'daily_budget_usd': str(settings.llm_daily_budget_usd), 'unknown_cost_calls': sum(c.cost_usd is None for c in rows),
+            **settings.llm_proxy_info,
             'calls': len(rows), 'errors': sum(c.error is not None for c in rows),
             'jobs': {status: jobs.get(status, 0) for status in ('queued', 'running', 'succeeded', 'failed')}}

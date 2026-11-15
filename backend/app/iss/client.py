@@ -12,7 +12,8 @@ class IssError(RuntimeError):
 def _get(path: str, params: dict | None = None) -> dict:
     s = get_settings()
     try:
-        resp = httpx.get(f"{s.iss_base_url}{path}", params={"iss.meta": "off", **(params or {})}, timeout=s.iss_timeout)
+        resp = httpx.get(f"{s.iss_base_url}{path}", params={"iss.meta": "off", **(params or {})},
+                         timeout=s.iss_timeout, trust_env=False)
         resp.raise_for_status()
         return resp.json()
     except (httpx.HTTPError, ValueError) as e:

@@ -26,7 +26,8 @@ class LLMClient:
                 headers['HTTP-Referer'] = self.settings.public_base_url
         path = '/embeddings' if embedding else '/chat/completions'
         if self.client is None:
-            with httpx.Client(timeout=self.settings.llm_timeout_seconds) as client:
+            with httpx.Client(timeout=self.settings.llm_timeout_seconds,
+                              proxy=self.settings.llm_proxy_url or None, trust_env=False) as client:
                 response = client.post(base.rstrip('/') + path, headers=headers, json=payload)
         else:
             response = self.client.post(base.rstrip('/') + path, headers=headers, json=payload, timeout=self.settings.llm_timeout_seconds)
