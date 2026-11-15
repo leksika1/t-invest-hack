@@ -72,7 +72,10 @@ server {
         try_files $uri =404;
     }
 
+    # index.html (и SPA-маршруты) — всегда перепроверять, иначе после деплоя браузер держит старую сборку.
+    # Именно expires, а не add_header: add_header в location отменил бы заголовки безопасности уровня server.
     location / {
+        expires -1;
         try_files $uri $uri/ /index.html;
     }
 }
