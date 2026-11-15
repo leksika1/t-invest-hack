@@ -9,7 +9,7 @@ from sqlalchemy import func, select, text
 from app.cards.schema import DISCLAIMER, FIELDS, SPECS, extraction_model
 from app.cards import prompts
 from app.cards.export import REASONS
-from app.cards.retriever import retrieve
+from app.cards.retriever import context_token_bound, full_document_context, retrieve
 from app.cards.verification import degraded_field, result_template, verify
 from app.config import get_settings
 from app.documents.sources import MoexIssSource
@@ -39,7 +39,7 @@ def create_card(session, isin):
                 input_snapshot={'document_ids': [str(d.id) for d in documents],
                                 'documents': [json_safe(document_json(session, d)) for d in documents],
                                 'auto_collect': not documents and not had_collect and session.scalar(select(Document.id).where(Document.issue_id == issue.id).limit(1)) is None,
-                                'prepared': False, 'schema_version': '1', 'prompt_version': '1'})
+                                'prepared': False, 'schema_version': '2', 'prompt_version': '2'})
     session.add(card)
     session.flush()
     job = new_job(session, 'build_card', {'issue_id': str(issue.id), 'card_id': str(card.id)})
@@ -139,6 +139,7 @@ def build_card(factory, job, gateway_factory=LLMGateway):
                             'iss_fetched_at': str(issue.iss_updated_at) if issue.iss_updated_at else None,
                             'model': settings.llm_model, 'embedding_model': settings.embedding_model or None,
                             'quote_fuzzy_threshold': settings.quote_fuzzy_threshold, 'min_confidence': settings.extraction_min_confidence,
+                            'full_context_max_tokens': settings.extraction_full_context_max_tokens,
                             'warnings': list(dict.fromkeys(warnings)), 'prepared': True}
                 card.input_snapshot = json_safe(snapshot)
         documents = [uuid.UUID(identifier) for identifier in snapshot['document_ids']]
@@ -148,6 +149,8 @@ def build_card(factory, job, gateway_factory=LLMGateway):
             warnings.append(configuration_error)
         with factory() as session:
             pages = {(str(p.document_id), p.number): p.text for p in session.scalars(select(Page).where(Page.document_id.in_(documents)))}
+        ready_documents = [doc for doc in snapshot['documents'] if str(doc['id']) in snapshot['document_ids']]
+        full_context = full_document_context(ready_documents, pages, snapshot.get('full_context_max_tokens', settings.extraction_full_context_max_tokens))
         for index, spec in enumerate(SPECS):
             with factory() as session:
                 field = session.scalar(select(CardField).where(CardField.card_id == card_id, CardField.code == spec.code))
@@ -159,19 +162,25 @@ def build_card(factory, job, gateway_factory=LLMGateway):
                 result = degraded_field(spec.code, iss_value, iss_url, reason=configuration_error)
             else:
                 gateway = gateway_factory(factory=factory, settings=settings, job_id=job.id, field_id=field_id)
-                context, retrieval_warnings = retrieve(factory, issue_id, documents, spec.hints, settings, gateway)
+                if not spec.iss and full_context is not None:
+                    context, retrieval_warnings = full_context, []
+                else:
+                    context, retrieval_warnings = retrieve(factory, issue_id, documents, spec.hints, settings, gateway, spec.code)
                 warnings.extend(retrieval_warnings)
                 if not context:
                     result = result_template(spec.code, iss_value)
-                    if snapshot.get('failed_document_ids'):
-                        result.update(status='needs_review', reason='document_processing_failed')
-                    elif not documents and spec.iss:
+                    if spec.iss:
                         result = degraded_field(spec.code, iss_value, iss_url)
-                        warnings.append('iss_only_no_documents')
+                        if result['source'].get('kind') == 'moex_iss':
+                            result['reason'] = 'iss_not_confirmed'
+                        if not documents:
+                            warnings.append('iss_only_no_documents')
+                    elif snapshot.get('failed_document_ids'):
+                        result.update(status='needs_review', reason='document_processing_failed')
                 else:
                     try:
                         extracted = gateway.extract(spec.code, prompts.messages(spec, context), extraction_model(spec.code))
-                        result = verify(spec.code, extracted, pages, context, settings, iss_value)
+                        result = verify(spec.code, extracted, pages, context, settings, iss_value, iss_url=iss_url)
                     except GatewayError as exc:
                         warnings.append(exc.code)
                         result = degraded_field(spec.code, iss_value, iss_url, reason=exc.code)
@@ -195,6 +204,8 @@ def build_card(factory, job, gateway_factory=LLMGateway):
             documents_meta = snapshot.get('documents', [])
             unknown = sum(c.cost_usd is None for c in calls)
             card.journal = {'documents_used': len(documents), 'pages': sum(d['pages'] for d in documents_meta if d['id'] in snapshot['document_ids']),
+                            'risk_context_mode': 'none' if not documents else 'full_document' if full_context is not None else 'retrieval',
+                            'risk_context_tokens_upper_bound': context_token_bound(full_context) if full_context is not None else None,
                             'ocr_pages': sum(d['ocr_pages'] for d in documents_meta if d['id'] in snapshot['document_ids']),
                             'models': sorted({c.model for c in calls}), 'tokens_in': sum(c.tokens_in or 0 for c in calls),
                             'tokens_out': sum(c.tokens_out or 0 for c in calls), 'unknown_cost_calls': unknown,

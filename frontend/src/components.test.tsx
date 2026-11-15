@@ -128,6 +128,20 @@ describe("Поле карточки", () => {
     expect(screen.getByText("Цитата не подтверждена")).toBeVisible();
     expect(screen.getByRole("button", { name: "Подтвердить" })).toBeDisabled();
     expect(screen.queryByText(mismatch.quote!)).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Данные MOEX ISS" })).toBeVisible();
+    expect(screen.getByText("900 RUB")).toBeVisible();
+  });
+  it("показывает ISS и пометку при частичной сверке документа", () => {
+    render(
+      <FieldCard
+        field={{ ...mismatch, status: "verified_iss", reason: "iss_partial_confirmation",
+          reason_message: "Документ подтверждает только часть параметров; полные данные — в MOEX ISS" }}
+        cardId={cardId} documents={[document]} onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("1000 RUB")).toBeVisible();
+    expect(screen.getByText("900 RUB")).toBeVisible();
+    expect(screen.getByText(/Документ подтверждает только часть параметров/)).toBeVisible();
   });
   it("исправляет типизированное значение через PATCH, сохраняет исходное", async () => {
     const user = userEvent.setup();

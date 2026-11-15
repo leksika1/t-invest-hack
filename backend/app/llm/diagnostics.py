@@ -115,3 +115,23 @@ def http_diagnostics(response, payload, settings):
         if safe := _safe_text(value, settings, phrases, limit):
             result[name] = safe
     return result, usage
+
+
+def validation_summary(error, model):
+    """Only allowlisted field paths and Pydantic error codes; never input/msg/ctx."""
+    names = set()
+    def fields(node):
+        if isinstance(node, dict):
+            names.update(node.get('properties', {}))
+            for value in node.values():
+                fields(value)
+        elif isinstance(node, list):
+            for value in node:
+                fields(value)
+    fields(model.model_json_schema())
+    summaries = []
+    for item in error.errors(include_input=False, include_context=False, include_url=False)[:10]:
+        path = '.'.join(str(part) if isinstance(part, int) else part if part in names else '?' for part in item['loc']) or 'response'
+        code = item['type'] if re.fullmatch(r'[a-z_]+', item['type']) else 'validation_error'
+        summaries.append(f'{path}: {code}')
+    return '; '.join(summaries)[:500]

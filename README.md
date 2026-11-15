@@ -53,7 +53,7 @@ curl http://127.0.0.1:18080/api/health
 | `LLM_MODEL` | Backend, этап 3 | По умолчанию `google/gemini-2.5-flash` |
 | `LLM_API_KEY` | Backend, сейчас | Ключ OpenRouter; без ключа целевой MVP работает в деградированном режиме |
 | `PUBLIC_BASE_URL` | Backend, этап 3 | URL сайта для HTTP-Referer; X-Title: Bond Card MVP |
-| `LLM_DAILY_BUDGET_USD` | Backend, этап 3 | 1 USD/UTC-день по умолчанию; 0 блокирует модель. Учитываются расходы и незакрытые резервы |
+| `LLM_DAILY_BUDGET_USD` | Backend | 10 USD/UTC-день по умолчанию; 0 блокирует модель. Явный env-лимит сохраняется. Учтены расходы и незакрытые резервы; расчёт до 15 вызовов на карточку — в ARCHITECTURE |
 | `LLM_INPUT_PRICE_PER_1M_USD`, `LLM_OUTPUT_PRICE_PER_1M_USD` | Backend, этап 3 | USD/1 млн токенов для резерва/fallback. Для `google/gemini-2.5-flash` пропущено/пусто → `0.30`/`2.50`; явные значения переопределяют тарифы. Для другой модели нужны оба тарифа, иначе `llm_prices_not_configured`. Проверить актуальность на [openrouter.ai/models](https://openrouter.ai/models) |
 | `LLM_TIMEOUT_SECONDS`, `LLM_MAX_RETRIES`, `LLM_MAX_OUTPUT_TOKENS` | Backend, этап 3 | 45 с, 2 повтора временной ошибки, 4096 выходных токенов |
 | `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`, `EMBEDDING_DIM` | Backend, этап 3 | Опционально, base/key наследуют LLM; DIM=1024 (1–2000), не настроено/ошибка → FTS |
@@ -69,6 +69,7 @@ curl http://127.0.0.1:18080/api/health
 | `WORKER_ENABLED`, `JOB_POLL_SECONDS`, `JOB_LEASE_SECONDS`, `JOB_MAX_ATTEMPTS` | Backend, этап 2 | true, 1 с, 180 с, 3 попытки |
 | `QUOTE_FUZZY_THRESHOLD`, `EXTRACTION_MIN_CONFIDENCE` | Backend, этап 3 | 0.95 и 0.8; пороги пока не калиброваны реальным экспериментом |
 | `RETRIEVAL_TOP_K`, `RETRIEVAL_MAX_TOKENS` | Backend, этап 3 | 8 фрагментов, консервативный предел контекста 10000 UTF-8 байт |
+| `EXTRACTION_FULL_CONTEXT_MAX_TOKENS` | Backend | 150000 UTF-8 байт консервативной верхней оценки контекста: рисковые поля получают все страницы до порога, иначе retrieval; 0 отключает полный режим |
 | `RATE_LIMIT_WINDOW_SECONDS`, `RATE_LIMIT_CARDS`, `RATE_LIMIT_UPLOADS`, `RATE_LIMIT_COLLECT` | Backend, этап 3 | PostgreSQL-лимит: 60 с, 5 карточек, 10 загрузок, 5 автосборов на адрес клиента |
 | `E2E_PORT`, `E2E_DB_PORT` | Локально, сейчас | HTTP/БД: overlay 18080/55433; scripts/ci.sh 28080/55434 |
 | `TEST_DATABASE_URL`, `TEST_DB_PORT` | Тесты | Отдельная БД *_test; scripts/ci.sh поднимает bonds_test на 55435; без URL db-тесты пропускаются |

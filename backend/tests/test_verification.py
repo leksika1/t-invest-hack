@@ -64,7 +64,7 @@ def test_coupon_graphs_and_partial_data():
     value = {'periods': [{'from': 1, 'to': 2, 'rate_percent': '18', 'amount': None}], 'formula': None}
     assert compare_iss('coupon_rate', value, iss) == 'verified_iss'
     value['periods'][0]['to'] = 1
-    assert compare_iss('coupon_rate', value, iss) == 'needs_review'
+    assert compare_iss('coupon_rate', value, iss) == 'verified_iss'
     assert compare_iss('coupon_type', {'type': 'fixed'}, None) == 'extracted'
 
 

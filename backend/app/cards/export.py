@@ -8,6 +8,9 @@ from app.llm.diagnostics import PROVIDER_REASONS
 REASONS = {'llm_not_configured': 'LLM не настроена', 'quote_not_verified': 'Цитата не подтверждена',
            'budget_exceeded': 'Дневной бюджет LLM исчерпан', 'not_in_documents': 'Не найдено в переданных документах',
            'iss_unavailable': 'Данные ISS недоступны', 'iss_only': 'Значение напрямую из MOEX ISS',
+           'iss_not_confirmed': 'Значение MOEX ISS; в документах не подтверждено',
+           'iss_partial_confirmation': 'Документ подтверждает только часть параметров; полные данные — в MOEX ISS',
+           'empty_extraction': 'Модель не указала ни одного условия; нужна проверка документов',
            'llm_prices_not_configured': 'Не настроены тарифы LLM', 'llm_timeout': 'Истекло время ожидания модели',
            'llm_http_error': 'Ошибка ответа провайдера модели', 'llm_transport_error': 'Ошибка соединения с моделью',
            'llm_client_error': 'Ошибка клиента модели',
@@ -37,6 +40,8 @@ def render_markdown(card):
             lines.append(escape(REASONS.get(field['reason'], field['reason'])))
         if field['iss_value'] is not None and field.get('source', {}).get('kind') != 'moex_iss':
             lines.append('Значение ISS: ' + escape(json.dumps(field['iss_value'], ensure_ascii=False)))
+        if field.get('reason') and field['value'] is not None:
+            lines.append(escape(REASONS.get(field['reason'], field['reason'])))
         if field.get('source', {}).get('kind') == 'moex_iss':
             lines.append('Источник: MOEX ISS ' + escape(field['source'].get('url') or ''))
         if field.get('user_status'):

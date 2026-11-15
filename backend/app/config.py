@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     llm_proxy_url: str = Field('', repr=False, exclude=True)
     llm_model: str = DEFAULT_LLM_MODEL
     public_base_url: str = ""
-    llm_daily_budget_usd: Decimal = Field(Decimal("1"), ge=0)
+    llm_daily_budget_usd: Decimal = Field(Decimal("10"), ge=0)
     llm_input_price_per_1m_usd: Decimal | None = Field(None, ge=0)
     llm_output_price_per_1m_usd: Decimal | None = Field(None, ge=0)
     embedding_input_price_per_1m_usd: Decimal | None = Field(None, ge=0)
@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     llm_max_output_tokens: int = Field(4096, ge=64, le=16384)
     retrieval_top_k: int = Field(8, ge=1, le=30)
     retrieval_max_tokens: int = Field(10000, ge=256, le=32000)
+    extraction_full_context_max_tokens: int = Field(150000, ge=0, le=500000)
     quote_fuzzy_threshold: float = Field(0.95, ge=0.9, le=1)
     extraction_min_confidence: float = Field(0.8, ge=0, le=1)
     admin_token: str = ""

@@ -37,6 +37,7 @@ export const labels: Record<string, string> = {
   rounding_rule: "Округление",
   frequency_per_year: "Выплат в год",
   period_days: "Период, дней",
+  total_payments: "Всего купонов",
   payments: "Выплаты",
   number: "№ купона",
   start: "Начало периода",
@@ -146,6 +147,7 @@ export const editors: Record<FieldCode, EditorNode> = {
     ),
   }),
   coupon_schedule: object({
+    total_payments: integer(),
     frequency_per_year: integer(),
     period_days: integer(),
     payments: list(

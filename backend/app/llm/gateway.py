@@ -13,7 +13,7 @@ from sqlalchemy import Numeric, cast, func, select, text
 from app.config import get_settings
 from app.errors import ProcessingError
 from app.llm.client import LLMClient
-from app.llm.diagnostics import http_diagnostics
+from app.llm.diagnostics import http_diagnostics, validation_summary
 from app.models import LLMCall
 
 
@@ -226,7 +226,10 @@ class LLMGateway:
                 error = {'code': 'llm_timeout', 'message': 'Истекло время ожидания модели'}
             except httpx.TransportError:
                 error = {'code': 'llm_transport_error', 'message': 'Ошибка соединения с моделью'}
-            except (ValueError, KeyError, IndexError, TypeError, ValidationError):
+            except ValidationError as exc:
+                error = {'code': 'invalid_json', 'message': 'Ответ модели не соответствует схеме',
+                         'validation_error': validation_summary(exc, output_model)}
+            except (ValueError, KeyError, IndexError, TypeError):
                 error = {'code': 'invalid_embedding' if embedding else 'invalid_json', 'message': 'Ответ модели не соответствует схеме'}
             except Exception:
                 error = {'code': 'llm_client_error', 'message': 'Ошибка клиента модели'}

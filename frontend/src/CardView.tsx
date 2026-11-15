@@ -147,7 +147,15 @@ export function FieldCard({
             </section>
           </div>
         ) : (
-          <FieldValue field={field} variableCoupon={variableCoupon} />
+          <>
+            <FieldValue field={field} variableCoupon={variableCoupon} />
+            {field.iss_value != null && field.source.kind !== "moex_iss" && (
+              <section className="iss-reference">
+                <h4>Данные MOEX ISS</h4>
+                <ValueView value={field.iss_value} />
+              </section>
+            )}
+          </>
         )}
         {field.source.kind === "moex_iss" ? (
           <p className="source-line">

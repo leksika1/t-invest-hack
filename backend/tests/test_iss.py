@@ -89,7 +89,7 @@ def test_aeroflot_unknown_future_coupons_and_empty_offers():
     assert result["status"] == "extracted"
     assert result["value"] == {"events": []}
     assert degraded_field("offers", None, "")['reason'] == 'iss_unavailable'
-    assert compare_iss('coupon_type', {'type': 'variable'}, fields['coupon_type']) == 'needs_review'
+    assert compare_iss('coupon_type', {'type': 'variable'}, fields['coupon_type']) == 'extracted'
 
 
 def test_missing_offers_block_is_not_an_empty_schedule():

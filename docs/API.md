@@ -186,14 +186,15 @@ Document DTO пока не содержит размер сохранённог�
 }
 ```
 
-`evidence` — объекты `{quote,document_id,page,clause,value_path}` для составных полей/графиков. Основная цитата относится к элементу 0, для остальных нужны JSON-pointer пути вида /events/1, /items/1, /payments/1. Недостаточное покрытие → needs_review, скрытое value. Поле reason содержит стабильный код, reason_message — русский текст. Экстрактор также возвращает ambiguous: true при замеченном противоречии редакций; это даёт needs_review/conflicting_sources. Все проходят ту же проверку; основной quote покрывает основное утверждение, массив — остальные. `confidence` число 0–1 или null, не калиброванная вероятность. `not_found` сохраняет результат извлечения; статус назначается правилами. Причины показываются пользователю с русским текстом, коды стабильны.
+`evidence` — объекты `{quote,document_id,page,clause,value_path}` для составных полей/графиков. Основная цитата относится к элементу 0, для остальных нужны JSON-pointer пути вида /events/1, /items/1, /payments/1. Недостаточное покрытие скрывает документальное значение; у рисков это needs_review, а у полей 1–8 при наличии ISS — extracted/moex_iss с iss_not_confirmed. Поле reason содержит стабильный код, reason_message — русский текст. Экстрактор также возвращает ambiguous: true при замеченном противоречии редакций; это даёт needs_review/conflicting_sources. `confidence` число 0–1 или null, не калиброванная вероятность. Сырой not_found=true с пустым контейнером нормализуется в value=null до валидации; публичный not_found=false у ISS-fallback означает доступное биржевое значение. CouponSchedule дополнен необязательным total_payments — явно указанным общим числом купонов.
 
 Варианты поведения той же оболочки:
 
 | Случай | Публичный результат |
 |---|---|
 | Несовпадение ISS | `status=mismatch_iss`, value документа и iss_value разные; оба показываются рядом с флагом |
-| Нет цитаты/цитата не на указанной странице | `value=null`, `status=needs_review`, `reason=quote_not_verified`; сомнительная цитата не оформляется как подтверждённый источник |
+| Нет цитаты/цитата не на указанной странице | Риски: `value=null`, needs_review/quote_not_verified. Поля 1–8 с доступным ISS: extracted/moex_iss, reason=iss_not_confirmed, без PDF-цитаты |
+| Подтверждено подмножество параметров графика | verified_iss/iss_partial_confirmation; это не проверка всех выплат. Полный iss_value показывается рядом с документальным результатом |
 | Условие не найдено | `value=null`, `not_found=true`, `status=not_found`, `reason=not_in_documents` |
 | Нет ключа LLM, текстовое поле | `value=null`, `status=not_found`, `reason=llm_not_configured` |
 | Прямой ISS без PDF | `status=extracted`, `source.kind=moex_iss`, source.url — путь снимка ISS, quote/document_id/page/clause/confidence = null; value из ISS |
