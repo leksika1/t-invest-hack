@@ -10,7 +10,7 @@ def make(**env):
 def test_google_ai_studio_key_selects_google_endpoint_and_model():
     s = make(llm_api_key='AIzaSyTEST', llm_base_url='', llm_model='')
     assert s.llm_base_url == 'https://generativelanguage.googleapis.com/v1beta/openai'
-    assert s.llm_model == 'gemini-2.5-flash'
+    assert s.llm_model == 'gemini-3.5-flash'
     assert s.llm_input_price_per_1m_usd == Decimal('0.30')
     assert s.llm_output_price_per_1m_usd == Decimal('2.50')
     assert s.llm_configuration_error is None
@@ -33,3 +33,10 @@ def test_no_key_defaults_to_openrouter():
     s = make(llm_api_key='', llm_base_url='', llm_model='')
     assert s.llm_base_url == 'https://openrouter.ai/api/v1'
     assert s.llm_model == 'google/gemini-2.5-flash'
+
+
+def test_new_google_key_format_aq():
+    s = make(llm_api_key='AQ.Ab8RN6TEST', llm_base_url='', llm_model='')
+    assert s.llm_base_url == 'https://generativelanguage.googleapis.com/v1beta/openai'
+    assert s.llm_model == 'gemini-3.5-flash'
+    assert s.llm_configuration_error is None

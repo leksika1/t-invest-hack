@@ -15,13 +15,18 @@ _GEMINI_FLASH_PRICES = {
 }
 DEFAULT_LLM_PRICES = {
     DEFAULT_LLM_MODEL: _GEMINI_FLASH_PRICES,   # OpenRouter
-    'gemini-2.5-flash': _GEMINI_FLASH_PRICES,  # Google AI Studio (платный тариф; на бесплатном фактически 0)
+    # Google AI Studio. Google не возвращает стоимость в ответе, расход считается по этим ставкам.
+    # Тариф gemini-3.5-flash проверить на ai.google.dev/gemini-api/docs/pricing; на бесплатном ключе фактически 0.
+    'gemini-3.5-flash': _GEMINI_FLASH_PRICES,
+    'gemini-2.5-flash': _GEMINI_FLASH_PRICES,
 }
 
 # Провайдер по виду ключа, если LLM_BASE_URL / LLM_MODEL не заданы явно:
-# ключ Google AI Studio начинается с «AIza», ключ OpenRouter — с «sk-or-».
+# ключи Google AI Studio начинаются с «AIza» или «AQ.» (новый формат), ключ OpenRouter — с «sk-or-».
+# gemini-2.5-flash закрыта для новых ключей Google (404), поэтому для Google — gemini-3.5-flash.
 LLM_PROVIDER_PRESETS = (
-    ('AIza', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-2.5-flash'),
+    ('AIza', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-3.5-flash'),
+    ('AQ.', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-3.5-flash'),
     ('sk-or-', 'https://openrouter.ai/api/v1', DEFAULT_LLM_MODEL),
 )
 DEFAULT_LLM_BASE_URL = 'https://openrouter.ai/api/v1'
