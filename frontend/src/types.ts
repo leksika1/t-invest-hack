@@ -135,6 +135,8 @@ export type CardField = {
   reviewed_at?: string | null;
 };
 export type CardSummary = {
+  header?: Header;
+  field_statuses?: Record<string, number>;
   id: string;
   isin: string;
   version: number;

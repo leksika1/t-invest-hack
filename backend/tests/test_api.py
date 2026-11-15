@@ -6,6 +6,25 @@ from app import main
 client = TestClient(main.app)
 
 
+def test_history_includes_snapshot_title_and_field_status_counts():
+    from types import SimpleNamespace
+    from datetime import datetime, timezone
+    import uuid
+    from app.issues.router import database
+    identifier = uuid.uuid4()
+    timestamp = datetime.now(timezone.utc)
+    card = SimpleNamespace(id=identifier, issue_id=uuid.uuid4(), input_snapshot={'header': {'name': 'Выпуск из снимка'}}, version=2, status='ready', created_at=timestamp, updated_at=timestamp)
+    session = SimpleNamespace(scalar=lambda query: 1, scalars=lambda query: [card], get=lambda *args: SimpleNamespace(isin='RU000A10CS75'), execute=lambda query: [(identifier, 'extracted', 7), (identifier, 'needs_review', 8)])
+    main.app.dependency_overrides[database] = lambda: session
+    try:
+        result = client.get('/api/cards').json()
+    finally:
+        del main.app.dependency_overrides[database]
+    assert result['total'] == 1
+    assert result['items'][0]['header']['name'] == 'Выпуск из снимка'
+    assert result['items'][0]['field_statuses'] == {'extracted': 7, 'needs_review': 8}
+
+
 def test_health(monkeypatch):
     monkeypatch.setattr(main, "check_db", lambda: True)
     r = client.get("/api/health")

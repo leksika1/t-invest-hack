@@ -1,0 +1,49 @@
+{
+  "schema_version": "1",
+  "name": "2 synthetic controls + 2 unreviewed real demo drafts",
+  "seed": 42,
+  "frozen": true,
+  "settings": {
+    "schema_version": "1",
+    "prompt_version": "1",
+    "baseline": "regex-v1",
+    "quote_fuzzy_threshold": 0.95,
+    "model": "google/gemini-2.5-flash",
+    "embedding_model": null,
+    "retrieval_top_k": 8,
+    "retrieval_max_tokens": 10000,
+    "min_confidence": 0.8,
+    "endpoint": "https://openrouter.ai/api/v1",
+    "prices": "not measured; no live model calls"
+  },
+  "issues": [
+    {
+      "isin": "RU000A10AXF7",
+      "gold": "gold/synthetic/RU000A10AXF7.json",
+      "split": "test",
+      "issuer_group": "synthetic-0",
+      "card_id": "a0f9f403-344f-5d75-94b2-f2eed97ad659"
+    },
+    {
+      "isin": "RU000A10ZZZ0",
+      "gold": "gold/synthetic/RU000A10ZZZ0.json",
+      "split": "test",
+      "issuer_group": "synthetic-1",
+      "card_id": "d9854831-abc0-5c66-b476-2042eb298c7b"
+    },
+    {
+      "isin": "RU000A10ATW2",
+      "gold": "gold/demo/RU000A10ATW2.json",
+      "split": "dev",
+      "issuer_group": "7826705374",
+      "card_id": null
+    },
+    {
+      "isin": "RU000A10CS75",
+      "gold": "gold/demo/RU000A10CS75.json",
+      "split": "dev",
+      "issuer_group": "7712040126",
+      "card_id": null
+    }
+  ]
+}

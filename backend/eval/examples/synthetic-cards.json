@@ -1,0 +1,971 @@
+[
+  {
+    "id": "a0f9f403-344f-5d75-94b2-f2eed97ad659",
+    "isin": "RU000A10AXF7",
+    "version": 1,
+    "status": "ready",
+    "documents": [
+      {
+        "id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "filename": "synthetic-decision.pdf",
+        "sha256": "0fbb62a14022eb7549d7e719b86c9586f67f8d6222cefc1d4417255332b61eb9",
+        "enabled": true,
+        "status": "ready",
+        "origins": [
+          {
+            "source": "synthetic",
+            "published_at": null,
+            "fetched_at": "2026-11-15T00:00:00Z"
+          }
+        ]
+      }
+    ],
+    "iss_fields": {
+      "face_value": {
+        "code": "face_value",
+        "value": {
+          "amount": "1000",
+          "currency": "RUB"
+        },
+        "quote": "3.1. Номинальная стоимость облигации составляет 1 000 рублей.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 1,
+        "clause": "3.1",
+        "status": "verified_iss",
+        "iss_value": {
+          "amount": "1000",
+          "currency": "RUB"
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "placement_date": {
+        "code": "placement_date",
+        "value": {
+          "date": "2026-01-10"
+        },
+        "quote": "3.2. Дата размещения: 10.01.2026.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 1,
+        "clause": "3.2",
+        "status": "verified_iss",
+        "iss_value": {
+          "date": "2026-01-10"
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "maturity_date": {
+        "code": "maturity_date",
+        "value": {
+          "date": "2028-01-10"
+        },
+        "quote": "3.3. Дата погашения: 10.01.2028.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 1,
+        "clause": "3.3",
+        "status": "verified_iss",
+        "iss_value": {
+          "date": "2028-01-10"
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "coupon_type": {
+        "code": "coupon_type",
+        "value": {
+          "type": "fixed",
+          "description": null
+        },
+        "quote": "3.4. Тип купона: фиксированный.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 1,
+        "clause": "3.4",
+        "status": "verified_iss",
+        "iss_value": {
+          "type": "fixed",
+          "description": null
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "coupon_rate": {
+        "code": "coupon_rate",
+        "value": {
+          "periods": [
+            {
+              "from": 1,
+              "to": 2,
+              "rate_percent": "12",
+              "amount": null
+            }
+          ],
+          "formula": null
+        },
+        "quote": "3.5. Ставка купона с 1 по 2 купон составляет 12 процентов годовых.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 1,
+        "clause": "3.5",
+        "status": "verified_iss",
+        "iss_value": {
+          "periods": [
+            {
+              "from": 1,
+              "to": 2,
+              "rate_percent": "12",
+              "amount": null
+            }
+          ],
+          "formula": null
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "coupon_schedule": {
+        "code": "coupon_schedule",
+        "value": {
+          "frequency_per_year": null,
+          "period_days": null,
+          "payments": [
+            {
+              "number": 1,
+              "start": null,
+              "end": null,
+              "payment_date": "2026-07-10"
+            },
+            {
+              "number": 2,
+              "start": null,
+              "end": null,
+              "payment_date": "2027-01-10"
+            }
+          ]
+        },
+        "quote": "3.6. Купонные выплаты: 10.07.2026; 10.01.2027.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 1,
+        "clause": "3.6",
+        "status": "verified_iss",
+        "iss_value": {
+          "frequency_per_year": null,
+          "period_days": null,
+          "payments": [
+            {
+              "number": 1,
+              "start": null,
+              "end": null,
+              "payment_date": "2026-07-10"
+            },
+            {
+              "number": 2,
+              "start": null,
+              "end": null,
+              "payment_date": "2027-01-10"
+            }
+          ]
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [
+          {
+            "quote": "3.6. Купонные выплаты: 10.07.2026; 10.01.2027.",
+            "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+            "page": 1,
+            "clause": "3.6",
+            "value_path": "/payments/1"
+          }
+        ],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "offers": {
+        "code": "offers",
+        "value": {
+          "events": [
+            {
+              "date": "2027-01-10",
+              "type": "put",
+              "price_percent": "100"
+            }
+          ]
+        },
+        "quote": "3.7. Оферта put 10.01.2027 по цене 100 процентов номинала.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 1,
+        "clause": "3.7",
+        "status": "verified_iss",
+        "iss_value": {
+          "events": [
+            {
+              "date": "2027-01-10",
+              "type": "put",
+              "price_percent": "100"
+            }
+          ]
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "amortization": {
+        "code": "amortization",
+        "value": {
+          "events": [
+            {
+              "date": "2028-01-10",
+              "amount": null,
+              "percent": "100",
+              "percent_base": "initial_face_value"
+            }
+          ]
+        },
+        "quote": "3.8. Амортизация 10.01.2028: 100 процентов первоначального номинала.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 1,
+        "clause": "3.8",
+        "status": "verified_iss",
+        "iss_value": {
+          "events": [
+            {
+              "date": "2028-01-10",
+              "amount": null,
+              "percent": "100",
+              "percent_base": "initial_face_value"
+            }
+          ]
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      }
+    },
+    "risk_fields": {
+      "covenants": {
+        "code": "covenants",
+        "value": {
+          "items": [
+            {
+              "condition": "Ковенант: отношение долга к EBITDA не более 3.",
+              "test_date_rule": null,
+              "consequence": null,
+              "exceptions": null
+            },
+            {
+              "condition": "Ковенант: выплата дивидендов допускается при отсутствии просроченной задолженности.",
+              "test_date_rule": null,
+              "consequence": null,
+              "exceptions": null
+            }
+          ]
+        },
+        "quote": "9.1. Ковенант: отношение долга к EBITDA не более 3.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 2,
+        "clause": "9.1",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [
+          {
+            "quote": "9.2. Ковенант: выплата дивидендов допускается при отсутствии просроченной задолженности.",
+            "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+            "page": 2,
+            "clause": "9.2",
+            "value_path": "/items/1"
+          }
+        ],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "holder_early_redemption": {
+        "code": "holder_early_redemption",
+        "value": {
+          "grounds": [
+            {
+              "trigger": "Владельцы вправе требовать досрочного погашения при нарушении ковенанта.",
+              "deadline": null,
+              "exceptions": null
+            }
+          ]
+        },
+        "quote": "9.3. Владельцы вправе требовать досрочного погашения при нарушении ковенанта.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 2,
+        "clause": "9.3",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "issuer_call_option": {
+        "code": "issuer_call_option",
+        "value": {
+          "conditions": [
+            {
+              "trigger": "Эмитент вправе досрочно погасить облигации по цене 100 процентов номинала, уведомив за 10 дней.",
+              "date_rule": null,
+              "price_rule": null,
+              "notice_rule": null
+            }
+          ]
+        },
+        "quote": "9.4. Эмитент вправе досрочно погасить облигации по цене 100 процентов номинала, уведомив за\n10 дней.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 2,
+        "clause": "9.4",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "guarantee_security": {
+        "code": "guarantee_security",
+        "value": {
+          "items": [
+            {
+              "type": "surety",
+              "party": null,
+              "scope": "Исполнение обеспечено поручительством ООО Пример в полном объёме.",
+              "expiry": null,
+              "exceptions": null
+            }
+          ]
+        },
+        "quote": "9.5. Исполнение обеспечено поручительством ООО Пример в полном объёме.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 2,
+        "clause": "9.5",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "cross_default": {
+        "code": "cross_default",
+        "value": {
+          "items": [
+            {
+              "trigger": "Кросс-дефолт: неисполнение иных долговых обязательств свыше 1000000 рублей.",
+              "threshold": null,
+              "entities": null,
+              "grace_period": null,
+              "consequence": null,
+              "exceptions": null
+            }
+          ]
+        },
+        "quote": "9.6. Кросс-дефолт: неисполнение иных долговых обязательств свыше 1000000 рублей.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 2,
+        "clause": "9.6",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "issuer_restrictions": {
+        "code": "issuer_restrictions",
+        "value": {
+          "items": [
+            {
+              "action": "Эмитенту запрещена выплата дивидендов при наличии просроченной задолженности.",
+              "restriction": "Эмитенту запрещена выплата дивидендов при наличии просроченной задолженности.",
+              "exceptions": null,
+              "consequence": null
+            }
+          ]
+        },
+        "quote": "9.7. Эмитенту запрещена выплата дивидендов при наличии просроченной задолженности.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 2,
+        "clause": "9.7",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "offer_procedure": {
+        "code": "offer_procedure",
+        "value": {
+          "procedures": [
+            {
+              "offer_date": null,
+              "window_start": null,
+              "window_end": null,
+              "window_rule": null,
+              "via": null,
+              "submission": "Для участия в put-оферте владельцы предъявляют требования через депозитарий в течение 5 рабочих дней.",
+              "settlement_rule": null
+            }
+          ]
+        },
+        "quote": "9.8. Для участия в put-оферте владельцы предъявляют требования через депозитарий в течение 5\nрабочих дней.",
+        "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+        "page": 2,
+        "clause": "9.8",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      }
+    },
+    "journal": {
+      "models": [],
+      "cost_usd": "0",
+      "duration_ms": 0,
+      "pages": 2,
+      "ocr_pages": 0
+    },
+    "evaluation_mode": "synthetic-oracle"
+  },
+  {
+    "id": "d9854831-abc0-5c66-b476-2042eb298c7b",
+    "isin": "RU000A10ZZZ0",
+    "version": 1,
+    "status": "ready",
+    "documents": [
+      {
+        "id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "filename": "synthetic-decision.pdf",
+        "sha256": "d32b38d12594e8f641f1915dacaced516e739bfd3d32036348849cb0e0554b88",
+        "enabled": true,
+        "status": "ready",
+        "origins": [
+          {
+            "source": "synthetic",
+            "published_at": null,
+            "fetched_at": "2026-11-15T00:00:00Z"
+          }
+        ]
+      }
+    ],
+    "iss_fields": {
+      "face_value": {
+        "code": "face_value",
+        "value": {
+          "amount": "2000",
+          "currency": "RUB"
+        },
+        "quote": "3.1. Номинальная стоимость облигации составляет 2 000 рублей.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 1,
+        "clause": "3.1",
+        "status": "mismatch_iss",
+        "iss_value": {
+          "amount": "1900",
+          "currency": "RUB"
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "placement_date": {
+        "code": "placement_date",
+        "value": {
+          "date": "2026-01-10"
+        },
+        "quote": "3.2. Дата размещения: 10.01.2026.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 1,
+        "clause": "3.2",
+        "status": "verified_iss",
+        "iss_value": {
+          "date": "2026-01-10"
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "maturity_date": {
+        "code": "maturity_date",
+        "value": {
+          "date": "2028-01-10"
+        },
+        "quote": "3.3. Дата погашения: 10.01.2028.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 1,
+        "clause": "3.3",
+        "status": "verified_iss",
+        "iss_value": {
+          "date": "2028-01-10"
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "coupon_type": {
+        "code": "coupon_type",
+        "value": {
+          "type": "floating",
+          "description": null
+        },
+        "quote": "3.4. Тип купона: плавающий.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 1,
+        "clause": "3.4",
+        "status": "verified_iss",
+        "iss_value": {
+          "type": "floating",
+          "description": null
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "coupon_rate": {
+        "code": "coupon_rate",
+        "value": {
+          "periods": [],
+          "formula": {
+            "text": "Ключевая ставка Банка России плюс 2 процентных пункта.",
+            "base": "Ключевая ставка Банка России",
+            "spread_pp": "2",
+            "cap_percent": null,
+            "floor_percent": null,
+            "observation_rule": null,
+            "rounding_rule": null
+          }
+        },
+        "quote": "3.5. Формула купона: ключевая ставка Банка России плюс 2 процентных пункта.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 1,
+        "clause": "3.5",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "coupon_schedule": {
+        "code": "coupon_schedule",
+        "value": {
+          "frequency_per_year": null,
+          "period_days": null,
+          "payments": [
+            {
+              "number": 1,
+              "start": null,
+              "end": null,
+              "payment_date": "2026-07-10"
+            },
+            {
+              "number": 2,
+              "start": null,
+              "end": null,
+              "payment_date": "2027-01-10"
+            }
+          ]
+        },
+        "quote": "3.6. Купонные выплаты: 10.07.2026; 10.01.2027.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 1,
+        "clause": "3.6",
+        "status": "verified_iss",
+        "iss_value": {
+          "frequency_per_year": null,
+          "period_days": null,
+          "payments": [
+            {
+              "number": 1,
+              "start": null,
+              "end": null,
+              "payment_date": "2026-07-10"
+            },
+            {
+              "number": 2,
+              "start": null,
+              "end": null,
+              "payment_date": "2027-01-10"
+            }
+          ]
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [
+          {
+            "quote": "3.6. Купонные выплаты: 10.07.2026; 10.01.2027.",
+            "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+            "page": 1,
+            "clause": "3.6",
+            "value_path": "/payments/1"
+          }
+        ],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "offers": {
+        "code": "offers",
+        "value": {
+          "events": [
+            {
+              "date": "2027-01-10",
+              "type": "put",
+              "price_percent": "100"
+            }
+          ]
+        },
+        "quote": "3.7. Оферта put 10.01.2027 по цене 100 процентов номинала.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 1,
+        "clause": "3.7",
+        "status": "verified_iss",
+        "iss_value": {
+          "events": [
+            {
+              "date": "2027-01-10",
+              "type": "put",
+              "price_percent": "100"
+            }
+          ]
+        },
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "amortization": {
+        "code": "amortization",
+        "value": null,
+        "quote": null,
+        "document_id": null,
+        "page": null,
+        "clause": null,
+        "status": "not_found",
+        "iss_value": null,
+        "confidence": null,
+        "source": {},
+        "not_found": true,
+        "evidence": [],
+        "reason": "not_in_documents",
+        "user_status": null,
+        "user_value": null
+      }
+    },
+    "risk_fields": {
+      "covenants": {
+        "code": "covenants",
+        "value": {
+          "items": [
+            {
+              "condition": "Ковенант: отношение долга к EBITDA не более 2, кроме периода реорганизации.",
+              "test_date_rule": null,
+              "consequence": null,
+              "exceptions": null
+            },
+            {
+              "condition": "Ковенант: выплата дивидендов допускается при отсутствии просроченной задолженности.",
+              "test_date_rule": null,
+              "consequence": null,
+              "exceptions": null
+            }
+          ]
+        },
+        "quote": "9.1. Ковенант: отношение долга к EBITDA не более 2, кроме периода реорганизации.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 2,
+        "clause": "9.1",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [
+          {
+            "quote": "9.2. Ковенант: выплата дивидендов допускается при отсутствии просроченной задолженности.",
+            "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+            "page": 2,
+            "clause": "9.2",
+            "value_path": "/items/1"
+          }
+        ],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "holder_early_redemption": {
+        "code": "holder_early_redemption",
+        "value": {
+          "grounds": [
+            {
+              "trigger": "При просрочке выплаты купона более 10 рабочих дней владельцы вправе потребовать досрочного погашения.",
+              "deadline": null,
+              "exceptions": null
+            }
+          ]
+        },
+        "quote": "9.3. При просрочке выплаты купона более 10 рабочих дней владельцы вправе потребовать\nдосрочного погашения.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 2,
+        "clause": "9.3",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "issuer_call_option": {
+        "code": "issuer_call_option",
+        "value": {
+          "conditions": [
+            {
+              "trigger": "По решению эмитента весь выпуск может быть погашен 10.01.2027 по номиналу с уведомлением за 15 дней.",
+              "date_rule": null,
+              "price_rule": null,
+              "notice_rule": null
+            }
+          ]
+        },
+        "quote": "9.4. По решению эмитента весь выпуск может быть погашен 10.01.2027 по номиналу с\nуведомлением за 15 дней.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 2,
+        "clause": "9.4",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      },
+      "guarantee_security": {
+        "code": "guarantee_security",
+        "value": null,
+        "quote": null,
+        "document_id": null,
+        "page": null,
+        "clause": null,
+        "status": "not_found",
+        "iss_value": null,
+        "confidence": null,
+        "source": {},
+        "not_found": true,
+        "evidence": [],
+        "reason": "not_in_documents",
+        "user_status": null,
+        "user_value": null
+      },
+      "cross_default": {
+        "code": "cross_default",
+        "value": null,
+        "quote": null,
+        "document_id": null,
+        "page": null,
+        "clause": null,
+        "status": "not_found",
+        "iss_value": null,
+        "confidence": null,
+        "source": {},
+        "not_found": true,
+        "evidence": [],
+        "reason": "not_in_documents",
+        "user_status": null,
+        "user_value": null
+      },
+      "issuer_restrictions": {
+        "code": "issuer_restrictions",
+        "value": null,
+        "quote": null,
+        "document_id": null,
+        "page": null,
+        "clause": null,
+        "status": "not_found",
+        "iss_value": null,
+        "confidence": null,
+        "source": {},
+        "not_found": true,
+        "evidence": [],
+        "reason": "not_in_documents",
+        "user_status": null,
+        "user_value": null
+      },
+      "offer_procedure": {
+        "code": "offer_procedure",
+        "value": {
+          "procedures": [
+            {
+              "offer_date": null,
+              "window_start": null,
+              "window_end": null,
+              "window_rule": null,
+              "via": null,
+              "submission": "Для участия в put-оферте владельцы предъявляют требования через депозитарий в течение 5 рабочих дней.",
+              "settlement_rule": null
+            }
+          ]
+        },
+        "quote": "9.8. Для участия в put-оферте владельцы предъявляют требования через депозитарий в течение 5\nрабочих дней.",
+        "document_id": "2924948e-12d5-5112-ba58-6c783956a616",
+        "page": 2,
+        "clause": "9.8",
+        "status": "extracted",
+        "iss_value": null,
+        "confidence": 1,
+        "source": {
+          "kind": "document"
+        },
+        "not_found": false,
+        "evidence": [],
+        "reason": null,
+        "user_status": null,
+        "user_value": null
+      }
+    },
+    "journal": {
+      "models": [],
+      "cost_usd": "0",
+      "duration_ms": 0,
+      "pages": 2,
+      "ocr_pages": 0
+    },
+    "evaluation_mode": "synthetic-oracle"
+  }
+]

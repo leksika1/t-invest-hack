@@ -1,7 +1,9 @@
+import { CouponRibbon } from "./CouponRibbon";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api, errorMessage } from "./api";
 import {
+  CouponBrief,
   ErrorNotice,
   ExternalLink,
   IssueHeader,
@@ -21,16 +23,77 @@ import {
 } from "./fields";
 import type { Card, CardField, DocumentInfo, Json, Review } from "./types";
 
+function FieldValue({
+  field,
+  variableCoupon = false,
+}: {
+  field: CardField;
+  variableCoupon?: boolean;
+}) {
+  if (
+    field.code === "offers" &&
+    Array.isArray(field.value?.events) &&
+    !field.value.events.length
+  )
+    return <span>Оферт нет по данным MOEX ISS</span>;
+  if (field.code === "coupon_rate" && field.value)
+    return (
+      <>
+        <CouponBrief
+          value={
+            field.source.kind === "moex_iss"
+              ? (field.iss_value ?? field.value)
+              : field.value
+          }
+        />
+        {variableCoupon && !field.value.formula && (
+          <p className="caption">
+            Будущие выплаты определяются по формуле (см. документы). ISS не
+            подтверждает формулу.
+          </p>
+        )}
+        <details>
+          <summary>Известные купоны и параметры ставки</summary>
+          <ValueView value={field.value} />
+        </details>
+      </>
+    );
+  const rows =
+    field.code === "coupon_schedule"
+      ? field.value?.payments
+      : field.code === "amortization"
+        ? field.value?.events
+        : null;
+  if (Array.isArray(rows) && rows.length > 6)
+    return (
+      <>
+        <p>
+          {rows.length}{" "}
+          {field.code === "coupon_schedule"
+            ? "купонных выплат"
+            : "платежей амортизации"}
+          {field.value?.frequency_per_year
+            ? `, ${field.value.frequency_per_year} в год`
+            : ""}
+        </p>
+        <ValueView value={rows} />
+      </>
+    );
+  return <ValueView value={field.value} />;
+}
+
 export function FieldCard({
   field,
   cardId,
   documents,
   onChange,
+  variableCoupon = false,
 }: {
   field: CardField;
   cardId: string;
   documents: DocumentInfo[];
   onChange: (field: CardField) => void;
+  variableCoupon?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Json>(
@@ -58,147 +121,154 @@ export function FieldCard({
   }
   const document = documents.find((d) => d.id === field.document_id);
   return (
-    <article
-      className={`panel field-card ${field.status === "mismatch_iss" ? "has-mismatch" : ""}`}
+    <div
+      className={`field-row status-${field.status} ${field.status === "mismatch_iss" ? "has-mismatch" : ""}`}
       aria-labelledby={"field-" + field.code}
     >
-      <div className="section-heading">
+      <dt className="field-title">
         <h3 id={"field-" + field.code}>{title}</h3>
-        <StatusBadge status={field.status} />
-      </div>
-      {field.reason_message && (
-        <p className="field-reason">{field.reason_message}</p>
-      )}
-      {field.status === "mismatch_iss" ? (
-        <div className="comparison">
-          <section>
-            <h4>В документе</h4>
-            <ValueView value={field.value} />
-          </section>
-          <section>
-            <h4>В MOEX ISS</h4>
-            <ValueView value={field.iss_value} />
-          </section>
+      </dt>
+      <dd className="field-content">
+        <div className="field-status">
+          <StatusBadge status={field.status} />
         </div>
-      ) : (
-        <ValueView value={field.value} />
-      )}
-      {field.source.kind === "moex_iss" ? (
-        <p className="source-line">
-          <ExternalLink url={field.source.url}>Источник: MOEX ISS</ExternalLink>{" "}
-          · Без сверки с документом
-        </p>
-      ) : (
-        field.document_id && (
+        {field.reason_message && (
+          <p className="field-reason">{field.reason_message}</p>
+        )}
+        {field.status === "mismatch_iss" ? (
+          <div className="comparison">
+            <section>
+              <h4>В документе</h4>
+              <FieldValue field={field} variableCoupon={variableCoupon} />
+            </section>
+            <section>
+              <h4>В MOEX ISS</h4>
+              <ValueView value={field.iss_value} />
+            </section>
+          </div>
+        ) : (
+          <FieldValue field={field} variableCoupon={variableCoupon} />
+        )}
+        {field.source.kind === "moex_iss" ? (
           <p className="source-line">
             <ExternalLink url={field.source.url}>
-              {field.source.name || document?.filename || "Документ"}
-            </ExternalLink>
-            {field.page ? `, стр. ${field.page}` : ""}
-            {field.clause ? `, п. ${field.clause}` : ""}
+              Источник: MOEX ISS
+            </ExternalLink>{" "}
+            ; Без сверки с документом
           </p>
-        )
-      )}
-      {(field.quote || field.evidence.length > 0) && (
-        <details className="quotes">
-          <summary>
-            Цитаты и источники
-            {field.evidence.length ? ` · ${field.evidence.length + 1}` : ""}
-          </summary>
-          {field.quote && <blockquote>{field.quote}</blockquote>}
-          {field.evidence.map((e, i) => (
-            <div key={i}>
-              <p className="caption">
-                {documents.find((d) => d.id === e.document_id)?.filename ||
-                  "Документ"}
-                , стр. {e.page}
-                {e.clause ? `, п. ${e.clause}` : ""}
-                {e.value_path
-                  ? ` · элемент ${Number(e.value_path.split("/").at(-1)) + 1}`
-                  : ""}
-              </p>
-              <blockquote>{e.quote}</blockquote>
-            </div>
-          ))}
-        </details>
-      )}
-      {field.user_status && (
-        <section className="human-review">
-          <StatusBadge status={field.user_status} />
-          {field.user_status === "corrected" && (
-            <>
-              <h4>Значение пользователя</h4>
-              <ValueView value={field.user_value} />
-              <p className="caption">
-                Исходный машинный результат сохранён выше.
-              </p>
-            </>
-          )}
-          {field.reviewed_at && (
-            <p className="caption">{formatDate(field.reviewed_at)}</p>
-          )}
-        </section>
-      )}
-      <div className="field-actions">
-        <button
-          type="button"
-          className="small secondary"
-          disabled={busy || field.value === null}
-          onClick={() => void save({ user_status: "confirmed" })}
-        >
-          Подтвердить
-        </button>
-        <button
-          type="button"
-          className="small secondary"
-          disabled={busy}
-          onClick={() => {
-            setDraft(
-              field.user_value ??
-                field.value ??
-                initialValue(editors[field.code]),
-            );
-            setEditing(!editing);
-            setError(null);
-          }}
-        >
-          {editing ? "Закрыть форму" : "Исправить"}
-        </button>
-        {busy && (
-          <span role="status" className="caption">
-            Сохранение…
-          </span>
+        ) : (
+          field.document_id && (
+            <p className="source-line">
+              <ExternalLink url={field.source.url}>
+                {field.source.name || document?.filename || "Документ"}
+              </ExternalLink>
+              {field.page ? `, стр. ${field.page}` : ""}
+              {field.clause ? `, п. ${field.clause}` : ""}
+            </p>
+          )
         )}
-      </div>
-      {editing && (
-        <form className="correction-form" onSubmit={correct}>
-          <p className="caption">
-            Введите проверенные данные. Они сохранятся как правка пользователя.
-          </p>
-          <fieldset disabled={busy}>
-            <ValueEditor
-              node={editors[field.code]}
-              value={draft}
-              onChange={setDraft}
-              title={title}
-            />
-            <div className="actions">
-              <button type="submit" className="small">
-                Сохранить исправление
-              </button>
-              <button
-                type="button"
-                className="small secondary"
-                onClick={() => setEditing(false)}
-              >
-                Отмена
-              </button>
-            </div>
-          </fieldset>
-        </form>
-      )}
-      <ErrorNotice message={error} />
-    </article>
+        {(field.quote || field.evidence.length > 0) && (
+          <details className="quotes">
+            <summary>
+              Цитаты и источники
+              {field.evidence.length ? `; ${field.evidence.length + 1}` : ""}
+            </summary>
+            {field.quote && <blockquote>{field.quote}</blockquote>}
+            {field.evidence.map((e, i) => (
+              <div key={i}>
+                <p className="caption">
+                  {documents.find((d) => d.id === e.document_id)?.filename ||
+                    "Документ"}
+                  , стр. {e.page}
+                  {e.clause ? `, п. ${e.clause}` : ""}
+                  {e.value_path
+                    ? `; элемент ${Number(e.value_path.split("/").at(-1)) + 1}`
+                    : ""}
+                </p>
+                <blockquote>{e.quote}</blockquote>
+              </div>
+            ))}
+          </details>
+        )}
+        {field.user_status && (
+          <section className="human-review">
+            <StatusBadge status={field.user_status} />
+            {field.user_status === "corrected" && (
+              <>
+                <h4>Значение пользователя</h4>
+                <ValueView value={field.user_value} />
+                <p className="caption">
+                  Исходный машинный результат сохранён выше.
+                </p>
+              </>
+            )}
+            {field.reviewed_at && (
+              <p className="caption">{formatDate(field.reviewed_at)}</p>
+            )}
+          </section>
+        )}
+        <div className="field-actions">
+          <button
+            type="button"
+            className="small secondary"
+            disabled={busy || field.value === null}
+            onClick={() => void save({ user_status: "confirmed" })}
+          >
+            Подтвердить
+          </button>
+          <button
+            type="button"
+            className="small secondary"
+            disabled={busy}
+            onClick={() => {
+              setDraft(
+                field.user_value ??
+                  field.value ??
+                  initialValue(editors[field.code]),
+              );
+              setEditing(!editing);
+              setError(null);
+            }}
+          >
+            {editing ? "Закрыть форму" : "Исправить"}
+          </button>
+          {busy && (
+            <span role="status" className="caption">
+              Сохранение…
+            </span>
+          )}
+        </div>
+        {editing && (
+          <form className="correction-form" onSubmit={correct}>
+            <p className="caption">
+              Введите проверенные данные. Они сохранятся как правка
+              пользователя.
+            </p>
+            <fieldset disabled={busy}>
+              <ValueEditor
+                node={editors[field.code]}
+                value={draft}
+                onChange={setDraft}
+                title={title}
+              />
+              <div className="actions">
+                <button type="submit" className="small">
+                  Сохранить исправление
+                </button>
+                <button
+                  type="button"
+                  className="small secondary"
+                  onClick={() => setEditing(false)}
+                >
+                  Отмена
+                </button>
+              </div>
+            </fieldset>
+          </form>
+        )}
+        <ErrorNotice message={error} />
+      </dd>
+    </div>
   );
 }
 
@@ -240,30 +310,58 @@ function Journal({ card }: { card: Card }) {
           </dd>
         </div>
       </dl>
-      {card.documents.map((d) => (
-        <div className="journal-document" key={d.id}>
-          <strong>{d.filename}</strong>
-          <p className="caption">
-            {d.enabled && d.status === "ready"
-              ? "Использован"
-              : "Не использован"}{" "}
-            · {d.pages} стр. · OCR {d.ocr_pages} ·{" "}
-            <StatusBadge status={d.status} />
-          </p>
-          {d.origins.map((origin, i) => (
-            <p className="caption" key={i}>
-              <ExternalLink url={origin.download_url || origin.source_url}>
-                {sourceName(origin.source)}
-              </ExternalLink>{" "}
-              · опубликовано:{" "}
-              {origin.published_at
-                ? formatDate(origin.published_at)
-                : "дата неизвестна"}{" "}
-              · получено {formatDate(origin.fetched_at)}
-            </p>
-          ))}
-        </div>
-      ))}
+      <div
+        className="table-scroll"
+        tabIndex={0}
+        role="region"
+        aria-label="Документы сборки"
+      >
+        <table>
+          <thead>
+            <tr>
+              <th>Документ</th>
+              <th>Использование</th>
+              <th>Страницы / OCR</th>
+              <th>Статус</th>
+              <th>Источники</th>
+            </tr>
+          </thead>
+          <tbody>
+            {card.documents.map((d) => (
+              <tr key={d.id}>
+                <td>{d.filename}</td>
+                <td>
+                  {d.enabled && d.status === "ready"
+                    ? "Использован"
+                    : "Не использован"}
+                </td>
+                <td>
+                  {d.pages} / {d.ocr_pages}
+                </td>
+                <td>
+                  <StatusBadge status={d.status} />
+                </td>
+                <td>
+                  {d.origins.map((origin, i) => (
+                    <p key={i}>
+                      <ExternalLink
+                        url={origin.download_url || origin.source_url}
+                      >
+                        {sourceName(origin.source)}
+                      </ExternalLink>
+                      <br />
+                      <span className="caption">
+                        Получено {formatDate(origin.fetched_at)}. Публикация:{" "}
+                        {formatDate(origin.published_at)}
+                      </span>
+                    </p>
+                  ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {!!j.warnings?.length && (
         <ul className="caption">
           {j.warnings.map((w, i) => (
@@ -343,11 +441,10 @@ export function CardPage({ id }: { id: string }) {
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">КАРТОЧКА ВЫПУСКА</p>
           <h1>{card ? card.isin : "Карточка облигации"}</h1>
           <p className="muted">
             {card
-              ? `Версия ${card.version} · ${formatDate(card.created_at)}`
+              ? `Версия ${card.version}; ${formatDate(card.created_at)}`
               : "Загрузка сохранённой карточки…"}
           </p>
         </div>
@@ -359,7 +456,7 @@ export function CardPage({ id }: { id: string }) {
           )}
           {card?.status === "ready" && (
             <button disabled={exporting} onClick={() => void download()}>
-              {exporting ? "Скачивание…" : "↓ Экспорт Markdown"}
+              {exporting ? "Скачивание…" : "Скачать Markdown"}
             </button>
           )}
         </div>
@@ -367,7 +464,22 @@ export function CardPage({ id }: { id: string }) {
       <ErrorNotice message={error} retry={() => setRevision((n) => n + 1)} />
       {card && (
         <>
-          <IssueHeader isin={card.isin} header={card.header} />
+          <IssueHeader
+            isin={card.isin}
+            header={card.header}
+            fields={
+              card.status === "ready"
+                ? Object.fromEntries(
+                    Object.entries(card.iss_fields).map(([key, field]) => [
+                      key,
+                      field?.source.kind === "moex_iss"
+                        ? (field.iss_value ?? field.value)
+                        : field?.value,
+                    ]),
+                  )
+                : undefined
+            }
+          />
           {card.status === "processing" && card.job_id && (
             <JobProgress
               key={card.job_id}
@@ -378,19 +490,18 @@ export function CardPage({ id }: { id: string }) {
           {card.status === "failed" && (
             <div className="notice danger" role="alert">
               Сборка не завершена. Проверьте журнал и документы, затем создайте
-              новую версию.<a href={"#/issue/" + card.isin}>Открыть выпуск →</a>
+              новую версию.<a href={"#/issue/" + card.isin}>Открыть выпуск</a>
             </div>
           )}
           {card.status === "ready" && (
             <>
-              <p className="notice neutral">
-                Машинный статус и проверка человеком показаны отдельно. При
-                расхождении сравните документ с данными биржи.
-              </p>
-              {(["iss_fields", "risk_fields"] as const).map((group, index) => (
+              <CouponRibbon
+                schedule={card.iss_fields.coupon_schedule?.value}
+                rate={card.iss_fields.coupon_rate?.value}
+              />
+              {(["iss_fields", "risk_fields"] as const).map((group) => (
                 <section className="field-group" key={group}>
                   <div className="group-heading">
-                    <span className="section-number">0{index + 1}</span>
                     <div>
                       <h2>
                         {group === "iss_fields"
@@ -399,22 +510,27 @@ export function CardPage({ id }: { id: string }) {
                       </h2>
                       <p className="caption">
                         {group === "iss_fields"
-                          ? "8 полей · расхождения требуют проверки"
-                          : "7 полей · отсутствие ответа не доказывает отсутствие условия"}
+                          ? "8 полей; расхождения требуют проверки"
+                          : "7 полей; отсутствие ответа не доказывает отсутствие условия"}
                       </p>
                     </div>
                   </div>
-                  {Object.keys(fieldTitles)
-                    .filter((code) => code in card[group])
-                    .map((code) => (
-                      <FieldCard
-                        key={code}
-                        field={card[group][code as CardField["code"]]!}
-                        cardId={id}
-                        documents={card.documents}
-                        onChange={change}
-                      />
-                    ))}
+                  <dl className="field-list">
+                    {Object.keys(fieldTitles)
+                      .filter((code) => code in card[group])
+                      .map((code) => (
+                        <FieldCard
+                          key={code}
+                          field={card[group][code as CardField["code"]]!}
+                          cardId={id}
+                          documents={card.documents}
+                          onChange={change}
+                          variableCoupon={["floating", "variable"].includes(
+                            String(card.iss_fields.coupon_type?.value?.type),
+                          )}
+                        />
+                      ))}
+                  </dl>
                 </section>
               ))}
             </>

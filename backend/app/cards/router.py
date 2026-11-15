@@ -39,8 +39,12 @@ def list_cards(isin: str | None = None, limit: int = Query(20, ge=1, le=100), of
             raise HTTPException(422, detail='Некорректный ISIN')
         statement = statement.where(Issue.isin == normalized)
     total = session.scalar(select(func.count()).select_from(statement.subquery()))
-    rows = session.scalars(statement.order_by(Card.created_at.desc(), Card.id.desc()).limit(limit).offset(offset))
-    return {'items': [{'id': c.id, 'isin': session.get(Issue, c.issue_id).isin, 'version': c.version, 'status': c.status, 'created_at': c.created_at, 'updated_at': c.updated_at} for c in rows],
+    rows = list(session.scalars(statement.order_by(Card.created_at.desc(), Card.id.desc()).limit(limit).offset(offset)))
+    statuses = {}
+    if rows:
+        for card_id, status, count in session.execute(select(CardField.card_id, CardField.status, func.count()).where(CardField.card_id.in_([c.id for c in rows])).group_by(CardField.card_id, CardField.status)):
+            statuses.setdefault(card_id, {})[status] = count
+    return {'items': [{'id': c.id, 'isin': session.get(Issue, c.issue_id).isin, 'header': c.input_snapshot.get('header', {}), 'field_statuses': statuses.get(c.id, {}), 'version': c.version, 'status': c.status, 'created_at': c.created_at, 'updated_at': c.updated_at} for c in rows],
             'total': total, 'limit': limit, 'offset': offset}
 
 

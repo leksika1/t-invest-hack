@@ -1,3 +1,4 @@
+import { Rosette, GuillocheBorder } from "./art/guilloche";
 import { useEffect, useId, useState } from "react";
 import type { FormEvent } from "react";
 import { errorMessage, safeUrl } from "./api";
@@ -22,8 +23,8 @@ const statuses: Record<string, [string, string, string]> = {
   extracted: ["Извлечено", "info", "◆"],
   not_found: ["Не найдено", "neutral", "—"],
   needs_review: ["Нужна проверка", "warn", "!"],
-  confirmed: ["Подтверждено человеком", "good", "✓"],
-  corrected: ["Исправлено человеком", "info", "✎"],
+  confirmed: ["Подтверждено человеком", "human", "✓"],
+  corrected: ["Исправлено человеком", "human", "✎"],
   ready: ["Готово", "good", "✓"],
   succeeded: ["Завершено", "good", "✓"],
   failed: ["Ошибка", "danger", "!"],
@@ -126,7 +127,7 @@ export function IsinForm({
           aria-describedby={id + "-hint"}
         />
         <button disabled={busy} type="submit">
-          {busy ? "Загрузка…" : label} <span aria-hidden="true">→</span>
+          {busy ? "Загрузка…" : label}
         </button>
       </div>
       <p id={id + "-hint"} className={error ? "error-text" : "muted"}>
@@ -150,16 +151,20 @@ export function IssueHeader({
 }) {
   return (
     <section className="panel issue-header" aria-label="Параметры выпуска">
-      <div className="eyebrow">
+      <GuillocheBorder seed={isin} />
+      <Rosette seed={isin} className="issue-rosette" />
+      <div className="issue-identifier">
         {isin}
         {header.listing_level
-          ? ` · Уровень листинга ${header.listing_level}`
+          ? ` / Уровень листинга ${header.listing_level}`
           : ""}
       </div>
       <h2>{header.name || header.short_name || "Выпуск облигаций"}</h2>
       <p className="issuer">
         {header.issuer || "Эмитент не определён"}{" "}
-        <span className="muted">· ИНН {header.inn || "не указан"}</span>
+        <span className="muted issuer-inn">
+          ИНН {header.inn || "не указан"}
+        </span>
       </p>
       {fields && (
         <dl className="metrics">
@@ -173,7 +178,14 @@ export function IssueHeader({
             <div key={key}>
               <dt>{fieldTitles[key as keyof typeof fieldTitles]}</dt>
               <dd>
-                {key === "coupon_rate" ? (
+                {key === "coupon_type" && isObject(fields[key]) ? (
+                  <>
+                    <ValueView value={fields[key].type} />
+                    {fields[key].inferred && (
+                      <small className="caption"> (по графику ISS)</small>
+                    )}
+                  </>
+                ) : key === "coupon_rate" ? (
                   <CouponBrief value={fields[key]} />
                 ) : (
                   <ValueView value={fields[key] ?? null} compact />
@@ -189,29 +201,43 @@ export function IssueHeader({
     </section>
   );
 }
-function CouponBrief({ value }: { value: Json | undefined }) {
+export function CouponBrief({ value }: { value: Json | undefined }) {
   if (!isObject(value)) return <span className="muted">Нет данных</span>;
   if (isObject(value.formula) && value.formula.text)
     return <span>{String(value.formula.text)}</span>;
-  const first = Array.isArray(value.periods)
-    ? value.periods.find(
-        (p) => isObject(p) && (p.rate_percent != null || p.amount != null),
-      )
-    : null;
-  if (!isObject(first)) return <span className="muted">Нет данных</span>;
+  if (value.current_rate_percent != null)
+    return (
+      <span>
+        {String(value.current_rate_percent)}%{" "}
+        <small className="caption">(текущая ставка ISS)</small>
+      </span>
+    );
+  const periods = Array.isArray(value.periods)
+    ? value.periods.filter(isObject)
+    : [];
+  const known = periods.filter(
+    (p) => p.rate_percent != null || p.amount != null,
+  );
+  const last = known.at(-1);
   return (
     <span>
-      {first.rate_percent != null
-        ? `${first.rate_percent}%`
-        : String(first.amount)}
-      <small className="caption">
-        {" "}
-        · купон {String(first.from)}
-        {first.to !== first.from ? `–${first.to}` : ""}
-      </small>
+      {last ? (
+        <>
+          {last.rate_percent != null
+            ? `${last.rate_percent}%`
+            : `${last.amount} ₽`}
+          <small className="caption">
+            {" "}
+            (последний известный купон № {String(last.to)})
+          </small>
+        </>
+      ) : (
+        <span className="muted">Ставка пока не определена</span>
+      )}
     </span>
   );
 }
+
 const stepLabels: Record<string, string> = {
   queued: "Ожидание воркера",
   resolve_iss: "Обновление MOEX ISS",
@@ -277,7 +303,7 @@ export function JobProgress({
       <p className="caption" role="status">
         {job?.progress ?? 0}%
         {job?.total_fields
-          ? ` · Полей обработано: ${job.processed_fields ?? 0} из ${job.total_fields}`
+          ? `; Полей обработано: ${job.processed_fields ?? 0} из ${job.total_fields}`
           : ""}
         . Можно закрыть страницу: обработка продолжится на сервере.
       </p>
@@ -305,13 +331,22 @@ export function JobProgress({
 export function ValueView({
   value,
   compact = false,
+  expanded = false,
 }: {
+  expanded?: boolean;
   value: Json | undefined;
   compact?: boolean;
 }) {
   if (value == null) return <span className="muted">Нет данных</span>;
   if (Array.isArray(value)) {
     if (!value.length) return <span className="muted">Список пуст</span>;
+    if (value.length > 6 && !expanded)
+      return (
+        <details className="schedule-details">
+          <summary>Показать полный график ({value.length} записей)</summary>
+          <ValueView value={value} expanded />
+        </details>
+      );
     if (value.every(isObject)) {
       const keys = [
         ...new Set(value.flatMap((row) => Object.keys(row))),
@@ -365,7 +400,9 @@ export function ValueView({
       );
     if (Object.keys(value).length === 1 && "date" in value)
       return <span>{formatDate(String(value.date))}</span>;
-    const entries = Object.entries(value).filter(([, item]) => item != null);
+    const entries = Object.entries(value).filter(
+      ([key, item]) => item != null && key !== "inferred",
+    );
     return (
       <dl className={compact ? "value-list compact" : "value-list"}>
         {entries.map(([key, item]) => (

@@ -45,6 +45,10 @@ def project_iss(code, value):
     if value is None:
         return None
     value = json.loads(json.dumps(value))
+    if code == 'coupon_type':
+        value.pop('inferred', None)
+    if code == 'coupon_rate':
+        value.pop('current_rate_percent', None)
     if code == 'offers':
         value['events'] = [{k: item.get(k) for k in ('date', 'type', 'price_percent')} for item in value.get('events', [])]
     try:
@@ -88,6 +92,8 @@ def comparable(code, value):
 
 
 def compare_iss(code, value, iss_value):
+    if code == 'coupon_type' and iss_value and iss_value.get('inferred'):
+        return 'needs_review'
     projected = project_iss(code, iss_value)
     if not comparable(code, projected) or not comparable(code, value):
         return 'needs_review' if projected is not None else 'extracted'

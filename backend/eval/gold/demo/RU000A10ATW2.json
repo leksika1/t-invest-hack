@@ -1,0 +1,1275 @@
+{
+  "schema_version": "1",
+  "isin": "RU000A10ATW2",
+  "kind": "real",
+  "as_of": "2026-11-15",
+  "issuer_group": "7826705374",
+  "documents": [
+    {
+      "document_id": "8c217ef7-40a6-556b-85c4-fde17084e977",
+      "filename": "4 Решение о выпуске ценных бумаг 4B02-15-36442-R-001P ПАО Московская биржа 04.02.2025 05.02.2025 05.02.2025 Загрузить (171,44 Кб)",
+      "path": "data/demo/RU000A10ATW2/a32112916d7ad6935b3e8d5f66fbffa3e09cd05180634fa236d4883af5cd6a99.pdf",
+      "sha256": "a32112916d7ad6935b3e8d5f66fbffa3e09cd05180634fa236d4883af5cd6a99",
+      "enabled": true,
+      "type": "decision",
+      "origins": [
+        {
+          "source": "prime",
+          "title": "4 Решение о выпуске ценных бумаг 4B02-15-36442-R-001P ПАО Московская биржа 04.02.2025 05.02.2025 05.02.2025 Загрузить (171,44 Кб)",
+          "source_url": "https://disclosure.1prime.ru/Portal/Default.aspx?emId=7826705374",
+          "download_url": "https://disclosure.1prime.ru/Portal/GetDocument.aspx?emId=7826705374&docId=4cb600a4761e4316866f903828009967",
+          "published_at": "2025-02-05",
+          "type": "decision",
+          "requires_review": false,
+          "fetched_at": "2026-11-15T07:17:57.120273+00:00"
+        }
+      ],
+      "pages_file": "data/demo/RU000A10ATW2/a32112916d7ad6935b3e8d5f66fbffa3e09cd05180634fa236d4883af5cd6a99.pages.json",
+      "pages_sha256": "f2dc1bb2fc9f8892e71abd2888d745e252085fdc3ce44e9f432c5cf1e1cdda85"
+    },
+    {
+      "document_id": "f69cb552-d656-5ef5-85f8-34e99a33ec2a",
+      "filename": "11 Документ, содержащий условия размещения ценных бумаг 4B02-15-36442-R-001P ПАО Московская биржа 04.02.2025 25.02.2025 25.02.2025 Загрузить (190,12 Кб)",
+      "path": "data/demo/RU000A10ATW2/349d7058e81dd6f99e063b65c4cabb1a5806a0091f27ee710a3d34ffa751467f.pdf",
+      "sha256": "349d7058e81dd6f99e063b65c4cabb1a5806a0091f27ee710a3d34ffa751467f",
+      "enabled": true,
+      "type": "decision",
+      "origins": [
+        {
+          "source": "prime",
+          "title": "11 Документ, содержащий условия размещения ценных бумаг 4B02-15-36442-R-001P ПАО Московская биржа 04.02.2025 25.02.2025 25.02.2025 Загрузить (190,12 Кб)",
+          "source_url": "https://disclosure.1prime.ru/Portal/Default.aspx?emId=7826705374",
+          "download_url": "https://disclosure.1prime.ru/Portal/GetDocument.aspx?emId=7826705374&docId=03336aefd35d4dfa82a9de50d260e22d",
+          "published_at": "2025-02-25",
+          "type": "decision",
+          "requires_review": false,
+          "fetched_at": "2026-11-15T07:46:07.407678+00:00"
+        }
+      ],
+      "pages_file": "data/demo/RU000A10ATW2/349d7058e81dd6f99e063b65c4cabb1a5806a0091f27ee710a3d34ffa751467f.pages.json",
+      "pages_sha256": "3e5578d112e026d26eb7a782b1b721d043fd26581c448b071ac3adf35cfb0696"
+    }
+  ],
+  "iss_fixture": "data/demo/RU000A10ATW2/iss.json",
+  "fields": {
+    "face_value": {
+      "value": {
+        "amount": "1000",
+        "currency": "RUB"
+      },
+      "iss_value": {
+        "amount": "1000",
+        "currency": "RUB"
+      },
+      "not_found": false,
+      "unscorable": false,
+      "reason": null,
+      "expected_status": "verified_iss",
+      "quote": "Номинальная стоимость каждой ценной бумаги выпуска: 1 000 (Одна тысяча) российских рублей.",
+      "document_id": "8c217ef7-40a6-556b-85c4-fde17084e977",
+      "page": 2,
+      "clause": "3",
+      "evidence": []
+    },
+    "placement_date": {
+      "value": {
+        "date": "2025-02-28"
+      },
+      "iss_value": {
+        "date": "2025-02-28"
+      },
+      "not_found": false,
+      "unscorable": false,
+      "reason": null,
+      "evidence": [],
+      "quote": "Дата начала размещения Биржевых облигаций: «28» февраля 2025 года.",
+      "document_id": "f69cb552-d656-5ef5-85f8-34e99a33ec2a",
+      "page": 2,
+      "clause": "3",
+      "expected_status": "verified_iss"
+    },
+    "maturity_date": {
+      "value": {
+        "date": "2028-02-13"
+      },
+      "iss_value": {
+        "date": "2028-02-13"
+      },
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: сверить документное значение с ISS"
+    },
+    "coupon_type": {
+      "value": null,
+      "iss_value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: в зафиксированном снимке нет явно размеченного юридического типа купона; установить по полному комплекту PDF."
+    },
+    "coupon_rate": {
+      "value": {
+        "periods": [
+          {
+            "from": 1,
+            "to": 1,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 2,
+            "to": 2,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 3,
+            "to": 3,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 4,
+            "to": 4,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 5,
+            "to": 5,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 6,
+            "to": 6,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 7,
+            "to": 7,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 8,
+            "to": 8,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 9,
+            "to": 9,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 10,
+            "to": 10,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 11,
+            "to": 11,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 12,
+            "to": 12,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 13,
+            "to": 13,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 14,
+            "to": 14,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 15,
+            "to": 15,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 16,
+            "to": 16,
+            "rate_percent": "23.7",
+            "amount": "17.04"
+          },
+          {
+            "from": 17,
+            "to": 17,
+            "rate_percent": "23.7",
+            "amount": "17.04"
+          },
+          {
+            "from": 18,
+            "to": 18,
+            "rate_percent": "23.7",
+            "amount": "17.04"
+          },
+          {
+            "from": 19,
+            "to": 19,
+            "rate_percent": "23.7",
+            "amount": "14.61"
+          },
+          {
+            "from": 20,
+            "to": 20,
+            "rate_percent": "23.7",
+            "amount": "14.61"
+          },
+          {
+            "from": 21,
+            "to": 21,
+            "rate_percent": "23.7",
+            "amount": "14.61"
+          },
+          {
+            "from": 22,
+            "to": 22,
+            "rate_percent": "23.7",
+            "amount": "12.17"
+          },
+          {
+            "from": 23,
+            "to": 23,
+            "rate_percent": "23.7",
+            "amount": "12.17"
+          },
+          {
+            "from": 24,
+            "to": 24,
+            "rate_percent": "23.7",
+            "amount": "12.17"
+          },
+          {
+            "from": 25,
+            "to": 25,
+            "rate_percent": "23.7",
+            "amount": "9.74"
+          },
+          {
+            "from": 26,
+            "to": 26,
+            "rate_percent": "23.7",
+            "amount": "9.74"
+          },
+          {
+            "from": 27,
+            "to": 27,
+            "rate_percent": "23.7",
+            "amount": "9.74"
+          },
+          {
+            "from": 28,
+            "to": 28,
+            "rate_percent": "23.7",
+            "amount": "7.3"
+          },
+          {
+            "from": 29,
+            "to": 29,
+            "rate_percent": "23.7",
+            "amount": "7.3"
+          },
+          {
+            "from": 30,
+            "to": 30,
+            "rate_percent": "23.7",
+            "amount": "7.3"
+          },
+          {
+            "from": 31,
+            "to": 31,
+            "rate_percent": "23.7",
+            "amount": "4.87"
+          },
+          {
+            "from": 32,
+            "to": 32,
+            "rate_percent": "23.7",
+            "amount": "4.87"
+          },
+          {
+            "from": 33,
+            "to": 33,
+            "rate_percent": "23.7",
+            "amount": "4.87"
+          },
+          {
+            "from": 34,
+            "to": 34,
+            "rate_percent": "23.7",
+            "amount": "2.43"
+          },
+          {
+            "from": 35,
+            "to": 35,
+            "rate_percent": "23.7",
+            "amount": "2.43"
+          },
+          {
+            "from": 36,
+            "to": 36,
+            "rate_percent": "23.7",
+            "amount": "2.43"
+          }
+        ],
+        "formula": null
+      },
+      "iss_value": {
+        "periods": [
+          {
+            "from": 1,
+            "to": 1,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 2,
+            "to": 2,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 3,
+            "to": 3,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 4,
+            "to": 4,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 5,
+            "to": 5,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 6,
+            "to": 6,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 7,
+            "to": 7,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 8,
+            "to": 8,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 9,
+            "to": 9,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 10,
+            "to": 10,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 11,
+            "to": 11,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 12,
+            "to": 12,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 13,
+            "to": 13,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 14,
+            "to": 14,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 15,
+            "to": 15,
+            "rate_percent": "23.7",
+            "amount": "19.48"
+          },
+          {
+            "from": 16,
+            "to": 16,
+            "rate_percent": "23.7",
+            "amount": "17.04"
+          },
+          {
+            "from": 17,
+            "to": 17,
+            "rate_percent": "23.7",
+            "amount": "17.04"
+          },
+          {
+            "from": 18,
+            "to": 18,
+            "rate_percent": "23.7",
+            "amount": "17.04"
+          },
+          {
+            "from": 19,
+            "to": 19,
+            "rate_percent": "23.7",
+            "amount": "14.61"
+          },
+          {
+            "from": 20,
+            "to": 20,
+            "rate_percent": "23.7",
+            "amount": "14.61"
+          },
+          {
+            "from": 21,
+            "to": 21,
+            "rate_percent": "23.7",
+            "amount": "14.61"
+          },
+          {
+            "from": 22,
+            "to": 22,
+            "rate_percent": "23.7",
+            "amount": "12.17"
+          },
+          {
+            "from": 23,
+            "to": 23,
+            "rate_percent": "23.7",
+            "amount": "12.17"
+          },
+          {
+            "from": 24,
+            "to": 24,
+            "rate_percent": "23.7",
+            "amount": "12.17"
+          },
+          {
+            "from": 25,
+            "to": 25,
+            "rate_percent": "23.7",
+            "amount": "9.74"
+          },
+          {
+            "from": 26,
+            "to": 26,
+            "rate_percent": "23.7",
+            "amount": "9.74"
+          },
+          {
+            "from": 27,
+            "to": 27,
+            "rate_percent": "23.7",
+            "amount": "9.74"
+          },
+          {
+            "from": 28,
+            "to": 28,
+            "rate_percent": "23.7",
+            "amount": "7.3"
+          },
+          {
+            "from": 29,
+            "to": 29,
+            "rate_percent": "23.7",
+            "amount": "7.3"
+          },
+          {
+            "from": 30,
+            "to": 30,
+            "rate_percent": "23.7",
+            "amount": "7.3"
+          },
+          {
+            "from": 31,
+            "to": 31,
+            "rate_percent": "23.7",
+            "amount": "4.87"
+          },
+          {
+            "from": 32,
+            "to": 32,
+            "rate_percent": "23.7",
+            "amount": "4.87"
+          },
+          {
+            "from": 33,
+            "to": 33,
+            "rate_percent": "23.7",
+            "amount": "4.87"
+          },
+          {
+            "from": 34,
+            "to": 34,
+            "rate_percent": "23.7",
+            "amount": "2.43"
+          },
+          {
+            "from": 35,
+            "to": 35,
+            "rate_percent": "23.7",
+            "amount": "2.43"
+          },
+          {
+            "from": 36,
+            "to": 36,
+            "rate_percent": "23.7",
+            "amount": "2.43"
+          }
+        ],
+        "formula": null
+      },
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: сверить документное значение с ISS"
+    },
+    "coupon_schedule": {
+      "value": {
+        "frequency_per_year": 12,
+        "period_days": null,
+        "payments": [
+          {
+            "number": 1,
+            "start": "2025-02-28",
+            "end": "2025-03-30",
+            "payment_date": "2025-03-30"
+          },
+          {
+            "number": 2,
+            "start": "2025-03-30",
+            "end": "2025-04-29",
+            "payment_date": "2025-04-29"
+          },
+          {
+            "number": 3,
+            "start": "2025-04-29",
+            "end": "2025-05-29",
+            "payment_date": "2025-05-29"
+          },
+          {
+            "number": 4,
+            "start": "2025-05-29",
+            "end": "2025-06-28",
+            "payment_date": "2025-06-28"
+          },
+          {
+            "number": 5,
+            "start": "2025-06-28",
+            "end": "2025-07-28",
+            "payment_date": "2025-07-28"
+          },
+          {
+            "number": 6,
+            "start": "2025-07-28",
+            "end": "2025-08-27",
+            "payment_date": "2025-08-27"
+          },
+          {
+            "number": 7,
+            "start": "2025-08-27",
+            "end": "2025-09-26",
+            "payment_date": "2025-09-26"
+          },
+          {
+            "number": 8,
+            "start": "2025-09-26",
+            "end": "2025-10-26",
+            "payment_date": "2025-10-26"
+          },
+          {
+            "number": 9,
+            "start": "2025-10-26",
+            "end": "2025-11-25",
+            "payment_date": "2025-11-25"
+          },
+          {
+            "number": 10,
+            "start": "2025-11-25",
+            "end": "2025-12-25",
+            "payment_date": "2025-12-25"
+          },
+          {
+            "number": 11,
+            "start": "2025-12-25",
+            "end": "2026-01-24",
+            "payment_date": "2026-01-24"
+          },
+          {
+            "number": 12,
+            "start": "2026-01-24",
+            "end": "2026-02-23",
+            "payment_date": "2026-02-23"
+          },
+          {
+            "number": 13,
+            "start": "2026-02-23",
+            "end": "2026-03-25",
+            "payment_date": "2026-03-25"
+          },
+          {
+            "number": 14,
+            "start": "2026-03-25",
+            "end": "2026-04-24",
+            "payment_date": "2026-04-24"
+          },
+          {
+            "number": 15,
+            "start": "2026-04-24",
+            "end": "2026-05-24",
+            "payment_date": "2026-05-24"
+          },
+          {
+            "number": 16,
+            "start": "2026-05-24",
+            "end": "2026-06-23",
+            "payment_date": "2026-06-23"
+          },
+          {
+            "number": 17,
+            "start": "2026-06-23",
+            "end": "2026-07-23",
+            "payment_date": "2026-07-23"
+          },
+          {
+            "number": 18,
+            "start": "2026-07-23",
+            "end": "2026-08-22",
+            "payment_date": "2026-08-22"
+          },
+          {
+            "number": 19,
+            "start": "2026-08-22",
+            "end": "2026-09-21",
+            "payment_date": "2026-09-21"
+          },
+          {
+            "number": 20,
+            "start": "2026-09-21",
+            "end": "2026-10-21",
+            "payment_date": "2026-10-21"
+          },
+          {
+            "number": 21,
+            "start": "2026-10-21",
+            "end": "2026-11-20",
+            "payment_date": "2026-11-20"
+          },
+          {
+            "number": 22,
+            "start": "2026-11-20",
+            "end": "2026-12-20",
+            "payment_date": "2026-12-20"
+          },
+          {
+            "number": 23,
+            "start": "2026-12-20",
+            "end": "2027-01-19",
+            "payment_date": "2027-01-19"
+          },
+          {
+            "number": 24,
+            "start": "2027-01-19",
+            "end": "2027-02-18",
+            "payment_date": "2027-02-18"
+          },
+          {
+            "number": 25,
+            "start": "2027-02-18",
+            "end": "2027-03-20",
+            "payment_date": "2027-03-20"
+          },
+          {
+            "number": 26,
+            "start": "2027-03-20",
+            "end": "2027-04-19",
+            "payment_date": "2027-04-19"
+          },
+          {
+            "number": 27,
+            "start": "2027-04-19",
+            "end": "2027-05-19",
+            "payment_date": "2027-05-19"
+          },
+          {
+            "number": 28,
+            "start": "2027-05-19",
+            "end": "2027-06-18",
+            "payment_date": "2027-06-18"
+          },
+          {
+            "number": 29,
+            "start": "2027-06-18",
+            "end": "2027-07-18",
+            "payment_date": "2027-07-18"
+          },
+          {
+            "number": 30,
+            "start": "2027-07-18",
+            "end": "2027-08-17",
+            "payment_date": "2027-08-17"
+          },
+          {
+            "number": 31,
+            "start": "2027-08-17",
+            "end": "2027-09-16",
+            "payment_date": "2027-09-16"
+          },
+          {
+            "number": 32,
+            "start": "2027-09-16",
+            "end": "2027-10-16",
+            "payment_date": "2027-10-16"
+          },
+          {
+            "number": 33,
+            "start": "2027-10-16",
+            "end": "2027-11-15",
+            "payment_date": "2027-11-15"
+          },
+          {
+            "number": 34,
+            "start": "2027-11-15",
+            "end": "2027-12-15",
+            "payment_date": "2027-12-15"
+          },
+          {
+            "number": 35,
+            "start": "2027-12-15",
+            "end": "2028-01-14",
+            "payment_date": "2028-01-14"
+          },
+          {
+            "number": 36,
+            "start": "2028-01-14",
+            "end": "2028-02-13",
+            "payment_date": "2028-02-13"
+          }
+        ]
+      },
+      "iss_value": {
+        "frequency_per_year": 12,
+        "period_days": null,
+        "payments": [
+          {
+            "number": 1,
+            "start": "2025-02-28",
+            "end": "2025-03-30",
+            "payment_date": "2025-03-30"
+          },
+          {
+            "number": 2,
+            "start": "2025-03-30",
+            "end": "2025-04-29",
+            "payment_date": "2025-04-29"
+          },
+          {
+            "number": 3,
+            "start": "2025-04-29",
+            "end": "2025-05-29",
+            "payment_date": "2025-05-29"
+          },
+          {
+            "number": 4,
+            "start": "2025-05-29",
+            "end": "2025-06-28",
+            "payment_date": "2025-06-28"
+          },
+          {
+            "number": 5,
+            "start": "2025-06-28",
+            "end": "2025-07-28",
+            "payment_date": "2025-07-28"
+          },
+          {
+            "number": 6,
+            "start": "2025-07-28",
+            "end": "2025-08-27",
+            "payment_date": "2025-08-27"
+          },
+          {
+            "number": 7,
+            "start": "2025-08-27",
+            "end": "2025-09-26",
+            "payment_date": "2025-09-26"
+          },
+          {
+            "number": 8,
+            "start": "2025-09-26",
+            "end": "2025-10-26",
+            "payment_date": "2025-10-26"
+          },
+          {
+            "number": 9,
+            "start": "2025-10-26",
+            "end": "2025-11-25",
+            "payment_date": "2025-11-25"
+          },
+          {
+            "number": 10,
+            "start": "2025-11-25",
+            "end": "2025-12-25",
+            "payment_date": "2025-12-25"
+          },
+          {
+            "number": 11,
+            "start": "2025-12-25",
+            "end": "2026-01-24",
+            "payment_date": "2026-01-24"
+          },
+          {
+            "number": 12,
+            "start": "2026-01-24",
+            "end": "2026-02-23",
+            "payment_date": "2026-02-23"
+          },
+          {
+            "number": 13,
+            "start": "2026-02-23",
+            "end": "2026-03-25",
+            "payment_date": "2026-03-25"
+          },
+          {
+            "number": 14,
+            "start": "2026-03-25",
+            "end": "2026-04-24",
+            "payment_date": "2026-04-24"
+          },
+          {
+            "number": 15,
+            "start": "2026-04-24",
+            "end": "2026-05-24",
+            "payment_date": "2026-05-24"
+          },
+          {
+            "number": 16,
+            "start": "2026-05-24",
+            "end": "2026-06-23",
+            "payment_date": "2026-06-23"
+          },
+          {
+            "number": 17,
+            "start": "2026-06-23",
+            "end": "2026-07-23",
+            "payment_date": "2026-07-23"
+          },
+          {
+            "number": 18,
+            "start": "2026-07-23",
+            "end": "2026-08-22",
+            "payment_date": "2026-08-22"
+          },
+          {
+            "number": 19,
+            "start": "2026-08-22",
+            "end": "2026-09-21",
+            "payment_date": "2026-09-21"
+          },
+          {
+            "number": 20,
+            "start": "2026-09-21",
+            "end": "2026-10-21",
+            "payment_date": "2026-10-21"
+          },
+          {
+            "number": 21,
+            "start": "2026-10-21",
+            "end": "2026-11-20",
+            "payment_date": "2026-11-20"
+          },
+          {
+            "number": 22,
+            "start": "2026-11-20",
+            "end": "2026-12-20",
+            "payment_date": "2026-12-20"
+          },
+          {
+            "number": 23,
+            "start": "2026-12-20",
+            "end": "2027-01-19",
+            "payment_date": "2027-01-19"
+          },
+          {
+            "number": 24,
+            "start": "2027-01-19",
+            "end": "2027-02-18",
+            "payment_date": "2027-02-18"
+          },
+          {
+            "number": 25,
+            "start": "2027-02-18",
+            "end": "2027-03-20",
+            "payment_date": "2027-03-20"
+          },
+          {
+            "number": 26,
+            "start": "2027-03-20",
+            "end": "2027-04-19",
+            "payment_date": "2027-04-19"
+          },
+          {
+            "number": 27,
+            "start": "2027-04-19",
+            "end": "2027-05-19",
+            "payment_date": "2027-05-19"
+          },
+          {
+            "number": 28,
+            "start": "2027-05-19",
+            "end": "2027-06-18",
+            "payment_date": "2027-06-18"
+          },
+          {
+            "number": 29,
+            "start": "2027-06-18",
+            "end": "2027-07-18",
+            "payment_date": "2027-07-18"
+          },
+          {
+            "number": 30,
+            "start": "2027-07-18",
+            "end": "2027-08-17",
+            "payment_date": "2027-08-17"
+          },
+          {
+            "number": 31,
+            "start": "2027-08-17",
+            "end": "2027-09-16",
+            "payment_date": "2027-09-16"
+          },
+          {
+            "number": 32,
+            "start": "2027-09-16",
+            "end": "2027-10-16",
+            "payment_date": "2027-10-16"
+          },
+          {
+            "number": 33,
+            "start": "2027-10-16",
+            "end": "2027-11-15",
+            "payment_date": "2027-11-15"
+          },
+          {
+            "number": 34,
+            "start": "2027-11-15",
+            "end": "2027-12-15",
+            "payment_date": "2027-12-15"
+          },
+          {
+            "number": 35,
+            "start": "2027-12-15",
+            "end": "2028-01-14",
+            "payment_date": "2028-01-14"
+          },
+          {
+            "number": 36,
+            "start": "2028-01-14",
+            "end": "2028-02-13",
+            "payment_date": "2028-02-13"
+          }
+        ]
+      },
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: сверить документное значение с ISS"
+    },
+    "offers": {
+      "value": null,
+      "iss_value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: в зафиксированном ISS snapshot нет событий оферты; это не доказывает отсутствие оферты в документах."
+    },
+    "amortization": {
+      "value": {
+        "events": [
+          {
+            "date": "2026-05-24",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2026-08-22",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2026-11-20",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2027-02-18",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2027-05-19",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2027-08-17",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2027-11-15",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2028-02-13",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          }
+        ]
+      },
+      "iss_value": {
+        "events": [
+          {
+            "date": "2026-05-24",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2026-08-22",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2026-11-20",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2027-02-18",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2027-05-19",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2027-08-17",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2027-11-15",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          },
+          {
+            "date": "2028-02-13",
+            "amount": "125",
+            "percent": "12.5",
+            "percent_base": "initial_face_value"
+          }
+        ]
+      },
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: сверить документное значение с ISS"
+    },
+    "covenants": {
+      "value": null,
+      "iss_value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: разметить условие по PDF и проверить полноту комплекта"
+    },
+    "holder_early_redemption": {
+      "value": {
+        "grounds": [
+          {
+            "trigger": "Делистинг Биржевых облигаций на всех биржах, осуществивших их допуск к организованным торгам.",
+            "deadline": null,
+            "exceptions": null
+          }
+        ]
+      },
+      "iss_value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "Подтверждено одно основание; TODO: п. 9.5.1 Программы и остальные основания/сроки.",
+      "expected_status": "extracted",
+      "quote": "Владельцы Биржевых облигаций вправе предъявить их к досрочному погашению в случае делистинга Биржевых облигаций на всех биржах, осуществивших их допуск к организованным торгам.",
+      "document_id": "8c217ef7-40a6-556b-85c4-fde17084e977",
+      "page": 7,
+      "clause": "5.6.1",
+      "evidence": [],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "draft-holder_early_redemption-0",
+          "category": "early_redemption"
+        }
+      ]
+    },
+    "issuer_call_option": {
+      "value": {
+        "conditions": [
+          {
+            "trigger": "Возможность досрочного, в том числе частичного, погашения по усмотрению Эмитента.",
+            "date_rule": "В Условиях размещения указано: дата выплаты купонного дохода за 36-й купонный период — 13 февраля 2028 года.",
+            "price_rule": "Непогашенная часть номинальной стоимости; порядок установлен п. 9.5.2 Программы и п. 5.6 Решения о выпуске.",
+            "notice_rule": null
+          }
+        ]
+      },
+      "iss_value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "Подтверждены дата 13.02.2028 и база цены из Условий размещения; TODO: проверить Программу, изменения и порядок уведомления.",
+      "expected_status": "extracted",
+      "quote": "Предусмотрена возможность досрочного погашения (частичного досрочного погашения) Биржевых облигаций по усмотрению Эмитента в соответствии с п. 9.5.2 Программы.",
+      "document_id": "8c217ef7-40a6-556b-85c4-fde17084e977",
+      "page": 7,
+      "clause": "5.6.2",
+      "evidence": [
+        {
+          "quote": "Биржевые облигации досрочно погашаются в дату выплаты купонного дохода за 36-й купонный период – 13 февраля 2028 года. Биржевые облигации досрочно погашаются по непогашенной части номинальной стоимости в порядке, установленном в пункте 9.5.2 Программы, а также в пункте 5.6. Решения о выпуске ценных бумаг.",
+          "document_id": "f69cb552-d656-5ef5-85f8-34e99a33ec2a",
+          "page": 11,
+          "clause": "7",
+          "value_path": "/conditions/0"
+        }
+      ],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "draft-issuer_call_option-0",
+          "category": "call"
+        }
+      ]
+    },
+    "guarantee_security": {
+      "value": null,
+      "not_found": true,
+      "unscorable": false,
+      "reason": "В выбранном Решении явно указано, что обеспечение не предусмотрено; действующая редакция требует проверки человеком.",
+      "expected_status": "not_found",
+      "quote": "Предоставление обеспечения по Биржевым облигациям не предусмотрено.",
+      "document_id": "8c217ef7-40a6-556b-85c4-fde17084e977",
+      "page": 10,
+      "clause": "7.1",
+      "evidence": []
+    },
+    "cross_default": {
+      "value": null,
+      "iss_value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: разметить условие по PDF и проверить полноту комплекта"
+    },
+    "issuer_restrictions": {
+      "value": null,
+      "iss_value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: разметить условие по PDF и проверить полноту комплекта"
+    },
+    "offer_procedure": {
+      "value": {
+        "procedures": [
+          {
+            "offer_date": null,
+            "window_start": null,
+            "window_end": null,
+            "window_rule": "Последние 5 рабочих дней предшествующего купонного периода, если ставка/порядок купона определяется эмитентом после размещения.",
+            "via": null,
+            "submission": "Предъявление требования о приобретении облигаций эмитентом.",
+            "settlement_rule": null
+          }
+        ]
+      },
+      "iss_value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: разметить оба способа подачи, порядок НРД/заявки на бирже и п. 10, 10.1, 10.2 Программы.",
+      "expected_status": "extracted",
+      "quote": "Эмитент обязан приобрести Биржевые облигации по требованиям их владельцев, заявленным в течение последних 5 (Пяти) рабочих дней купонного периода, предшествующего купонному периоду, по которому Эмитентом определяется размер (порядок определения размера) процента (купона) по Биржевым облигациям после завершения размещения Биржевых облигаций.",
+      "document_id": "8c217ef7-40a6-556b-85c4-fde17084e977",
+      "page": 9,
+      "clause": "6",
+      "evidence": [],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "draft-offer_procedure-0",
+          "category": "put"
+        }
+      ]
+    }
+  },
+  "review": {
+    "annotators": [],
+    "resolved": false,
+    "verified_by": "codex",
+    "needs_human_check": true
+  },
+  "todo": [
+    "Два независимых разметчика и арбитр: все значения пока codex draft, не принятый gold.",
+    "Выбраны решение и условия размещения; включить и проверить Программу, изменения и решения о ставке/оферте.",
+    "Проверить ковенанты, кросс-дефолт, ограничения и полноту стандартных полей по Программе/изменениям; размеченные PDF-факты ещё требуют второго проверяющего."
+  ],
+  "collection": {
+    "captured_at": "2026-11-15T07:17:57.120273+00:00",
+    "source": "prime",
+    "selected_limit": 2,
+    "complete_corpus": false,
+    "errors": [],
+    "status": "succeeded",
+    "documents_found": 2,
+    "message": null,
+    "documents_downloaded": 2,
+    "additional_capture_at": "2026-11-15T07:46:07.407678+00:00"
+  }
+}

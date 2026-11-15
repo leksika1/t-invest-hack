@@ -88,7 +88,7 @@ it("проходит демо → документы → collect → выбор 
   const toggle = screen.getByRole("checkbox", { name: /Использовать/ });
   await user.click(toggle);
   await waitFor(() => expect(toggle).not.toBeChecked());
-  await user.click(screen.getByRole("button", { name: "Собрать карточку →" }));
+  await user.click(screen.getByRole("button", { name: "Собрать карточку" }));
   expect(
     await screen.findByRole("heading", {
       name: "Параметры выпуска — сверка с MOEX ISS",
@@ -125,7 +125,7 @@ it("история фильтрует по ISIN и открывает сохра
   window.location.hash = "/history";
   const user = userEvent.setup();
   render(<App />);
-  expect(await screen.findByText(/Версия 2 ·/)).toBeVisible();
+  expect(await screen.findByRole("cell", { name: "2" })).toBeVisible();
   await user.type(screen.getByLabelText("ISIN выпуска"), isin);
   await user.click(screen.getByRole("button", { name: /Найти карточки/ }));
   await waitFor(() =>
@@ -134,7 +134,7 @@ it("история фильтрует по ISIN и открывает сохра
       expect.anything(),
     ),
   );
-  await user.click(screen.getByRole("link", { name: /RU000A10ATW2 Версия 2/ }));
+  await user.click(screen.getByRole("link", { name: "RU000A10ATW2" }));
   expect(
     await screen.findByRole("heading", { name: "Ковенанты" }),
   ).toBeVisible();
@@ -182,11 +182,11 @@ it("получение Markdown создаёт скачивание и обра�
     .mockRejectedValueOnce(new Error("Экспорт недоступен"));
   render(<App />);
   await user.click(
-    await screen.findByRole("button", { name: /Экспорт Markdown/ }),
+    await screen.findByRole("button", { name: /Скачать Markdown/ }),
   );
   expect(create).toHaveBeenCalled();
   expect(click).toHaveBeenCalled();
-  await user.click(screen.getByRole("button", { name: /Экспорт Markdown/ }));
+  await user.click(screen.getByRole("button", { name: /Скачать Markdown/ }));
   expect(await screen.findByText("Экспорт недоступен")).toBeVisible();
   expect(markdown).toHaveBeenCalledTimes(2);
 });

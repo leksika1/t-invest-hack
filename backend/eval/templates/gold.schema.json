@@ -1,0 +1,464 @@
+{
+  "$defs": {
+    "Atom": {
+      "additionalProperties": false,
+      "description": "One expected array element, with pre-approved paraphrases/slot constraints.",
+      "properties": {
+        "index": {
+          "minimum": 0,
+          "title": "Index",
+          "type": "integer"
+        },
+        "condition_id": {
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "category": {
+          "default": "other",
+          "enum": [
+            "covenants",
+            "call",
+            "early_redemption",
+            "put",
+            "other"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "alternatives": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "constraints": {
+          "additionalProperties": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "title": "Constraints",
+          "type": "object"
+        }
+      },
+      "required": [
+        "index",
+        "condition_id"
+      ],
+      "title": "Atom",
+      "type": "object"
+    },
+    "Citation": {
+      "additionalProperties": false,
+      "properties": {
+        "quote": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "document_id": {
+          "minLength": 1,
+          "title": "Document Id",
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "clause": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clause"
+        },
+        "value_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value Path"
+        }
+      },
+      "required": [
+        "quote",
+        "document_id",
+        "page"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "GoldDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "type": {
+          "default": "decision",
+          "title": "Type",
+          "type": "string"
+        },
+        "origins": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Origins",
+          "type": "array"
+        },
+        "pages_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pages File"
+        },
+        "pages_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pages Sha256"
+        }
+      },
+      "required": [
+        "document_id",
+        "filename",
+        "path",
+        "sha256"
+      ],
+      "title": "GoldDocument",
+      "type": "object"
+    },
+    "GoldField": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "not_found": {
+          "default": false,
+          "title": "Not Found",
+          "type": "boolean"
+        },
+        "unscorable": {
+          "default": false,
+          "title": "Unscorable",
+          "type": "boolean"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "alternatives": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        },
+        "document_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Document Id"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page"
+        },
+        "clause": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clause"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Citation"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "iss_value": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iss Value"
+        },
+        "expected_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "verified_iss",
+                "mismatch_iss",
+                "extracted",
+                "not_found",
+                "needs_review"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Status"
+        },
+        "atoms": {
+          "items": {
+            "$ref": "#/$defs/Atom"
+          },
+          "title": "Atoms",
+          "type": "array"
+        }
+      },
+      "title": "GoldField",
+      "type": "object"
+    },
+    "Review": {
+      "additionalProperties": false,
+      "properties": {
+        "annotators": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Annotators",
+          "type": "array"
+        },
+        "resolved": {
+          "default": false,
+          "title": "Resolved",
+          "type": "boolean"
+        },
+        "adjudicator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adjudicator"
+        },
+        "disagreements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Disagreements",
+          "type": "array"
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolution"
+        },
+        "verified_by": {
+          "default": "codex",
+          "title": "Verified By",
+          "type": "string"
+        },
+        "needs_human_check": {
+          "default": true,
+          "title": "Needs Human Check",
+          "type": "boolean"
+        }
+      },
+      "title": "Review",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1",
+      "default": "1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "isin": {
+      "title": "Isin",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "synthetic",
+        "real"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "as_of": {
+      "format": "date",
+      "title": "As Of",
+      "type": "string"
+    },
+    "issuer_group": {
+      "title": "Issuer Group",
+      "type": "string"
+    },
+    "documents": {
+      "items": {
+        "$ref": "#/$defs/GoldDocument"
+      },
+      "title": "Documents",
+      "type": "array"
+    },
+    "iss_fixture": {
+      "title": "Iss Fixture",
+      "type": "string"
+    },
+    "fields": {
+      "additionalProperties": {
+        "$ref": "#/$defs/GoldField"
+      },
+      "title": "Fields",
+      "type": "object"
+    },
+    "review": {
+      "$ref": "#/$defs/Review"
+    },
+    "todo": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Todo",
+      "type": "array"
+    },
+    "collection": {
+      "additionalProperties": true,
+      "title": "Collection",
+      "type": "object"
+    }
+  },
+  "required": [
+    "isin",
+    "kind",
+    "as_of",
+    "issuer_group",
+    "documents",
+    "iss_fixture",
+    "fields",
+    "review"
+  ],
+  "title": "GoldIssue",
+  "type": "object"
+}

@@ -1,4 +1,5 @@
-﻿import { useEffect, useState } from "react";
+import { Rosette, PaperIllustration } from "./art/guilloche";
+import { useEffect, useState } from "react";
 import { api, errorMessage } from "./api";
 import { CardPage } from "./CardView";
 import { ErrorNotice, IsinForm, StatusBadge } from "./components";
@@ -12,46 +13,58 @@ export const DISCLAIMER =
 function Home() {
   return (
     <>
-      <div className="hero">
-        <p className="eyebrow">АНАЛИЗ УСЛОВИЙ ВЫПУСКА</p>
-        <h1>
-          Каждое условие —<br />с опорой на источник.
-        </h1>
-        <p className="hero-copy">
-          Параметры биржи, эмиссионные документы и рисковые условия в одной
-          карточке. С цитатами и проверкой данных.
-        </p>
-      </div>
-      <section className="panel search-panel">
-        <IsinForm
-          onSubmit={(isin) => {
-            window.location.hash = "/issue/" + isin;
-          }}
-        />
-        <div className="demo-options">
-          <span className="caption">Демо-выпуски</span>
-          <a href="#/issue/RU000A10ATW2">
-            Балтийский лизинг <span>RU000A10ATW2 · ПРАЙМ ↗</span>
-          </a>
-          <a href="#/issue/RU000A10CS75">
-            Аэрофлот <span>RU000A10CS75 · СКРИН ↗</span>
-          </a>
+      <div className="home-layout">
+        <div className="home-content">
+          <div className="hero">
+            <h1>
+              Разберите условия
+              <br />
+              облигации по документам
+            </h1>
+            <p className="hero-copy">
+              Сопоставьте параметры биржи с документами эмитента. Проверьте
+              купоны, оферты и риски в одном месте.
+            </p>
+          </div>
+          <section className="search-panel" aria-label="Открыть выпуск по ISIN">
+            <IsinForm
+              onSubmit={(isin) => {
+                window.location.hash = "/issue/" + isin;
+              }}
+            />
+            <p className="caption demo-caption">Попробуйте:</p>
+            <div className="demo-options">
+              <a href="#/issue/RU000A10ATW2">
+                <strong>Балтийский лизинг</strong>
+                <span>RU000A10ATW2</span>
+                <small>Документы ПРАЙМ</small>
+              </a>
+              <a href="#/issue/RU000A10CS75">
+                <strong>Аэрофлот</strong>
+                <span>RU000A10CS75</span>
+                <small>Документы СКРИН</small>
+              </a>
+            </div>
+          </section>
         </div>
-      </section>
+        <div className="home-art">
+          <Rosette seed="RU000A10CS75" />
+        </div>
+      </div>
       <div className="intro-grid">
         {[
           [
-            "01",
+            "1",
             "Подготовьте документы",
             "Автосбор из раскрытия или загрузка своих PDF. Вы сами выбираете источники для сборки.",
           ],
           [
-            "02",
+            "2",
             "Сопоставьте факты",
             "8 параметров выпуска со сверкой ISS и 7 групп рисковых условий из документов.",
           ],
           [
-            "03",
+            "3",
             "Проверьте и сохраните",
             "Откройте цитаты, подтвердите или исправьте результат и скачайте Markdown.",
           ],
@@ -95,7 +108,6 @@ function HistoryPage({ isin }: { isin: string }) {
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">СОХРАНЁННЫЕ РЕЗУЛЬТАТЫ</p>
           <h1>История карточек</h1>
           <p className="muted">
             Каждая сборка — отдельная версия со своими документами и правками.
@@ -131,23 +143,52 @@ function HistoryPage({ isin }: { isin: string }) {
             </p>
           </div>
         ) : (
-          <div className="history-list">
-            {items.map((card) => (
-              <a
-                href={"#/cards/" + card.id}
-                className="history-row"
-                key={card.id}
-              >
-                <div>
-                  <strong>{card.isin}</strong>
-                  <p className="caption">
-                    Версия {card.version} · {formatDate(card.created_at)}
-                  </p>
-                </div>
-                <StatusBadge status={card.status} />
-                <span aria-hidden="true">→</span>
-              </a>
-            ))}
+          <div
+            className="table-scroll"
+            role="region"
+            aria-label="История карточек"
+            tabIndex={0}
+          >
+            <table className="history-table">
+              <thead>
+                <tr>
+                  <th>ISIN</th>
+                  <th>Выпуск</th>
+                  <th>Дата сборки</th>
+                  <th>Версия</th>
+                  <th>Статусы полей</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((card) => (
+                  <tr key={card.id}>
+                    <td>
+                      <a href={"#/cards/" + card.id}>{card.isin}</a>
+                    </td>
+                    <td>
+                      {card.header?.name ||
+                        card.header?.short_name ||
+                        "Облигация"}
+                    </td>
+                    <td>{formatDate(card.created_at)}</td>
+                    <td>{card.version}</td>
+                    <td>
+                      <div className="history-statuses">
+                        <StatusBadge status={card.status} />
+                        {card.field_statuses &&
+                          Object.entries(card.field_statuses).map(
+                            ([status, count]) => (
+                              <span key={status}>
+                                <StatusBadge status={status} /> {count}
+                              </span>
+                            ),
+                          )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
         <div className="pagination">
@@ -257,16 +298,12 @@ export default function App() {
             href="#/"
             aria-label="Карточка облигации — главная"
           >
-            <span className="brand-mark" aria-hidden="true">
-              ▥
-            </span>
-            <span>
-              Карточка<span className="brand-sub">облигации</span>
-            </span>
+            <Rosette className="brand-mark" seed="logo" />
+            <span>Карточка облигации</span>
           </a>
           <nav aria-label="Основная навигация">
             <a href="#/" aria-current={!isHistory ? "page" : undefined}>
-              Рабочее пространство
+              Выпуск
             </a>
             <a href="#/history" aria-current={isHistory ? "page" : undefined}>
               История
@@ -296,8 +333,8 @@ export default function App() {
           </p>
         )}
         {health?.llm === "not_configured" && (
-          <p className="notice warn llm-banner">
-            <span aria-hidden="true">ⓘ</span>
+          <p className="notice neutral llm-banner">
+            <PaperIllustration kind="model" />
             <span>
               <strong>LLM не настроена — заполнены только данные биржи.</strong>{" "}
               Текстовые риски и условия требуют проверки документов вручную.
@@ -308,7 +345,7 @@ export default function App() {
       </main>
       <footer className="app-footer">
         <strong>{DISCLAIMER}</strong>
-        <span>Карточка облигации · рабочий инструмент аналитика</span>
+        <span>Данные и документы выпуска</span>
       </footer>
     </>
   );

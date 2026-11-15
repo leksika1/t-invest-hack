@@ -1,3 +1,4 @@
+import { PaperIllustration } from "./art/guilloche";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorMessage, uploadDocuments } from "./api";
 import {
@@ -320,7 +321,6 @@ export function Workspace({ isin }: { isin: string }) {
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">ПОДГОТОВКА КАРТОЧКИ</p>
           <h1>Документы выпуска</h1>
           <p className="muted">
             Проверьте исходные данные, выберите документы и запустите сборку.
@@ -340,260 +340,256 @@ export function Workspace({ isin }: { isin: string }) {
         message={issError}
         retry={() => void refresh(lifetime.current?.signal)}
       />
-      {issue ? (
-        <>
-          <IssueHeader
-            isin={isin}
-            header={issue.header}
-            fields={Object.fromEntries(
-              Object.entries(issue.normalized?.fields ?? {}).map(
-                ([key, value]) => [
-                  key,
-                  key === "coupon_rate" && value
-                    ? {
-                        periods: Array.isArray(value.periods)
-                          ? value.periods.slice(0, 1)
-                          : [],
-                        formula: value.formula ?? null,
-                      }
-                    : value,
-                ],
-              ),
-            )}
-            fetchedAt={issue.iss.fetched_at}
-          />
-          {issue.iss.status !== "available" && (
-            <p className="notice warn">
-              Данные ISS{" "}
-              {issue.iss.status === "stale"
-                ? "могут быть устаревшими"
-                : "недоступны"}
-              . Сборка попробует обновить снимок.
+      <div className="workspace-layout">
+        <aside className="issue-sidebar">
+          {issue ? (
+            <>
+              <IssueHeader
+                isin={isin}
+                header={issue.header}
+                fields={issue.normalized?.fields}
+                fetchedAt={issue.iss.fetched_at}
+              />
+              {issue.iss.status !== "available" && (
+                <p className="notice warn">
+                  Данные ISS{" "}
+                  {issue.iss.status === "stale"
+                    ? "могут быть устаревшими"
+                    : "недоступны"}
+                  . Сборка попробует обновить снимок.
+                </p>
+              )}
+              {!!issue.warnings.length && (
+                <details className="warnings">
+                  <summary>
+                    Замечания к данным ISS; {issue.warnings.length}
+                  </summary>
+                  <ul>
+                    {issue.warnings.map((w, i) => (
+                      <li key={i}>{warningText(w)}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </>
+          ) : (
+            <p className="caption">
+              {isin}; Шапка выпуска будет доступна после ответа ISS.
             </p>
           )}
-          {!!issue.warnings.length && (
-            <details className="warnings">
-              <summary>
-                Замечания к данным ISS · {issue.warnings.length}
-              </summary>
-              <ul>
-                {issue.warnings.map((w, i) => (
-                  <li key={i}>{warningText(w)}</li>
+        </aside>
+        <div className="workspace-process">
+          <section className="panel process-step" data-step="1">
+            <div className="section-heading">
+              <div>
+                <h2>Найти документы</h2>
+              </div>
+              <button
+                className="secondary"
+                onClick={() => void collect()}
+                disabled={locked}
+              >
+                Найти документы
+              </button>
+            </div>
+            <p className="muted">
+              Поиск на ПРАЙМ, СКРИН и проверка доступа e-disclosure. Частичный
+              результат не мешает ручной загрузке.
+            </p>
+            <SourceList sources={sources} running={!!jobId} />
+          </section>
+          {jobId && (
+            <JobProgress
+              key={jobId}
+              id={jobId}
+              onDone={completed}
+              onUpdate={update}
+            />
+          )}
+          <section className="panel process-step" data-step="2">
+            <div className="section-heading">
+              <div>
+                <h2>
+                  Исходные документы{" "}
+                  <span className="count">{listing?.total ?? 0}</span>
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="small secondary"
+                disabled={busy}
+                onClick={() => void refresh(lifetime.current?.signal)}
+              >
+                Обновить список
+              </button>
+            </div>
+            {!listing?.items.length ? (
+              <div className="empty-state">
+                <PaperIllustration />
+                <p>Пока нет документов</p>
+                <p className="caption">
+                  Запустите поиск или загрузите PDF ниже.
+                </p>
+              </div>
+            ) : (
+              <div className="document-list">
+                {listing.items.map((doc) => (
+                  <article className="document-row" key={doc.id}>
+                    <div className="document-main">
+                      <strong>{doc.filename}</strong>
+                      <div className="document-meta">
+                        <StatusBadge status={doc.status} />
+                        <span>
+                          {doc.pages} стр.; OCR {doc.ocr_pages}
+                          {doc.size_bytes != null
+                            ? `; ${(doc.size_bytes / 1024 / 1024).toFixed(1)} МиБ`
+                            : ""}
+                        </span>
+                      </div>
+                      {doc.origins.map((origin, i) => (
+                        <p className="caption" key={i}>
+                          <ExternalLink
+                            url={origin.download_url || origin.source_url}
+                          >
+                            {sourceName(origin.source)}
+                          </ExternalLink>{" "}
+                          ;{" "}
+                          {origin.published_at
+                            ? formatDate(origin.published_at)
+                            : "Дата публикации неизвестна"}{" "}
+                          ; получено {formatDate(origin.fetched_at)}
+                          {origin.archive
+                            ? `; из архива: ${origin.archive.entry_name}`
+                            : ""}
+                        </p>
+                      ))}
+                      {doc.error && (
+                        <p className="error-text caption">
+                          {doc.error.message}
+                        </p>
+                      )}
+                    </div>
+                    <label className="toggle">
+                      <input
+                        type="checkbox"
+                        checked={doc.enabled}
+                        disabled={locked || pending.includes(doc.id)}
+                        onChange={() => void select(doc)}
+                      />
+                      Использовать{" "}
+                      <span className="sr-only">{doc.filename}</span>
+                    </label>
+                  </article>
                 ))}
-              </ul>
-            </details>
-          )}
-        </>
-      ) : (
-        <p className="caption">
-          {isin} · Шапка выпуска будет доступна после ответа ISS.
-        </p>
-      )}
-      <section className="panel">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">ШАГ 01</p>
-            <h2>Найти документы</h2>
-          </div>
-          <button
-            className="secondary"
-            onClick={() => void collect()}
-            disabled={locked}
-          >
-            Найти документы
-          </button>
-        </div>
-        <p className="muted">
-          ПРАЙМ → СКРИН → официальный доступ e-disclosure. Частичный результат
-          не мешает ручной загрузке.
-        </p>
-        <SourceList sources={sources} running={!!jobId} />
-      </section>
-      {jobId && (
-        <JobProgress
-          key={jobId}
-          id={jobId}
-          onDone={completed}
-          onUpdate={update}
-        />
-      )}
-      <section className="panel">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">ШАГ 02</p>
-            <h2>
-              Исходные документы{" "}
-              <span className="count">{listing?.total ?? 0}</span>
-            </h2>
-          </div>
-          <button
-            type="button"
-            className="small secondary"
-            disabled={busy}
-            onClick={() => void refresh(lifetime.current?.signal)}
-          >
-            Обновить список
-          </button>
-        </div>
-        {!listing?.items.length ? (
-          <div className="empty-state">
-            <span aria-hidden="true">▤</span>
-            <p>Пока нет документов</p>
-            <p className="caption">Запустите поиск или загрузите PDF ниже.</p>
-          </div>
-        ) : (
-          <div className="document-list">
-            {listing.items.map((doc) => (
-              <article className="document-row" key={doc.id}>
-                <div className="document-main">
-                  <strong>{doc.filename}</strong>
-                  <div className="document-meta">
-                    <StatusBadge status={doc.status} />
-                    <span>
-                      {doc.pages} стр. · OCR {doc.ocr_pages}
-                      {doc.size_bytes != null
-                        ? ` · ${(doc.size_bytes / 1024 / 1024).toFixed(1)} МиБ`
-                        : ""}
-                    </span>
-                  </div>
-                  {doc.origins.map((origin, i) => (
-                    <p className="caption" key={i}>
-                      <ExternalLink
-                        url={origin.download_url || origin.source_url}
-                      >
-                        {sourceName(origin.source)}
-                      </ExternalLink>{" "}
-                      ·{" "}
-                      {origin.published_at
-                        ? formatDate(origin.published_at)
-                        : "Дата публикации неизвестна"}{" "}
-                      · получено {formatDate(origin.fetched_at)}
-                      {origin.archive
-                        ? ` · из архива: ${origin.archive.entry_name}`
-                        : ""}
-                    </p>
+              </div>
+            )}
+            {listing && listing.items.length < listing.total && (
+              <button
+                className="small secondary"
+                disabled={busy}
+                onClick={() => void moreDocuments()}
+              >
+                Показать ещё документы
+              </button>
+            )}
+            <AssistedBlock assisted={assisted} inn={issue?.header.inn} />
+            <div
+              className={`dropzone ${drag ? "dragging" : ""}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (!locked) setDrag(true);
+              }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDrag(false);
+                if (!locked) choose(Array.from(e.dataTransfer.files));
+              }}
+            >
+              <span className="upload-icon" aria-hidden="true">
+                ↑
+              </span>
+              <h3>Загрузите свои PDF</h3>
+              <p className="muted">
+                Перетащите сюда документы или выберите файлы
+              </p>
+              <label
+                className={`button secondary file-button ${locked ? "disabled" : ""}`}
+              >
+                Выбрать PDF
+                <input
+                  ref={fileInput}
+                  type="file"
+                  multiple
+                  accept=".pdf,application/pdf"
+                  disabled={locked}
+                  onChange={(e) => choose(Array.from(e.target.files ?? []))}
+                />
+              </label>
+              <p className="caption">
+                До 5 файлов за раз; не более 30 МиБ каждый; только PDF
+              </p>
+            </div>
+            <ErrorNotice message={fileError} />
+            {!!files.length && (
+              <div className="upload-selection">
+                <ul>
+                  {files.map((file, i) => (
+                    <li key={i}>
+                      {file.name}{" "}
+                      <span className="caption">
+                        {(file.size / 1024 / 1024).toFixed(2)} МиБ
+                      </span>
+                    </li>
                   ))}
-                  {doc.error && (
-                    <p className="error-text caption">{doc.error.message}</p>
-                  )}
-                </div>
-                <label className="toggle">
-                  <input
-                    type="checkbox"
-                    checked={doc.enabled}
-                    disabled={locked || pending.includes(doc.id)}
-                    onChange={() => void select(doc)}
-                  />
-                  Использовать <span className="sr-only">{doc.filename}</span>
-                </label>
-              </article>
-            ))}
-          </div>
-        )}
-        {listing && listing.items.length < listing.total && (
-          <button
-            className="small secondary"
-            disabled={busy}
-            onClick={() => void moreDocuments()}
-          >
-            Показать ещё документы
-          </button>
-        )}
-        <AssistedBlock assisted={assisted} inn={issue?.header.inn} />
-        <div
-          className={`dropzone ${drag ? "dragging" : ""}`}
-          onDragOver={(e) => {
-            e.preventDefault();
-            if (!locked) setDrag(true);
-          }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDrag(false);
-            if (!locked) choose(Array.from(e.dataTransfer.files));
-          }}
-        >
-          <span className="upload-icon" aria-hidden="true">
-            ↑
-          </span>
-          <h3>Загрузите свои PDF</h3>
-          <p className="muted">Перетащите сюда документы или выберите файлы</p>
-          <label
-            className={`button secondary file-button ${locked ? "disabled" : ""}`}
-          >
-            Выбрать PDF
-            <input
-              ref={fileInput}
-              type="file"
-              multiple
-              accept=".pdf,application/pdf"
-              disabled={locked}
-              onChange={(e) => choose(Array.from(e.target.files ?? []))}
-            />
-          </label>
-          <p className="caption">
-            До 5 файлов за раз · не более 30 МиБ каждый · только PDF
-          </p>
-        </div>
-        <ErrorNotice message={fileError} />
-        {!!files.length && (
-          <div className="upload-selection">
-            <ul>
-              {files.map((file, i) => (
-                <li key={i}>
-                  {file.name}{" "}
-                  <span className="caption">
-                    {(file.size / 1024 / 1024).toFixed(2)} МиБ
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <button disabled={locked} onClick={() => void upload()}>
-              Загрузить {files.length} PDF
+                </ul>
+                <button disabled={locked} onClick={() => void upload()}>
+                  Загрузить {files.length} PDF
+                </button>
+              </div>
+            )}
+            {uploadPercent !== null && (
+              <div role="status">
+                <progress
+                  value={uploadPercent}
+                  max={100}
+                  aria-label="Загрузка PDF"
+                />
+                <p className="caption">
+                  {uploadPercent < 100
+                    ? `Передано ${uploadPercent}%`
+                    : "Файлы переданы. Ожидаем подтверждение сервера…"}
+                </p>
+              </div>
+            )}
+          </section>
+          <ErrorNotice message={error} />
+          <section className="build-bar panel process-step" data-step="3">
+            <div>
+              <h2>Собрать карточку</h2>
+              <p className="caption">
+                Выбрано {listing?.items.filter((d) => d.enabled).length ?? 0} из
+                загруженных в список документов
+                {listing && listing.total > listing.items.length
+                  ? `. Всего документов ${listing.total}: проверьте остальные страницы списка.`
+                  : "."}{" "}
+                Новая сборка создаёт отдельную версию.
+              </p>
+              {!listing?.total && (
+                <p className="caption">
+                  Если документов ещё не было, задача сначала выполнит автосбор.
+                </p>
+              )}
+            </div>
+            <button
+              disabled={locked || pending.length > 0}
+              onClick={() => void build()}
+            >
+              {busy ? "Подождите…" : "Собрать карточку"}
             </button>
-          </div>
-        )}
-        {uploadPercent !== null && (
-          <div role="status">
-            <progress
-              value={uploadPercent}
-              max={100}
-              aria-label="Загрузка PDF"
-            />
-            <p className="caption">
-              {uploadPercent < 100
-                ? `Передано ${uploadPercent}%`
-                : "Файлы переданы. Ожидаем подтверждение сервера…"}
-            </p>
-          </div>
-        )}
-      </section>
-      <ErrorNotice message={error} />
-      <section className="build-bar panel">
-        <div>
-          <p className="eyebrow">ШАГ 03</p>
-          <h2>Собрать карточку</h2>
-          <p className="caption">
-            Выбрано {listing?.items.filter((d) => d.enabled).length ?? 0} из
-            загруженных в список документов
-            {listing && listing.total > listing.items.length
-              ? `. Всего документов ${listing.total}: проверьте остальные страницы списка.`
-              : "."}{" "}
-            Новая сборка создаёт отдельную версию.
-          </p>
-          {!listing?.total && (
-            <p className="caption">
-              Если документов ещё не было, задача сначала выполнит автосбор.
-            </p>
-          )}
+          </section>
         </div>
-        <button
-          disabled={locked || pending.length > 0}
-          onClick={() => void build()}
-        >
-          {busy ? "Подождите…" : "Собрать карточку →"}
-        </button>
-      </section>
+      </div>
     </>
   );
 }

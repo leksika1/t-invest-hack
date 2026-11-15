@@ -1,4 +1,4 @@
-"""Normalize observed ISS columns, never infer legal coupon/offer types."""
+"""Normalize ISS observations; mark coupon-type estimates as inferred."""
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
@@ -39,24 +39,35 @@ def normalize(raw: dict) -> dict:
     if initial is None:
         warnings.append("initial_face_value_unavailable")
     rates = [{"from": i, "to": i, "rate_percent": number(r.get("valueprc")), "amount": number(r.get("value"))}
-             for i, r in enumerate(coupons, 1)]
+             for i, r in enumerate(coupons, 1)
+             if number(r.get("valueprc")) is not None or number(r.get("value")) is not None]
+    current_rate = number(desc.get("COUPONPERCENT"))
+    # Missing future values suggest a variable coupon, not a particular legal formula.
+    # TYPE=exchange_bond describes the security, not its coupon.
+    observed_rates = {number(r.get("valueprc")) for r in coupons} - {None}
+    incomplete = any(number(r.get("valueprc")) is None and number(r.get("value")) is None for r in coupons)
+    coupon_type = None
+    if coupons:
+        variable = incomplete or len(observed_rates) > 1 or not observed_rates
+        coupon_type = {"type": "variable" if variable else "fixed", "inferred": True,
+                       "description": "Плавающий / переменный: параметры части купонов не заданы или меняются. Тип и формулу проверьте в документах." if variable else "По графику ISS ставка постоянная. Тип купона проверьте в документах."}
     freq = number(desc.get("COUPONFREQUENCY"))
     fields = {
         "face_value": {"amount": initial, "currency": currency((coupons or amort or [{}])[0].get("faceunit") or desc.get("FACEUNIT"))} if initial else None,
         "placement_date": {"date": day(desc.get("ISSUEDATE"))} if day(desc.get("ISSUEDATE")) else None,
         "maturity_date": {"date": day(desc.get("MATDATE"))} if day(desc.get("MATDATE")) else None,
-        "coupon_type": None,
-        "coupon_rate": {"periods": rates, "formula": None} if rates else None,
+        "coupon_type": coupon_type,
+        "coupon_rate": {"periods": rates, "formula": None, "current_rate_percent": current_rate} if rates or current_rate is not None else None,
         "coupon_schedule": {"frequency_per_year": int(Decimal(freq)) if freq and Decimal(freq) == int(Decimal(freq)) else None,
                             "period_days": None,
                             "payments": [{"number": i, "start": day(r.get("startdate")), "end": day(r.get("coupondate")), "payment_date": day(r.get("coupondate"))} for i, r in enumerate(coupons, 1)]} if coupons else None,
         "offers": {"events": [{"date": day(r.get("offerdate")), "type": "call" if "call" in str(r.get("offertype")).lower() else "put" if "put" in str(r.get("offertype")).lower() else "unknown",
                                "price_percent": number(r.get("price")), "raw_type": r.get("offertype"),
-                               "window_start": day(r.get("offerdatestart")), "window_end": day(r.get("offerdateend"))} for r in offers]} if offers else None,
+                               "window_start": day(r.get("offerdatestart")), "window_end": day(r.get("offerdateend"))} for r in offers]} if isinstance(bond.get("offers"), dict) and "data" in bond["offers"] else None,
         "amortization": {"events": [{"date": day(r.get("amortdate")), "amount": number(r.get("value")), "percent": number(r.get("valueprc")),
                                      "percent_base": "initial_face_value" if initial and number(r.get("valueprc")) and number(r.get("value")) and Decimal(str(r["value"])) == Decimal(initial) * Decimal(str(r["valueprc"])) / 100 else "unknown"} for r in amort]} if amort else None,
     }
-    warnings.append("coupon_type_not_explicit_in_iss")
+    warnings.append("coupon_type_inferred_from_iss" if coupon_type else "coupon_type_not_explicit_in_iss")
     if any(e["type"] == "unknown" for e in (fields["offers"] or {}).get("events", [])):
         warnings.append("offer_type_requires_document")
     return {"header": {"issuer": emitter.get("TITLE") or fallback.get("emitent_title"), "inn": str(emitter.get("INN") or fallback.get("emitent_inn") or "") or None,

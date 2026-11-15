@@ -294,6 +294,8 @@ export const warningText = (value: string) =>
         "ISS не содержит подтверждённого первоначального номинала.",
       coupon_type_not_explicit_in_iss:
         "Тип купона нельзя определить только по ISS.",
+      coupon_type_inferred_from_iss:
+        "Тип купона предположен по графику ISS. Проверьте его и формулу в документах.",
       offer_type_requires_document:
         "Тип оферты требует проверки по документам.",
       iss_unavailable: "ISS временно недоступен.",

@@ -16,7 +16,7 @@ def test_actual_iss_columns_and_normalization(isin):
     assert result["header"]["inn"] == "6685151087"
     assert result["fields"]["face_value"] == {"amount": "1000", "currency": "RUB"}
     assert len(result["fields"]) == 8
-    assert result["fields"]["coupon_type"] is None
+    assert result["fields"]["coupon_type"]["type"] in {"fixed", "variable"}
     assert result["fields"]["coupon_schedule"]["payments"][0]["number"] == 1
     if isin == "RU000A1048A9":
         assert len(result["fields"]["amortization"]["events"]) == 4
@@ -72,3 +72,35 @@ def test_pagination_ignoring_start_is_not_silent_success(monkeypatch):
     monkeypatch.setattr(client, "_get", lambda *a, **kw: {"coupons": {"columns": ["value"], "data": [[1]]}, "coupons.cursor": {"columns": ["TOTAL"], "data": [[2]]}})
     with pytest.raises(client.IssError, match="Неполный"):
         client.get_bondization("TEST")
+
+
+def test_aeroflot_unknown_future_coupons_and_empty_offers():
+    raw = json.loads((FIXTURES / "RU000A10CS75.json").read_text(encoding="utf-8"))
+    fields = normalize(raw)["fields"]
+    assert fields["coupon_type"]["type"] == "variable"
+    assert fields["coupon_type"]["inferred"] is True
+    assert len(fields["coupon_schedule"]["payments"]) == 60
+    assert fields["coupon_rate"]["periods"]
+    assert all(p["amount"] is not None or p["rate_percent"] is not None for p in fields["coupon_rate"]["periods"])
+    assert fields["coupon_rate"]["formula"] is None  # Only documents establish the formula.
+    assert fields["offers"] == {"events": []}
+    from app.cards.verification import degraded_field, compare_iss
+    result = degraded_field("offers", fields["offers"], "https://iss.moex.com")
+    assert result["status"] == "extracted"
+    assert result["value"] == {"events": []}
+    assert degraded_field("offers", None, "")['reason'] == 'iss_unavailable'
+    assert compare_iss('coupon_type', {'type': 'variable'}, fields['coupon_type']) == 'needs_review'
+
+
+def test_missing_offers_block_is_not_an_empty_schedule():
+    raw = json.loads((FIXTURES / "RU000A10CS75.json").read_text(encoding="utf-8"))
+    del raw['bondization']['offers']
+    assert normalize(raw)['fields']['offers'] is None
+
+
+def test_rate_in_description_without_schedule_is_preserved():
+    raw = {'description': {'description': {'columns': ['name', 'value'], 'data': [['COUPONPERCENT', '12.5']]}}}
+    rate = normalize(raw)['fields']['coupon_rate']
+    assert rate['current_rate_percent'] == '12.5'
+    assert rate['periods'] == []  # ISS did not identify a coupon number.
+    assert normalize(raw)['fields']['coupon_type'] is None
