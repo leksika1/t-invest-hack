@@ -21,6 +21,8 @@ proxy-providers:
     type: http
     url: __SUBSCRIPTION_URL__
     path: ./providers/subscription.yaml
+    # Саму подписку качаем напрямую: иначе запрос уходит по MATCH в пустую группу LLM и получает REJECT
+    proxy: DIRECT
     interval: 3600
     size-limit: 8388608
     exclude-type: direct
