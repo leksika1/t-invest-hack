@@ -19,6 +19,8 @@ DEFAULT_LLM_PRICES = {
     # Тариф gemini-3.5-flash проверить на ai.google.dev/gemini-api/docs/pricing; на бесплатном ключе фактически 0.
     'gemini-3.5-flash': _GEMINI_FLASH_PRICES,
     'gemini-2.5-flash': _GEMINI_FLASH_PRICES,
+    # Проверить: консервативный резерв как flash, не подтверждённый тариф lite.
+    'gemini-3.1-flash-lite': _GEMINI_FLASH_PRICES,
 }
 
 # Провайдер по виду ключа, если LLM_BASE_URL / LLM_MODEL не заданы явно:
@@ -52,6 +54,7 @@ class Settings(BaseSettings):
     # Credentials may be present: exclude the URL from repr/serialization.
     llm_proxy_url: str = Field('', repr=False, exclude=True)
     llm_model: str = DEFAULT_LLM_MODEL
+    llm_fallback_models: str = ""
     public_base_url: str = ""
     llm_daily_budget_usd: Decimal = Field(Decimal("10"), ge=0)
     llm_input_price_per_1m_usd: Decimal | None = Field(None, ge=0)
@@ -86,7 +89,13 @@ class Settings(BaseSettings):
             data[lowered.get('llm_base_url', 'llm_base_url')] = base_url
         if not raw('llm_model'):
             data[lowered.get('llm_model', 'llm_model')] = model
+        if not raw('llm_fallback_models') and 'generativelanguage.googleapis.com' in (raw('llm_base_url') or base_url):
+            data[lowered.get('llm_fallback_models', 'llm_fallback_models')] = 'gemini-3.1-flash-lite'
         return data
+
+    @property
+    def fallback_models(self):
+        return list(dict.fromkeys(m.strip() for m in self.llm_fallback_models.split(',') if m.strip() and m.strip() != self.llm_model))
 
     @field_validator('llm_proxy_url')
     @classmethod

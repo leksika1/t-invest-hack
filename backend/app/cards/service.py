@@ -6,8 +6,8 @@ import uuid
 
 from sqlalchemy import func, select, text
 
-from app.cards.schema import DISCLAIMER, FIELDS, SPECS, extraction_model
-from app.cards import prompts
+from app.cards.schema import DISCLAIMER, FIELDS, SPECS
+from app.cards.batch import extract_batch
 from app.cards.export import REASONS
 from app.cards.retriever import context_token_bound, full_document_context, retrieve
 from app.cards.verification import degraded_field, result_template, verify
@@ -39,7 +39,7 @@ def create_card(session, isin):
                 input_snapshot={'document_ids': [str(d.id) for d in documents],
                                 'documents': [json_safe(document_json(session, d)) for d in documents],
                                 'auto_collect': not documents and not had_collect and session.scalar(select(Document.id).where(Document.issue_id == issue.id).limit(1)) is None,
-                                'prepared': False, 'schema_version': '2', 'prompt_version': '2'})
+                                'prepared': False, 'schema_version': '2', 'prompt_version': '3'})
     session.add(card)
     session.flush()
     job = new_job(session, 'build_card', {'issue_id': str(issue.id), 'card_id': str(card.id)})
@@ -55,7 +55,7 @@ def field_json(field):
     return {'code': field.code, 'value': field.value, 'quote': field.quote, 'document_id': field.document_id,
             'page': field.page, 'clause': field.clause, 'status': field.status, 'iss_value': field.iss_value,
             'confidence': field.confidence, 'source': field.source, 'evidence': field.evidence,
-            'reason': field.reason, 'reason_message': REASONS.get(field.reason, field.reason), 'not_found': field.not_found, 'user_status': field.user_status,
+            'reason': field.reason, 'reason_message': (field.source or {}).get('llm_error', {}).get('message') or REASONS.get(field.reason, field.reason), 'not_found': field.not_found, 'user_status': field.user_status,
             'user_value': field.user_value, 'reviewed_at': field.reviewed_at}
 
 
@@ -151,6 +151,24 @@ def build_card(factory, job, gateway_factory=LLMGateway):
             pages = {(str(p.document_id), p.number): p.text for p in session.scalars(select(Page).where(Page.document_id.in_(documents)))}
         ready_documents = [doc for doc in snapshot['documents'] if str(doc['id']) in snapshot['document_ids']]
         full_context = full_document_context(ready_documents, pages, snapshot.get('full_context_max_tokens', settings.extraction_full_context_max_tokens))
+        # Only unfinished fields enter a batch on a resumed job.
+        with factory() as session:
+            pending = {f.code: f.id for f in session.scalars(select(CardField).where(CardField.card_id == card_id)) if f.reason == 'processing'}
+        batches, contexts = {}, {}
+        if not configuration_error:
+            gateway = gateway_factory(factory=factory, settings=settings, job_id=job.id)
+            for iss_group in (True, False):
+                specs = [spec for spec in SPECS if spec.iss == iss_group and spec.code in pending]
+                if not specs:
+                    continue
+                if full_context is not None:
+                    context, retrieval_warnings = full_context, []
+                else:
+                    context, retrieval_warnings = retrieve(factory, issue_id, documents, ' '.join(s.hints for s in specs), settings, gateway)
+                warnings.extend(retrieval_warnings)
+                contexts.update({spec.code: context for spec in specs})
+                if context:
+                    batches.update(extract_batch(gateway, specs, context, field_ids=pending))
         for index, spec in enumerate(SPECS):
             with factory() as session:
                 field = session.scalar(select(CardField).where(CardField.card_id == card_id, CardField.code == spec.code))
@@ -161,12 +179,7 @@ def build_card(factory, job, gateway_factory=LLMGateway):
             if configuration_error:
                 result = degraded_field(spec.code, iss_value, iss_url, reason=configuration_error)
             else:
-                gateway = gateway_factory(factory=factory, settings=settings, job_id=job.id, field_id=field_id)
-                if not spec.iss and full_context is not None:
-                    context, retrieval_warnings = full_context, []
-                else:
-                    context, retrieval_warnings = retrieve(factory, issue_id, documents, spec.hints, settings, gateway, spec.code)
-                warnings.extend(retrieval_warnings)
+                context = contexts.get(spec.code, [])
                 if not context:
                     result = result_template(spec.code, iss_value)
                     if spec.iss:
@@ -178,12 +191,13 @@ def build_card(factory, job, gateway_factory=LLMGateway):
                     elif snapshot.get('failed_document_ids'):
                         result.update(status='needs_review', reason='document_processing_failed')
                 else:
-                    try:
-                        extracted = gateway.extract(spec.code, prompts.messages(spec, context), extraction_model(spec.code))
+                    extracted = batches[spec.code]
+                    if isinstance(extracted, GatewayError):
+                        warnings.append(extracted.code)
+                        result = degraded_field(spec.code, iss_value, iss_url, reason=extracted.code)
+                        result['source']['llm_error'] = extracted.diagnostic
+                    else:
                         result = verify(spec.code, extracted, pages, context, settings, iss_value, iss_url=iss_url)
-                    except GatewayError as exc:
-                        warnings.append(exc.code)
-                        result = degraded_field(spec.code, iss_value, iss_url, reason=exc.code)
                 if result['status'] == 'not_found' and snapshot.get('failed_document_ids'):
                     result.update(status='needs_review', reason='document_processing_failed')
             if result.get('source', {}).get('kind') == 'document':
@@ -207,7 +221,10 @@ def build_card(factory, job, gateway_factory=LLMGateway):
                             'risk_context_mode': 'none' if not documents else 'full_document' if full_context is not None else 'retrieval',
                             'risk_context_tokens_upper_bound': context_token_bound(full_context) if full_context is not None else None,
                             'ocr_pages': sum(d['ocr_pages'] for d in documents_meta if d['id'] in snapshot['document_ids']),
-                            'models': sorted({c.model for c in calls}), 'tokens_in': sum(c.tokens_in or 0 for c in calls),
+                            'models': sorted({c.model for c in calls}),
+                            'response_models': sorted({c.model for c in calls if c.purpose == 'extraction' and not c.error}),
+                            'generation_calls': sum(c.purpose == 'extraction' for c in calls),
+                            'cost_note': 'Оценка по тарифу; фактически может быть 0 на бесплатном тарифе Google' if any(c.cost_source == 'google_estimate' for c in calls) else None, 'tokens_in': sum(c.tokens_in or 0 for c in calls),
                             'tokens_out': sum(c.tokens_out or 0 for c in calls), 'unknown_cost_calls': unknown,
                             'cost_usd': None if unknown else str(sum((finite_decimal(c.cost_usd) or Decimal(0)) for c in calls)),
                             'known_cost_usd': str(sum((finite_decimal(c.cost_usd) or Decimal(0)) for c in calls)),

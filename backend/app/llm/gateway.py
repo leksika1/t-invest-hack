@@ -10,7 +10,7 @@ import httpx
 from pydantic import ValidationError
 from sqlalchemy import Numeric, cast, func, select, text
 
-from app.config import get_settings
+from app.config import DEFAULT_LLM_PRICES, get_settings
 from app.errors import ProcessingError
 from app.llm.client import LLMClient
 from app.llm.diagnostics import http_diagnostics, validation_summary
@@ -18,7 +18,9 @@ from app.models import LLMCall
 
 
 class GatewayError(ProcessingError):
-    pass
+    def __init__(self, code, message, diagnostic=None):
+        super().__init__(code, message)
+        self.diagnostic = diagnostic or {'code': code, 'message': message}
 
 
 def utc_bounds(day=None):
@@ -155,6 +157,9 @@ def provider_schema(model):
 class LLMGateway:
     def __init__(self, factory=None, settings=None, transport=None, ledger=None, job_id=None, field_id=None, sleep=time.sleep):
         self.settings = settings or get_settings()
+        self.active_model = self.settings.llm_model
+        self.unavailable_models = set()
+        self.unavailable_error = None
         self.transport = transport or LLMClient(self.settings)
         self.ledger = ledger or BudgetLedger(factory)
         self.job_id, self.field_id, self.sleep = job_id, field_id, sleep
@@ -163,28 +168,37 @@ class LLMGateway:
     def configured(self):
         return bool(self.settings.llm_api_key.strip())
 
-    def extract(self, code, messages, output_model):
+    def extract(self, code, messages, output_model, *, batch=False):
         if not self.configured:
             raise GatewayError('llm_not_configured', 'LLM не настроена')
+        if self.active_model in self.unavailable_models and self.unavailable_error:
+            raise self.unavailable_error
         schema = provider_schema(output_model)
-        return self._call('extraction', {'model': self.settings.llm_model, 'messages': messages,
-                          'temperature': 0, 'max_tokens': self.settings.llm_max_output_tokens,
-                          'response_format': {'type': 'json_schema', 'json_schema': {'name': code, 'strict': True, 'schema': schema}}}, output_model)
+        return self._call('extraction', {'model': self.active_model, 'messages': messages,
+                          'temperature': 0, 'max_tokens': max(self.settings.llm_max_output_tokens, 12288) if batch else self.settings.llm_max_output_tokens,
+                          'response_format': {'type': 'json_schema', 'json_schema': {'name': code, 'strict': True, 'schema': schema}}}, output_model, batch=batch)
 
     def embed(self, texts):
         if not texts or not self.settings.embedding_model or not (self.settings.embedding_api_key or self.settings.llm_api_key):
             return None
         return self._call('embedding', {'model': self.settings.embedding_model, 'input': texts})
 
-    def _call(self, purpose, payload, output_model=None):
+    def _call(self, purpose, payload, output_model=None, batch=False):
         embedding = purpose == 'embedding'
         input_price = self.settings.embedding_input_price_per_1m_usd if embedding else self.settings.llm_input_price_per_1m_usd
         output_price = Decimal(0) if embedding else self.settings.llm_output_price_per_1m_usd
         if input_price is None or output_price is None:
             raise GatewayError('llm_prices_not_configured', f"Не настроены тарифы для резервирования бюджета модели {payload['model']}")
         retries, repairs, attempt = 0, 0, 0
+        remaining_models = iter([model for model in self.settings.fallback_models if model != payload['model'] and model not in self.unavailable_models] if not embedding else [])
         proxy_error = {'code': 'llm_proxy_error', 'message': 'Прокси LLM недоступен'}
         while True:
+            if not embedding and payload['model'] != self.settings.llm_model:
+                prices = DEFAULT_LLM_PRICES.get(payload['model'], {})
+                input_price = prices.get('llm_input_price_per_1m_usd')
+                output_price = prices.get('llm_output_price_per_1m_usd')
+                if input_price is None or output_price is None:
+                    raise GatewayError('llm_prices_not_configured', f"Не настроены тарифы запасной модели {payload['model']}")
             attempt += 1
             # UTF-8 byte count is a conservative token bound, including schema/messages.
             token_bound = len(json.dumps(payload, ensure_ascii=False).encode('utf-8')) + 1024
@@ -233,28 +247,44 @@ class LLMGateway:
                 error = {'code': 'invalid_embedding' if embedding else 'invalid_json', 'message': 'Ответ модели не соответствует схеме'}
             except Exception:
                 error = {'code': 'llm_client_error', 'message': 'Ошибка клиента модели'}
+            if error and retry_after is None:
+                retry_after = error.get('retry_after_seconds')
             rejected_without_usage = status is not None and 400 <= status < 500 and not usage
             usage = sanitized_usage(usage)
             cost, source = usage_cost(usage, input_price, output_price)
+            if not embedding and source == 'config' and 'generativelanguage.googleapis.com' in self.settings.llm_base_url:
+                source = 'google_estimate'
             if rejected_without_usage:
                 cost, source = Decimal(0), 'request_rejected'
             self.ledger.complete(identifier, usage, cost, source, int((time.monotonic() - started) * 1000), error, response.get('id'))
             if not error:
+                if not embedding:
+                    self.active_model = payload['model']
                 return parsed
+            switch_model = error.get('daily_quota') or (status == 429 and retry_after is not None and retry_after > 60) or (status == 404 and 'model' in ' '.join(str(error.get(k, '')) for k in ('message', 'provider_message', 'openrouter_message')).lower())
+            if switch_model:
+                self.unavailable_models.add(payload['model'])
+                self.unavailable_error = GatewayError(error['code'], error['message'], error)
+                model = next(remaining_models, None)
+                if model:
+                    payload = {**payload, 'model': model}
+                    retries = 0
+                    continue
+                raise GatewayError(error['code'], error['message'], error)
             if error['code'] == 'llm_schema_rejected' and payload.get('response_format', {}).get('type') == 'json_schema':
                 schema_text = json.dumps(payload['response_format']['json_schema']['schema'], ensure_ascii=False)
                 payload = {**payload, 'response_format': {'type': 'json_object'},
                            'messages': [*payload['messages'], {'role': 'user', 'content': 'Верни JSON по этой схеме: ' + schema_text}]}
                 continue
-            if error['code'] == 'invalid_json' and repairs < 1:
+            if error['code'] == 'invalid_json' and not batch and repairs < 1:
                 repairs += 1
                 payload = {**payload, 'messages': [*payload['messages'], {'role': 'user', 'content': 'Ответ не прошёл валидацию. Верни только JSON строго по схеме поля; не добавляй факты.'}]}
                 continue
             transient = status == 429 or (status is not None and status >= 500) or error['code'] in ('llm_timeout', 'llm_transport_error', 'llm_proxy_error')
             if transient and retries < self.settings.llm_max_retries:
                 if retry_after is not None and (not math.isfinite(retry_after) or retry_after > 60):
-                    raise GatewayError(error['code'], error['message'])
+                    raise GatewayError(error['code'], error['message'], error)
                 self.sleep(max(min(2 ** retries, 8), retry_after or 0))
                 retries += 1
                 continue
-            raise GatewayError(error['code'], error['message'])
+            raise GatewayError(error['code'], error['message'], error)

@@ -1,4 +1,5 @@
 """Bounded provider diagnostics: never persist raw envelopes or request content."""
+import math
 import json
 import re
 
@@ -57,6 +58,7 @@ def _safe_text(value, settings, phrases, limit=500):
     for secret in (settings.llm_api_key, settings.embedding_api_key, settings.llm_proxy_url):
         if secret:
             value = value.replace(secret, '[redacted]')
+    value = re.sub(r'\b(?:AIza[A-Za-z0-9_-]{6,}|AQ\.[A-Za-z0-9_.-]{6,})', '[redacted]', value)
     value = re.sub(r'\bsk-[A-Za-z0-9_-]+', '[redacted]', value, flags=re.I)
     value = re.sub(r'\bBearer\s+[^\s\"\'<>]+', 'Bearer [redacted]', value, flags=re.I)
     value = re.sub(r'\b(?:https?|socks5h?)://[^\s\"\'<>]+', '[redacted URL]', value, flags=re.I)
@@ -78,6 +80,8 @@ def http_diagnostics(response, payload, settings):
         body = response.json()
     except ValueError:
         body = {}
+    if isinstance(body, list):
+        body = next((item for item in body if isinstance(item, dict) and isinstance(item.get('error'), dict)), {})
     if not isinstance(body, dict):
         body = {}
     usage = body.get('usage')
@@ -114,6 +118,39 @@ def http_diagnostics(response, payload, settings):
     ):
         if safe := _safe_text(value, settings, phrases, limit):
             result[name] = safe
+    google = 'generativelanguage.googleapis.com' in settings.llm_base_url
+    if google:
+        if safe := _safe_text(error.get('message'), settings, phrases):
+            result['message'] = safe
+        if safe := _safe_text(error.get('status'), settings, phrases, 64):
+            result['status'] = safe
+        details = error.get('details') or []
+        for detail in details if isinstance(details, list) else []:
+            if not isinstance(detail, dict):
+                continue
+            violations = detail.get('violations')
+            for violation in violations[:10] if isinstance(violations, list) else []:
+                if isinstance(violation, dict) and 'quota_id' not in result:
+                    for key, raw_key in [('quota_id', 'quotaId'), ('quota_value', 'quotaValue')]:
+                        value = violation.get(raw_key)
+                        if isinstance(value, (str, int)) and (safe := _safe_text(str(value), settings, phrases, 160)):
+                            result[key] = safe
+            delay = detail.get('retryDelay')
+            if isinstance(delay, str) and re.fullmatch(r'\d+(?:\.\d+)?s', delay):
+                number = float(delay[:-1])
+                if math.isfinite(number):
+                    result['retry_after_seconds'] = number
+        daily = status == 429 and ('perday' in result.get('quota_id', '').lower() or
+                  'per day' in str(error.get('message', '')).lower() or result.get('retry_after_seconds', 0) > 60)
+        if daily:
+            result['daily_quota'] = True
+            quota = result.get('quota_value')
+            hours = math.ceil(result.get('retry_after_seconds', 0) / 3600)
+            result['message'] = 'Исчерпана дневная квота Google' + (' бесплатного тарифа' if 'freetier' in result.get('quota_id', '').lower() else '')
+            if quota and re.fullmatch(r'\d+', quota):
+                result['message'] += f' ({quota} запросов на модель)'
+            if hours:
+                result['message'] += f', сброс через ~{hours} ч'
     return result, usage
 
 

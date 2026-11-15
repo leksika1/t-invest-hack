@@ -72,8 +72,8 @@ def test_saved_demo_pdf_sets_fit_default_full_context(isin):
     assert all(record['text'] == pages[(record['document_id'], record['page'])] for record in result)
 
 
-@pytest.mark.parametrize('limit,mode,expected_retrievals', [(150000, 'full_document', 8), (0, 'retrieval', 15), (10, 'retrieval', 15)])
-def test_build_uses_full_documents_only_for_risks(prepared_build, monkeypatch, limit, mode, expected_retrievals):
+@pytest.mark.parametrize('limit,mode,expected_retrievals', [(150000, 'full_document', 0), (0, 'retrieval', 2), (10, 'retrieval', 2)])
+def test_build_shares_full_documents_between_two_batches(prepared_build, monkeypatch, limit, mode, expected_retrievals):
     factory, job, card, fields, _ = prepared_build
     monkeypatch.setattr(service, 'get_settings', lambda: Settings(llm_api_key='fake', extraction_full_context_max_tokens=limit, _env_file=None))
     old_retrieve, queries, inputs = service.retrieve, [], {}
@@ -81,9 +81,9 @@ def test_build_uses_full_documents_only_for_risks(prepared_build, monkeypatch, l
         queries.append(args[-1])
         return old_retrieve(*args)
     class RecordingLLM(FakeLLM):
-        def extract(self, code, messages, output_model):
+        def extract(self, code, messages, output_model, *, batch=False):
             inputs[code] = json.loads(messages[1]['content'])['fragments']
-            return super().extract(code, messages, output_model)
+            return super().extract(code, messages, output_model, batch=batch)
     monkeypatch.setattr(service, 'retrieve', retrieve)
     service.build_card(factory, job, gateway_factory=RecordingLLM)
     assert len(queries) == expected_retrievals

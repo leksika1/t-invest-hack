@@ -41,7 +41,7 @@ def prepared_build(monkeypatch):
             {'id': str(document_id), 'filename': 'decision.pdf', 'pages': 1, 'ocr_pages': 0}],
     })
     job = SimpleNamespace(id=job_id, worker_id=None, payload={'card_id': str(card_id)})
-    fields = {s.code: SimpleNamespace(id=uuid.uuid4(), reason='processing') for s in SPECS}
+    fields = {s.code: SimpleNamespace(id=uuid.uuid4(), code=s.code, reason='processing') for s in SPECS}
 
     class Rows(list):
         def all(self):
@@ -67,6 +67,8 @@ def prepared_build(monkeypatch):
             entity = query.column_descriptions[0]['entity']
             if entity is Page:
                 return Rows([SimpleNamespace(document_id=document_id, number=1, text=text)])
+            if entity is CardField:
+                return Rows(fields.values())
             assert entity is LLMCall
             return Rows()
 
@@ -100,7 +102,7 @@ def test_build_gateway_failure_preserves_all_eight_iss_fields(prepared_build, mo
         def __init__(self, **kwargs):
             pass
 
-        def extract(self, code, *args):
+        def extract(self, code, *args, **kwargs):
             calls.append(code)
             raise GatewayError(reason, 'Тестовый отказ шлюза')
 
@@ -152,7 +154,7 @@ def test_real_gateway_proxy_error_reaches_build_fallback(prepared_build, monkeyp
 
     service.build_card(factory, job, gateway_factory=gateway_factory)
     assert card.status == 'ready' and 'llm_proxy_error' in card.journal['warnings']
-    assert len(ledger.records) == 15
+    assert len(ledger.records) == 2
     assert all(record['error']['code'] == 'llm_proxy_error' for record in ledger.records)
     for spec in SPECS:
         if spec.iss:
