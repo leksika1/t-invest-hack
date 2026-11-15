@@ -1,3 +1,4 @@
+from typing import Literal
 from functools import lru_cache
 from decimal import Decimal
 from urllib.parse import urlsplit
@@ -56,6 +57,7 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     # Credentials may be present: exclude the URL from repr/serialization.
     llm_proxy_url: str = Field('', repr=False, exclude=True)
+    llm_mode: Literal["demo", "live"] = "demo"
     llm_model: str = DEFAULT_LLM_MODEL
     llm_fallback_models: str = ""
     public_base_url: str = ""
@@ -170,6 +172,8 @@ class Settings(BaseSettings):
 
     @property
     def llm_configuration_error(self) -> str | None:
+        if self.llm_mode == "demo":
+            return None
         if not self.llm_api_key.strip():
             return 'llm_not_configured'
         if self.llm_input_price_per_1m_usd is None or self.llm_output_price_per_1m_usd is None:

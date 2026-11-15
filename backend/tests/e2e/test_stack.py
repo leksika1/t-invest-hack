@@ -4,6 +4,7 @@ def test_health_db_ok(http):
     body = r.json()
     assert body["status"] == "ok"
     assert body["db"] == "ok"
+    assert body["llm_mode"] == "demo" and body["llm"] == "demo"
 
 
 def test_card_valid_isin(http):
@@ -26,7 +27,9 @@ def test_card_valid_isin(http):
     assert len(fields) == 15
     assert body['iss_fields']['face_value']['status'] == 'extracted'
     assert body['iss_fields']['face_value']['source']['kind'] == 'moex_iss'
-    assert all(f['status'] == 'not_found' and f['reason'] == 'llm_not_configured' for f in body['risk_fields'].values())
+    assert body['journal']['models'] == ['demo'] and body['journal']['cost_usd'] == '0'
+    assert all(f['source']['engine'] == 'demo_heuristic' for f in fields)
+    assert 'llm_demo_mode' in body['journal']['warnings']
     card_url = '/api/cards/' + body['id']
     reviewed = http.patch(card_url + '/fields/face_value', json={'user_status': 'confirmed'})
     assert reviewed.status_code == 200 and reviewed.json()['user_status'] == 'confirmed'

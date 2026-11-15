@@ -1684,3 +1684,7 @@ input::placeholder {
     scroll-behavior: auto !important;
   }
 }
+
+.llm-banner > div { min-width: 0; }
+.llm-banner details { margin-top: 8px; }
+.field-status > .badge + .badge { margin-left: 6px; }

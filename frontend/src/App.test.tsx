@@ -20,7 +20,7 @@ beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn());
 });
 function mockApi(
-  options: { processing?: boolean; unavailable?: boolean } = {},
+  options: { processing?: boolean; unavailable?: boolean; demo?: boolean } = {},
 ) {
   let selected = true;
   let processing = !!options.processing;
@@ -31,7 +31,8 @@ function mockApi(
       result = {
         status: "ok",
         db: "ok",
-        llm: "not_configured",
+        llm: options.demo ? "demo" : "not_configured",
+        llm_mode: options.demo ? "demo" : "live",
         version: "0.1",
       };
     else if (url === "/api/issues/" + isin && options.unavailable)
@@ -52,7 +53,24 @@ function mockApi(
     } else if (url === "/api/cards")
       result = { items: [card], total: 1, limit: 20, offset: 0 };
     else if (url === "/api/cards/" + cardId) {
-      result = { ...card, status: processing ? "processing" : "ready" };
+      result = {
+        ...card,
+        status: processing ? "processing" : "ready",
+        ...(options.demo
+          ? {
+              journal: { ...card.journal, llm_mode: "demo", models: ["demo"] },
+              risk_fields: Object.fromEntries(
+                Object.entries(card.risk_fields).map(([code, field]) => [
+                  code,
+                  {
+                    ...field,
+                    source: { ...field?.source, engine: "demo_recorded" },
+                  },
+                ]),
+              ),
+            }
+          : {}),
+      };
     } else if (url === "/api/jobs/" + jobId) {
       processing = false;
       result = { ...job, result: { sources: listing.sources } };
@@ -232,4 +250,33 @@ it("скачивает PDF через API с ISIN и версией в имен�
   expect(pdf).toHaveBeenCalledWith(cardId);
   expect(create).toHaveBeenCalled();
   expect(filename).toBe(`card-${isin}-v2.pdf`);
+});
+
+it("демо-баннер виден на главной, в истории и карточке; риски и сводка имеют метку", async () => {
+  mockApi({ demo: true });
+  render(<App />);
+  expect(await screen.findByLabelText("Демо-режим")).toHaveTextContent(
+    "Ответы модели имитированы",
+  );
+  await act(async () => {
+    window.location.hash = "/history";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  });
+  expect(
+    await screen.findByRole("heading", { name: "История карточек" }),
+  ).toBeVisible();
+  expect(screen.getByLabelText("Демо-режим")).toBeVisible();
+  await act(async () => {
+    window.location.hash = "/cards/" + cardId;
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  });
+  expect(
+    await screen.findByRole("heading", { name: /Сводка Демо/ }),
+  ).toBeVisible();
+  expect(screen.getAllByText("Демо", { exact: true }).length).toBeGreaterThan(
+    1,
+  );
+  await userEvent.click(screen.getByText("Журнал сборки и документы"));
+  expect(screen.getByText("Демо-режим (без LLM)")).toBeVisible();
+  expect(screen.getByLabelText("Демо-режим")).toBeVisible();
 });

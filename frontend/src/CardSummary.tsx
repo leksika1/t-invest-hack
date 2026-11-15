@@ -57,7 +57,12 @@ export function CardSummary({ card }: { card: Card }) {
       tabIndex={-1}
     >
       <div className="section-heading">
-        <h2>Сводка</h2>
+        <h2>
+          Сводка{" "}
+          {card.journal.llm_mode === "demo" && (
+            <span className="badge neutral">Демо</span>
+          )}
+        </h2>
         <div className="summary-counts" aria-label="Статусы рисковых условий">
           {Object.entries(counts).map(([label, count]) => (
             <span key={label}>
@@ -67,8 +72,12 @@ export function CardSummary({ card }: { card: Card }) {
         </div>
       </div>
       <div className="summary-stickers">
-        {Object.values(card.iss_fields).some(field => field?.status === "verified_iss") && <SecuritySticker kind="moex" />}
-        {risks.some(field => field.quote && field.status === "extracted") && <SecuritySticker kind="quote" />}
+        {Object.values(card.iss_fields).some(
+          (field) => field?.status === "verified_iss",
+        ) && <SecuritySticker kind="moex" />}
+        {risks.some((field) => field.quote && field.status === "extracted") && (
+          <SecuritySticker kind="quote" />
+        )}
       </div>
       <dl className="key-facts">
         <div>

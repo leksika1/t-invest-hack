@@ -17,6 +17,7 @@ from app.errors import ProcessingError
 from app.iss.client import IssError
 from app.issues.service import document_json, ensure_issue, new_job, update_iss
 from app.llm.gateway import GatewayError, LLMGateway, finite_decimal
+from app.llm.demo import DemoGateway
 from app.models import Card, CardField, Document, Issue, Job, LLMCall, Page
 
 
@@ -80,6 +81,10 @@ def build_card(factory, job, gateway_factory=LLMGateway):
     from app.jobs.handlers import collect, parse_document, progress, _progress_range
     settings = get_settings()
     card_id = uuid.UUID(job.payload['card_id'])
+    if settings.llm_mode == 'demo':
+        gateway_factory = lambda **kwargs: DemoGateway(**kwargs)
+    model = 'demo' if settings.llm_mode == 'demo' else settings.llm_model
+    embedding_model = None if settings.llm_mode == 'demo' else settings.embedding_model or None
     started = time.monotonic()
     with factory.begin() as lock:
         lock.execute(text('SELECT pg_advisory_xact_lock(:key)'), {'key': card_id.int % (2**63 - 1)})
@@ -88,9 +93,11 @@ def build_card(factory, job, gateway_factory=LLMGateway):
             if card.status == 'ready':
                 return {'card_id': str(card_id)}
             issue_id, snapshot = card.issue_id, dict(card.input_snapshot)
-            if snapshot.get('prepared') and (snapshot.get('model') != settings.llm_model or snapshot.get('embedding_model') != (settings.embedding_model or None)):
+            if snapshot.get('prepared') and (snapshot.get('model') != model or snapshot.get('embedding_model') != embedding_model or snapshot.get('llm_mode', 'live') != settings.llm_mode):
                 raise ProcessingError('card_config_changed', 'Модель изменилась после фиксации входов; создайте новую версию карточки')
         warnings = list(snapshot.get('warnings', []))
+        if settings.llm_mode == 'demo':
+            warnings.append('llm_demo_mode')
         if not snapshot.get('prepared'):
             if snapshot.get('auto_collect') and not snapshot.get('collection_done'):
                 token = _progress_range.set((0, 30))
@@ -137,7 +144,7 @@ def build_card(factory, job, gateway_factory=LLMGateway):
                             'failed_document_ids': failed, 'header': issue.header, 'isin': issue.isin,
                             'secid': issue.secid, 'iss_raw': issue.iss_data, 'iss_fields': issue.normalized.get('fields', {}),
                             'iss_fetched_at': str(issue.iss_updated_at) if issue.iss_updated_at else None,
-                            'model': settings.llm_model, 'embedding_model': settings.embedding_model or None,
+                            'model': model, 'embedding_model': embedding_model, 'llm_mode': settings.llm_mode,
                             'quote_fuzzy_threshold': settings.quote_fuzzy_threshold, 'min_confidence': settings.extraction_min_confidence,
                             'full_context_max_tokens': settings.extraction_full_context_max_tokens,
                             'warnings': list(dict.fromkeys(warnings)), 'prepared': True}
@@ -156,7 +163,7 @@ def build_card(factory, job, gateway_factory=LLMGateway):
             pending = {f.code: f.id for f in session.scalars(select(CardField).where(CardField.card_id == card_id)) if f.reason == 'processing'}
         batches, contexts = {}, {}
         if not configuration_error:
-            gateway = gateway_factory(factory=factory, settings=settings, job_id=job.id)
+            gateway = gateway_factory(factory=factory, settings=settings, job_id=job.id, **({'isin': snapshot['isin'], 'documents': ready_documents} if settings.llm_mode == 'demo' else {}))
             for iss_group in (True, False):
                 specs = [spec for spec in SPECS if spec.iss == iss_group and spec.code in pending]
                 if not specs:
@@ -200,6 +207,10 @@ def build_card(factory, job, gateway_factory=LLMGateway):
                         result = verify(spec.code, extracted, pages, context, settings, iss_value, iss_url=iss_url)
                 if result['status'] == 'not_found' and snapshot.get('failed_document_ids'):
                     result.update(status='needs_review', reason='document_processing_failed')
+            if settings.llm_mode == 'demo':
+                result['source']['engine'] = gateway.engine if not configuration_error else 'demo_heuristic'
+                if result['status'] == 'not_found' and result['source']['engine'] == 'demo_heuristic':
+                    result['reason'] = 'demo_heuristic_not_found'
             if result.get('source', {}).get('kind') == 'document':
                 source_doc = next((d for d in snapshot['documents'] if d['id'] == str(result['document_id'])), {})
                 result['source'].update(name=source_doc.get('filename'), url=next((o['download_url'] for o in source_doc.get('origins', []) if o.get('download_url')), None))
@@ -221,7 +232,9 @@ def build_card(factory, job, gateway_factory=LLMGateway):
                             'risk_context_mode': 'none' if not documents else 'full_document' if full_context is not None else 'retrieval',
                             'risk_context_tokens_upper_bound': context_token_bound(full_context) if full_context is not None else None,
                             'ocr_pages': sum(d['ocr_pages'] for d in documents_meta if d['id'] in snapshot['document_ids']),
-                            'models': sorted({c.model for c in calls}),
+                            'llm_mode': settings.llm_mode,
+                            'engine': gateway.engine if settings.llm_mode == 'demo' else 'live',
+                            'models': ['demo'] if settings.llm_mode == 'demo' else sorted({c.model for c in calls}),
                             'response_models': sorted({c.model for c in calls if c.purpose == 'extraction' and not c.error}),
                             'generation_calls': sum(c.purpose == 'extraction' for c in calls),
                             'cost_note': 'Оценка по тарифу; фактически может быть 0 на бесплатном тарифе Google' if any(c.cost_source == 'google_estimate' for c in calls) else None, 'tokens_in': sum(c.tokens_in or 0 for c in calls),

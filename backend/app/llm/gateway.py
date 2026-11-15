@@ -166,7 +166,7 @@ class LLMGateway:
 
     @property
     def configured(self):
-        return bool(self.settings.llm_api_key.strip())
+        return self.settings.llm_mode == "live" and bool(self.settings.llm_api_key.strip())
 
     def extract(self, code, messages, output_model, *, batch=False):
         if not self.configured:
@@ -179,11 +179,15 @@ class LLMGateway:
                           'response_format': {'type': 'json_schema', 'json_schema': {'name': code, 'strict': True, 'schema': schema}}}, output_model, batch=batch)
 
     def embed(self, texts):
+        if self.settings.llm_mode == 'demo':
+            return None
         if not texts or not self.settings.embedding_model or not (self.settings.embedding_api_key or self.settings.llm_api_key):
             return None
         return self._call('embedding', {'model': self.settings.embedding_model, 'input': texts})
 
     def _call(self, purpose, payload, output_model=None, batch=False):
+        if self.settings.llm_mode == 'demo':
+            raise GatewayError('llm_demo_mode', 'LLM transport is disabled in demo mode')
         embedding = purpose == 'embedding'
         input_price = self.settings.embedding_input_price_per_1m_usd if embedding else self.settings.llm_input_price_per_1m_usd
         output_price = Decimal(0) if embedding else self.settings.llm_output_price_per_1m_usd

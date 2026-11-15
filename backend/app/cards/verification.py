@@ -269,7 +269,7 @@ def anchors_supported(value, quotes):
     if isinstance(value, list):
         return all(anchors_supported(v, quotes) for v in value)
     if isinstance(value, int) and not isinstance(value, bool):
-        return bool(re.search(r'(?<![\w.])' + str(value) + r'(?![\w.])', compact))
+        return bool(re.search(r'(?<![\w.])' + str(value) + r'(?![\w]|\.\d)', compact))
     if not isinstance(value, str):
         return True
     if re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
@@ -277,11 +277,15 @@ def anchors_supported(value, quotes):
         if value in quotes or f'{day}.{month}.{year}' in quotes:
             return True
         stems = ['январ', 'феврал', 'март', 'апрел', 'ма', 'июн', 'июл', 'август', 'сентябр', 'октябр', 'ноябр', 'декабр']
-        return bool(re.search(r'\b0?' + str(int(day)) + r'\s+' + stems[int(month)-1] + r'[а-я]*\s+' + year + r'\b', quotes))
+        return bool(re.search(r'\b0?' + str(int(day)) + r'[\s"]+' + stems[int(month)-1] + r'[а-я]*\s+' + year + r'\b', quotes))
     for date_text in re.findall(r'\b\d{2}\.\d{2}\.\d{4}\b', value):
         if date_text not in quotes:
             return False
         value = value.replace(date_text, '')
+    for reference in re.findall(r'\d+(?:\.\d+){2,}', value):
+        if not re.search(r'(?<![\w.])' + re.escape(reference) + r'(?![\w]|\.\d)', quotes):
+            return False
+        value = value.replace(reference, '')
     numbers = re.findall(r'\d+(?:[.,]\d+)?', value)
     quoted_numbers = {Decimal(n) for n in re.findall(r'(?<![\w.])[+-]?\d+(?:\.\d+)?', compact)}
     return all(Decimal(n.replace(',', '.')) in quoted_numbers for n in numbers)

@@ -16,6 +16,7 @@ from reportlab.platypus import Flowable, KeepTogether, LongTable, Paragraph, Sim
 
 from app.cards.export import REASONS
 from app.cards.schema import DISCLAIMER, SPECS
+from app.llm.demo import DEMO_NOTICE
 
 INK = colors.HexColor('#0e1a2b')
 MUTED = colors.HexColor('#5b6577')
@@ -192,7 +193,7 @@ def render_pdf(card, generated_at=None):
     styles.add(ParagraphStyle(name='HeadingRu', parent=styles['TextRu'], fontName='GolosBold', fontSize=15, leading=19, spaceBefore=17, spaceAfter=9, keepWithNext=True))
     styles.add(ParagraphStyle(name='SubRu', parent=styles['TextRu'], fontName='GolosBold', fontSize=10, leading=14, spaceBefore=10, keepWithNext=True))
     styles.add(ParagraphStyle(name='QuoteRu', parent=styles['TextRu'], fontName='PTSerif', fontSize=11, leading=16, backColor=PAPER, borderColor=RULE, borderWidth=.5, borderPadding=9, leftIndent=10, rightIndent=10, spaceBefore=9, spaceAfter=12))
-    styles.add(ParagraphStyle(name='TitleRu', parent=styles['TextRu'], fontName='PTSerif', fontSize=19, leading=23, textColor=BLUE))
+    styles.add(ParagraphStyle(name='TitleRu', parent=styles['TextRu'], fontName='PTSerif', fontSize=17, leading=22, textColor=BLUE))
 
     def p(value, style='TextRu', markup=False):
         return Paragraph(value if markup else escape(str(value)).replace('\n', '<br/>'), styles[style])
@@ -224,6 +225,8 @@ def render_pdf(card, generated_at=None):
                          [p(f"Регистрационный номер: {header.get('registration_number') or 'не указан'}", 'SmallRu'), p('Бланк выпуска', 'SmallRu')]], [width - 110, 110], False)
     certificate.setStyle(TableStyle([('BOX', (0, 0), (-1, -1), .8, BLUE), ('BACKGROUND', (0, 0), (-1, -1), PAPER)]))
     story.extend([certificate, Spacer(1, 10), p(DISCLAIMER, 'SmallRu'), p('Сформировано: ' + generated.strftime('%d.%m.%Y %H:%M UTC'), 'SmallRu')])
+    if card.get('journal', {}).get('llm_mode') == 'demo':
+        story.append(p(DEMO_NOTICE, 'SmallRu'))
     fields = card['iss_fields']
     currency = (display_value(fields.get('face_value', {})) or {}).get('currency') or 'в валюте номинала'
     heading('Сводка')
@@ -332,7 +335,7 @@ def render_pdf(card, generated_at=None):
     journal = card.get('journal', {})
     cost = journal.get('cost_usd')
     story.append(p(f"Документов использовано: {journal.get('documents_used', 'неизвестно')}; страниц / OCR: {journal.get('pages', '—')} / {journal.get('ocr_pages', '—')}."))
-    story.append(p('Модель: ' + (', '.join(journal.get('models') or []) or 'Без вызовов модели')))
+    story.append(p('Модель: ' + ('Демо-режим (без LLM)' if journal.get('llm_mode') == 'demo' else ', '.join(journal.get('models') or []) or 'Без вызовов модели')))
     story.append(p(f"Стоимость, USD: {cost if cost is not None else 'неизвестна'}; известная часть: {journal.get('known_cost_usd', 'неизвестна')}; вызовов с неизвестной стоимостью: {journal.get('unknown_cost_calls', 0)}."))
     duration = journal.get('duration_ms')
     story.append(p(f"Время: {duration / 1000:.1f} с" if duration is not None else 'Время неизвестно'))

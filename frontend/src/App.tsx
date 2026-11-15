@@ -51,7 +51,9 @@ function Home() {
             </div>
           </section>
         </div>
-        <div className="home-art"><BondComposition /></div>
+        <div className="home-art">
+          <BondComposition />
+        </div>
       </div>
       <div className="intro-grid">
         {[
@@ -332,7 +334,11 @@ export default function App() {
           </span>
         </div>
       </header>
-      <main id="main-content" className={!parts.length ? "home-page" : undefined} tabIndex={-1}>
+      <main
+        id="main-content"
+        className={!parts.length ? "home-page" : undefined}
+        tabIndex={-1}
+      >
         <ErrorNotice
           message={error}
           retry={() => setHealthRevision((n) => n + 1)}
@@ -341,6 +347,27 @@ export default function App() {
           <p className="notice danger" role="alert">
             Хранилище временно недоступно. Запросы могут завершаться ошибкой.
           </p>
+        )}
+        {(health?.llm_mode === "demo" || health?.llm === "demo") && (
+          <aside className="notice neutral llm-banner" aria-label="Демо-режим">
+            <PaperIllustration kind="model" />
+            <div>
+              <p>
+                <strong>Демо-режим.</strong> Ответы модели имитированы: для двух
+                демо-выпусков — записанный пример, для остальных — простой
+                разбор по ключевым словам. Полноценный анализ требует API-ключа
+                LLM.
+              </p>
+              <details>
+                <summary>Как подключить модель</summary>
+                <p className="caption">
+                  В настройках сервиса задайте <code>LLM_MODE=live</code> и{" "}
+                  <code>LLM_API_KEY</code> от OpenRouter, OpenAI или Google AI
+                  Studio.
+                </p>
+              </details>
+            </div>
+          </aside>
         )}
         {health?.llm === "not_configured" && (
           <p className="notice neutral llm-banner">

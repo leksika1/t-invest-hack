@@ -96,8 +96,8 @@ def progress(factory, job_id, step, percent, result=None):
 
 
 def ingest(factory, job_id, payload, settings, start=0, span=95):
-    from app.llm.gateway import LLMGateway
-    gateway = LLMGateway(factory=factory, settings=settings, job_id=job_id)
+    from app.llm.demo import make_gateway
+    gateway = make_gateway(factory=factory, settings=settings, job_id=job_id)
     outcomes = []
     for index, identifier in enumerate(payload["document_ids"]):
         try:

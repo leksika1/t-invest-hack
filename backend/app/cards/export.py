@@ -3,9 +3,10 @@ import json
 import re
 
 from app.cards.schema import DISCLAIMER, SPECS
+from app.llm.demo import DEMO_NOTICE, DEMO_NOT_FOUND
 from app.llm.diagnostics import PROVIDER_REASONS
 
-REASONS = {'llm_not_configured': 'LLM не настроена', 'quote_not_verified': 'Цитата не подтверждена',
+REASONS = {'llm_demo_mode': DEMO_NOTICE, 'demo_heuristic_not_found': DEMO_NOT_FOUND, 'llm_not_configured': 'LLM не настроена', 'quote_not_verified': 'Цитата не подтверждена',
            'budget_exceeded': 'Дневной бюджет LLM исчерпан', 'not_in_documents': 'Не найдено в переданных документах',
            'iss_unavailable': 'Данные ISS недоступны', 'iss_only': 'Значение напрямую из MOEX ISS',
            'iss_not_confirmed': 'Значение MOEX ISS; в документах не подтверждено',
@@ -30,6 +31,8 @@ def render_markdown(card):
     document_names = {str(d.get('id')): d['filename'] for d in card['documents'] if d.get('id')}
     lines = ['# Карточка облигации ' + escape(card['isin']), '', DISCLAIMER, '', 'Статус: ' + card['status'],
              'Версия: ' + str(card['version']), '', '## Выпуск', '', escape(json.dumps(card['header'], ensure_ascii=False))]
+    if card.get('journal', {}).get('llm_mode') == 'demo':
+        lines[2:2] = [DEMO_NOTICE, '']
     for spec in SPECS:
         field = card['iss_fields' if spec.iss else 'risk_fields'][spec.code]
         lines.extend(['', '## ' + spec.title, '', 'Машинный статус: ' + field['status']])

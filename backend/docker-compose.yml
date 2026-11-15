@@ -30,6 +30,7 @@ services:
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_PROXY_URL: ${LLM_PROXY_URL:-http://tinvest-llm-proxy:7890}
       LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODE: ${LLM_MODE:-demo}
       LLM_MODEL: ${LLM_MODEL:-}
       LLM_FALLBACK_MODELS: ${LLM_FALLBACK_MODELS:-}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}

@@ -168,6 +168,9 @@ export function FieldCard({
       </dt>
       <dd className="field-content">
         <div className="field-status">
+          {field.source.engine?.startsWith("demo_") && (
+            <span className="badge neutral">Демо</span>
+          )}
           <StatusBadge
             status={
               field.source.kind === "moex_iss" &&
@@ -244,7 +247,9 @@ export function FieldCard({
               Цитаты и источники
               {field.evidence.length ? `; ${field.evidence.length + 1}` : ""}
             </summary>
-            {risk && field.quote && field.status === "extracted" && <SecuritySticker kind="quote" small />}
+            {risk && field.quote && field.status === "extracted" && (
+              <SecuritySticker kind="quote" small />
+            )}
             {parts && (
               <blockquote>
                 {parts[0]}
@@ -387,7 +392,11 @@ function Journal({ card }: { card: Card }) {
         </div>
         <div>
           <dt>Модель</dt>
-          <dd>{j.models?.join(", ") || "Без вызовов модели"}</dd>
+          <dd>
+            {j.llm_mode === "demo" || j.models?.includes("demo")
+              ? "Демо-режим (без LLM)"
+              : j.models?.join(", ") || "Без вызовов модели"}
+          </dd>
         </div>
         <div>
           <dt>Стоимость, USD</dt>
