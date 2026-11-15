@@ -1,12 +1,15 @@
 import { Rosette, PaperIllustration } from "./art/guilloche";
+import { HolographicHeader } from "./art/HolographicHeader";
+import { BondComposition, FactStamp, SecuritySticker } from "./art/Stickers";
 import { useEffect, useState } from "react";
 import { api, errorMessage } from "./api";
 import { CardPage } from "./CardView";
-import { ErrorNotice, IsinForm, StatusBadge } from "./components";
+import { ErrorNotice, IsinForm, StatusBadge, Skeleton } from "./components";
 import { formatDate, validIsin } from "./fields";
 import type { CardSummary, Health } from "./types";
 import { Workspace } from "./Workspace";
 import "./styles.css";
+import "./design3.css";
 
 export const DISCLAIMER =
   "Факты из документов эмитента, не инвестиционная рекомендация";
@@ -14,6 +17,7 @@ function Home() {
   return (
     <>
       <div className="home-layout">
+        <HolographicHeader />
         <div className="home-content">
           <div className="hero">
             <h1>
@@ -48,7 +52,7 @@ function Home() {
           </section>
         </div>
         <div className="home-art">
-          <Rosette seed="RU000A10CS75" />
+          <BondComposition />
         </div>
       </div>
       <div className="intro-grid">
@@ -56,7 +60,7 @@ function Home() {
           [
             "1",
             "Подготовьте документы",
-            "Автосбор из раскрытия или загрузка своих PDF. Вы сами выбираете источники для сборки.",
+            "Автосбор из раскрытия или загрузка своих PDF или ZIP. Вы сами выбираете источники для сборки.",
           ],
           [
             "2",
@@ -66,7 +70,7 @@ function Home() {
           [
             "3",
             "Проверьте и сохраните",
-            "Откройте цитаты, подтвердите или исправьте результат и скачайте Markdown.",
+            "Откройте цитаты, подтвердите или исправьте результат и сохраните PDF или Markdown.",
           ],
         ].map(([n, title, text]) => (
           <section key={n}>
@@ -130,11 +134,18 @@ function HistoryPage({ isin }: { isin: string }) {
             <a href="#/history">Все выпуски</a>
           </p>
         )}
-        <ErrorNotice message={error} retry={() => setRevision((n) => n + 1)} />
+        <ErrorNotice
+          message={error}
+          retry={() => {
+            setLoading(true);
+            setRevision((n) => n + 1);
+          }}
+        />
         {loading ? (
-          <p role="status">Загрузка истории…</p>
+          <Skeleton label="Загружаем историю карточек" />
         ) : !items.length && !error ? (
           <div className="empty-state">
+            <SecuritySticker kind="coupon" decorative />
             <p>Карточек пока нет</p>
             <p className="caption">
               {isin
@@ -142,7 +153,7 @@ function HistoryPage({ isin }: { isin: string }) {
                 : "Откройте выпуск и создайте первую карточку."}
             </p>
           </div>
-        ) : (
+        ) : error && !items.length ? null : (
           <div
             className="table-scroll"
             role="region"
@@ -291,7 +302,8 @@ export default function App() {
       >
         К содержимому
       </a>
-      <header className="app-header">
+      <header className={`app-header${!parts.length ? " home-header" : ""}`}>
+        {parts.length > 0 && <HolographicHeader />}
         <div className="header-inner">
           <a
             className="brand"
@@ -322,7 +334,11 @@ export default function App() {
           </span>
         </div>
       </header>
-      <main id="main-content" tabIndex={-1}>
+      <main
+        id="main-content"
+        className={!parts.length ? "home-page" : undefined}
+        tabIndex={-1}
+      >
         <ErrorNotice
           message={error}
           retry={() => setHealthRevision((n) => n + 1)}
@@ -331,6 +347,27 @@ export default function App() {
           <p className="notice danger" role="alert">
             Хранилище временно недоступно. Запросы могут завершаться ошибкой.
           </p>
+        )}
+        {(health?.llm_mode === "demo" || health?.llm === "demo") && (
+          <aside className="notice neutral llm-banner" aria-label="Демо-режим">
+            <PaperIllustration kind="model" />
+            <div>
+              <p>
+                <strong>Демо-режим.</strong> Ответы модели имитированы: для двух
+                демо-выпусков — записанный пример, для остальных — простой
+                разбор по ключевым словам. Полноценный анализ требует API-ключа
+                LLM.
+              </p>
+              <details>
+                <summary>Как подключить модель</summary>
+                <p className="caption">
+                  В настройках сервиса задайте <code>LLM_MODE=live</code> и{" "}
+                  <code>LLM_API_KEY</code> от OpenRouter, OpenAI или Google AI
+                  Studio.
+                </p>
+              </details>
+            </div>
+          </aside>
         )}
         {health?.llm === "not_configured" && (
           <p className="notice neutral llm-banner">
@@ -344,6 +381,7 @@ export default function App() {
         {page}
       </main>
       <footer className="app-footer">
+        <FactStamp />
         <strong>{DISCLAIMER}</strong>
         <span>Данные и документы выпуска</span>
       </footer>

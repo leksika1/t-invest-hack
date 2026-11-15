@@ -9,7 +9,12 @@ class FakeLLM:
     def embed(self, texts):
         return None
 
-    def extract(self, code, messages, output_model):
+    def extract(self, code, messages, output_model, *, batch=False):
+        if batch:
+            from app.cards.schema import extraction_model
+            data = json.loads(messages[1]['content'])
+            return {field['field_code']: self.extract(field['field_code'],
+                [messages[0], {'role': 'user', 'content': json.dumps({**data, **field})}], extraction_model(field['field_code'])).model_dump(mode='json') for field in data['fields']}
         fragments = json.loads(messages[1]['content'])['fragments']
         parameters = {
             'face_value': ('Номинальная', {'amount': '1000', 'currency': 'RUB'}),

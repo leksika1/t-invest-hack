@@ -8,6 +8,8 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def offline_unit_tests(request, monkeypatch):
+    if 'tests/e2e' not in request.node.nodeid.replace('\\', '/') and request.node.path.name != 'test_demo.py':
+        monkeypatch.setenv('LLM_MODE', 'live')
     if request.node.get_closest_marker("db") or "tests/e2e" in request.node.nodeid.replace("\\", "/"):
         return
     monkeypatch.setattr('app.rate_limit.consume', lambda *args: None)

@@ -128,21 +128,35 @@ def upload_documents(isin: str, files: list[UploadFile] = File(...), document_ty
     settings = get_settings()
     try:
         if not 1 <= len(files) <= settings.max_upload_files:
-            raise ProcessingError("too_many_files", "Превышен лимит числа PDF", 413)
+            raise ProcessingError("too_many_files", "Превышен лимит числа PDF/ZIP", 413)
         kinds = document_types or ["other"] * len(files)
         if len(kinds) != len(files) or any(t not in TYPES for t in kinds):
-            raise ProcessingError("invalid_document_types", "Типы документов должны соответствовать PDF по порядку")
+            raise ProcessingError("invalid_document_types", "Типы документов должны соответствовать PDF/ZIP по порядку")
         prepared = []
+        unpacked = 0
         # Validate the entire batch before any issue/document/file mutation.
         for upload, kind in zip(files, kinds):
-            content = upload.file.read(settings.max_upload_bytes + 1)
-            prepared.append(UploadSource.prepare(content, upload.filename or "document.pdf", kind, settings))
+            filename = upload.filename or "document.pdf"
+            is_zip = filename.lower().endswith('.zip')
+            content = upload.file.read((settings.max_archive_bytes if is_zip else settings.max_upload_bytes) + 1)
+            if is_zip:
+                from app.documents.storage import archive_pdfs, clean_filename
+                for member, pdf in archive_pdfs(content, settings):
+                    prepared.append((pdf, clean_filename(member), kind,
+                                     {'url': None, 'filename': clean_filename(filename), 'entry_name': member}))
+                    unpacked += len(pdf)
+            else:
+                pdf, name, doc_type = UploadSource.prepare(content, filename, kind, settings)
+                prepared.append((pdf, name, doc_type, None))
+                unpacked += len(pdf)
+            if len(prepared) > settings.max_archive_entries or unpacked > settings.max_archive_unpacked_bytes:
+                raise ProcessingError('archive_limits', 'Превышен общий лимит PDF после распаковки', 413)
         issue = ensure_issue(session, code)
         result = []
         to_parse = []
-        for content, filename, kind in prepared:
+        for content, filename, kind, archive in prepared:
             document, duplicate = put_document(session, issue.id, content, filename, kind, settings,
-                            {"source": "upload", "source_url": None, "download_url": None, "published_at": None, "archive": None})
+                            {"source": "upload", "source_url": None, "download_url": None, "published_at": None, "archive": archive})
             if document.status != "ready":
                 to_parse.append(str(document.id))
             result.append({**document_json(session, document), "duplicate": duplicate})

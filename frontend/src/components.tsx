@@ -1,4 +1,5 @@
 import { Rosette, GuillocheBorder } from "./art/guilloche";
+import { FoilSurface } from "./art/FoilSurface";
 import { useEffect, useId, useState } from "react";
 import type { FormEvent } from "react";
 import { errorMessage, safeUrl } from "./api";
@@ -21,6 +22,7 @@ const statuses: Record<string, [string, string, string]> = {
   verified_iss: ["Сверено с ISS", "good", "✓"],
   mismatch_iss: ["Расхождение с ISS", "danger", "≠"],
   extracted: ["Извлечено", "info", "◆"],
+  iss_unconfirmed: ["Из ISS, без подтверждения", "info", "◆"],
   not_found: ["Не найдено", "neutral", "—"],
   needs_review: ["Нужна проверка", "warn", "!"],
   confirmed: ["Подтверждено человеком", "human", "✓"],
@@ -150,7 +152,7 @@ export function IssueHeader({
   fetchedAt?: string | null;
 }) {
   return (
-    <section className="panel issue-header" aria-label="Параметры выпуска">
+    <FoilSurface as="section" className="panel issue-header" label="Параметры выпуска">
       <GuillocheBorder seed={isin} />
       <Rosette seed={isin} className="issue-rosette" />
       <div className="issue-identifier">
@@ -198,7 +200,7 @@ export function IssueHeader({
       {fetchedAt && (
         <p className="caption">Снимок MOEX ISS: {formatDate(fetchedAt)}</p>
       )}
-    </section>
+    </FoilSurface>
   );
 }
 export function CouponBrief({ value }: { value: Json | undefined }) {
@@ -589,4 +591,20 @@ export function ValueEditor({
 }
 export function fieldEditor(code: keyof typeof editors) {
   return editors[code];
+}
+
+export function Skeleton({
+  label = "Загружаем документы",
+}: {
+  label?: string;
+}) {
+  return (
+    <div className="skeleton" role="status" aria-label={label}>
+      <span className="sr-only">{label}</span>
+      <i />
+      <i />
+      <i />
+      <i />
+    </div>
+  );
 }

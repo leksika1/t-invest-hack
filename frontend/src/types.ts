@@ -5,6 +5,7 @@ export type Health = {
   status: string;
   db: string;
   llm: string;
+  llm_mode?: "demo" | "live";
   llm_proxy?: "configured" | "none";
   llm_proxy_scheme?: "http" | "https" | "socks5" | "socks5h" | null;
   version: string;
@@ -22,7 +23,7 @@ export type Origin = {
   download_url: string | null;
   published_at: string | null;
   fetched_at: string;
-  archive: { url: string; entry_name: string } | null;
+  archive: { url: string | null; filename?: string; entry_name: string } | null;
 };
 export type DocumentInfo = {
   id: string;
@@ -127,7 +128,12 @@ export type CardField = {
   status: FieldStatus;
   iss_value: Value | null;
   confidence: number | null;
-  source: { kind?: string; name?: string | null; url?: string | null };
+  source: {
+    engine?: "demo_recorded" | "demo_heuristic";
+    kind?: string;
+    name?: string | null;
+    url?: string | null;
+  };
   evidence: Evidence[];
   reason: string | null;
   reason_message?: string | null;
@@ -153,6 +159,8 @@ export type Card = CardSummary & {
   iss_fields: Partial<Record<FieldCode, CardField>>;
   risk_fields: Partial<Record<FieldCode, CardField>>;
   journal: {
+    llm_mode?: "demo" | "live";
+    engine?: string;
     documents_used?: number;
     pages?: number;
     ocr_pages?: number;

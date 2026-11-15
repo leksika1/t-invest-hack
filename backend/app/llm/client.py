@@ -13,9 +13,11 @@ class LLMClient:
 
     @property
     def configured(self):
-        return bool(self.settings.llm_api_key)
+        return self.settings.llm_mode == "live" and bool(self.settings.llm_api_key)
 
     def request(self, purpose, payload):
+        if self.settings.llm_mode == "demo":
+            raise RuntimeError("LLM transport is disabled in demo mode")
         embedding = purpose == 'embedding'
         base = (self.settings.embedding_base_url or self.settings.llm_base_url) if embedding else self.settings.llm_base_url
         key = (self.settings.embedding_api_key or self.settings.llm_api_key) if embedding else self.settings.llm_api_key

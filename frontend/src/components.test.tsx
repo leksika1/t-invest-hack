@@ -48,14 +48,17 @@ describe("Статусы и валидация", () => {
     render(<ExternalLink url="javascript:alert(1)">Источник</ExternalLink>);
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
-  it("отклоняет пустой, большой PDF, архив и пакет > 5", () => {
+  it("отклоняет пустой, большой PDF, посторонний формат и пакет > 5", () => {
     const pdf = new File(["pdf"], "a.pdf", { type: "application/pdf" });
     const big = new File(["x"], "b.pdf");
     Object.defineProperty(big, "size", { value: 31 * 1024 * 1024 });
     expect(validateFiles([pdf])).toBeNull();
     expect(validateFiles([big])).toMatch(/30 МиБ/);
     expect(validateFiles([new File([], "empty.pdf")])).toMatch(/непустым/);
-    expect(validateFiles([new File(["zip"], "a.zip")])).toMatch(/только PDF/);
+    expect(validateFiles([new File(["zip"], "a.zip")])).toBeNull();
+    expect(validateFiles([new File(["rar"], "a.rar")])).toMatch(
+      /только PDF или ZIP/,
+    );
     expect(validateFiles(Array(6).fill(pdf))).toMatch(/1 до 5/);
   });
 });
@@ -128,17 +131,40 @@ describe("Поле карточки", () => {
     expect(screen.getByText("Цитата не подтверждена")).toBeVisible();
     expect(screen.getByRole("button", { name: "Подтвердить" })).toBeDisabled();
     expect(screen.queryByText(mismatch.quote!)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Данные MOEX ISS" }),
+    ).toBeVisible();
+    expect(screen.getByText("900 RUB")).toBeVisible();
+  });
+  it("показывает ISS и пометку при частичной сверке документа", () => {
+    render(
+      <FieldCard
+        field={{
+          ...mismatch,
+          status: "verified_iss",
+          reason: "iss_partial_confirmation",
+          reason_message:
+            "Документ подтверждает только часть параметров; полные данные — в MOEX ISS",
+        }}
+        cardId={cardId}
+        documents={[document]}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("1000 RUB")).toBeVisible();
+    expect(screen.getByText("900 RUB")).toBeVisible();
+    expect(
+      screen.getByText(/Документ подтверждает только часть параметров/),
+    ).toBeVisible();
   });
   it("исправляет типизированное значение через PATCH, сохраняет исходное", async () => {
     const user = userEvent.setup();
     const change = vi.fn();
-    const review = vi
-      .spyOn(api, "review")
-      .mockResolvedValue({
-        ...mismatch,
-        user_status: "corrected",
-        user_value: { amount: "1100", currency: "RUB" },
-      });
+    const review = vi.spyOn(api, "review").mockResolvedValue({
+      ...mismatch,
+      user_status: "corrected",
+      user_value: { amount: "1100", currency: "RUB" },
+    });
     render(
       <FieldCard
         field={mismatch}

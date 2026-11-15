@@ -41,7 +41,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.add_middleware(RateLimitMiddleware)
-app.add_middleware(UploadLimitMiddleware, max_bytes=settings.max_upload_bytes * settings.max_upload_files + 1024 * 1024)
+app.add_middleware(UploadLimitMiddleware, max_bytes=max(settings.max_archive_bytes, settings.max_upload_bytes * settings.max_upload_files) + 1024 * 1024)
 if settings.cors_origin_list:
     app.add_middleware(
         CORSMiddleware,
@@ -71,7 +71,8 @@ def health() -> dict:
     return {
         "status": "ok" if db_ok else "degraded",
         "db": "ok" if db_ok else "error",
-        "llm": "configured" if settings.llm_configuration_error is None else "not_configured",
+        "llm_mode": settings.llm_mode,
+        "llm": "demo" if settings.llm_mode == "demo" else "configured" if settings.llm_configuration_error is None else "not_configured",
         **settings.llm_proxy_info,
         "version": settings.app_version,
     }

@@ -1,20 +1,49 @@
+from typing import Literal
 from functools import lru_cache
 from decimal import Decimal
 from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# OpenRouter, USD / 1M tokens. Проверить актуальность на openrouter.ai/models.
-# Defaults apply only to this exact model; other models require explicit prices.
+# USD / 1M tokens. Проверить актуальность: openrouter.ai/models и ai.google.dev/gemini-api/docs/pricing.
+# Defaults apply only to these exact models; other models require explicit prices.
 DEFAULT_LLM_MODEL = 'google/gemini-2.5-flash'
-DEFAULT_LLM_PRICES = {
-    DEFAULT_LLM_MODEL: {
-        'llm_input_price_per_1m_usd': Decimal('0.30'),
-        'llm_output_price_per_1m_usd': Decimal('2.50'),
-    },
+_GEMINI_FLASH_PRICES = {
+    'llm_input_price_per_1m_usd': Decimal('0.30'),
+    'llm_output_price_per_1m_usd': Decimal('2.50'),
 }
+DEFAULT_LLM_PRICES = {
+    'gpt-4.1-mini': {'llm_input_price_per_1m_usd': Decimal('0.40'), 'llm_output_price_per_1m_usd': Decimal('1.60')},  # OpenAI, проверить
+    DEFAULT_LLM_MODEL: _GEMINI_FLASH_PRICES,   # OpenRouter
+    # Google AI Studio. Google не возвращает стоимость в ответе, расход считается по этим ставкам.
+    # Тариф gemini-3.5-flash проверить на ai.google.dev/gemini-api/docs/pricing; на бесплатном ключе фактически 0.
+    'gemini-3.5-flash': _GEMINI_FLASH_PRICES,
+    'gemini-2.5-flash': _GEMINI_FLASH_PRICES,
+    # Проверить: консервативный резерв как flash, не подтверждённый тариф lite.
+    'gemini-3.1-flash-lite': _GEMINI_FLASH_PRICES,
+}
+
+# Провайдер по виду ключа, если LLM_BASE_URL / LLM_MODEL не заданы явно:
+# ключи Google AI Studio начинаются с «AIza» или «AQ.» (новый формат), ключ OpenRouter — с «sk-or-».
+# gemini-2.5-flash закрыта для новых ключей Google (404), поэтому для Google — gemini-3.5-flash.
+LLM_PROVIDER_PRESETS = (
+    ('AIza', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-3.5-flash'),
+    ('AQ.', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-3.5-flash'),
+    ('sk-or-', 'https://openrouter.ai/api/v1', DEFAULT_LLM_MODEL),
+    # OpenAI API (platform.openai.com; баланс API отдельный от подписки ChatGPT). Проверять после «sk-or-».
+    ('sk-', 'https://api.openai.com/v1', 'gpt-4.1-mini'),
+)
+DEFAULT_LLM_BASE_URL = 'https://openrouter.ai/api/v1'
+
+
+def llm_preset(api_key: str):
+    key = (api_key or '').strip()
+    for prefix, base_url, model in LLM_PROVIDER_PRESETS:
+        if key.startswith(prefix):
+            return base_url, model
+    return DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL
 
 
 class Settings(BaseSettings):
@@ -23,13 +52,16 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     database_url: str = "postgresql+psycopg://bonds:bonds@db:5432/bonds"
 
-    llm_base_url: str = "https://openrouter.ai/api/v1"
+    # Пусто -> выбирается по виду LLM_API_KEY (см. LLM_PROVIDER_PRESETS)
+    llm_base_url: str = DEFAULT_LLM_BASE_URL
     llm_api_key: str = ""
     # Credentials may be present: exclude the URL from repr/serialization.
     llm_proxy_url: str = Field('', repr=False, exclude=True)
+    llm_mode: Literal["demo", "live"] = "demo"
     llm_model: str = DEFAULT_LLM_MODEL
+    llm_fallback_models: str = ""
     public_base_url: str = ""
-    llm_daily_budget_usd: Decimal = Field(Decimal("1"), ge=0)
+    llm_daily_budget_usd: Decimal = Field(Decimal("10"), ge=0)
     llm_input_price_per_1m_usd: Decimal | None = Field(None, ge=0)
     llm_output_price_per_1m_usd: Decimal | None = Field(None, ge=0)
     embedding_input_price_per_1m_usd: Decimal | None = Field(None, ge=0)
@@ -38,6 +70,7 @@ class Settings(BaseSettings):
     llm_max_output_tokens: int = Field(4096, ge=64, le=16384)
     retrieval_top_k: int = Field(8, ge=1, le=30)
     retrieval_max_tokens: int = Field(10000, ge=256, le=32000)
+    extraction_full_context_max_tokens: int = Field(150000, ge=0, le=500000)
     quote_fuzzy_threshold: float = Field(0.95, ge=0.9, le=1)
     extraction_min_confidence: float = Field(0.8, ge=0, le=1)
     admin_token: str = ""
@@ -45,6 +78,29 @@ class Settings(BaseSettings):
     rate_limit_cards: int = Field(5, ge=1)
     rate_limit_uploads: int = Field(10, ge=1)
     rate_limit_collect: int = Field(5, ge=1)
+
+    @model_validator(mode='before')
+    @classmethod
+    def provider_defaults(cls, data):
+        if not isinstance(data, dict):
+            return data
+        lowered = {str(k).lower(): k for k in data}
+        def raw(name):
+            key = lowered.get(name)
+            value = data.get(key) if key is not None else None
+            return value.strip() if isinstance(value, str) else value
+        base_url, model = llm_preset(raw('llm_api_key') or '')
+        if not raw('llm_base_url'):
+            data[lowered.get('llm_base_url', 'llm_base_url')] = base_url
+        if not raw('llm_model'):
+            data[lowered.get('llm_model', 'llm_model')] = model
+        if not raw('llm_fallback_models') and 'generativelanguage.googleapis.com' in (raw('llm_base_url') or base_url):
+            data[lowered.get('llm_fallback_models', 'llm_fallback_models')] = 'gemini-3.1-flash-lite'
+        return data
+
+    @property
+    def fallback_models(self):
+        return list(dict.fromkeys(m.strip() for m in self.llm_fallback_models.split(',') if m.strip() and m.strip() != self.llm_model))
 
     @field_validator('llm_proxy_url')
     @classmethod
@@ -116,6 +172,8 @@ class Settings(BaseSettings):
 
     @property
     def llm_configuration_error(self) -> str | None:
+        if self.llm_mode == "demo":
+            return None
         if not self.llm_api_key.strip():
             return 'llm_not_configured'
         if self.llm_input_price_per_1m_usd is None or self.llm_output_price_per_1m_usd is None:

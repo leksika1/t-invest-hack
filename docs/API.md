@@ -2,7 +2,7 @@
 
 ## Статус контракта
 
-Реализованы этапы 2–3: issues/collect/documents/jobs, асинхронные карточки/правки/Markdown и admin API. POST /api/cards теперь возвращает **202 с card_id/job_id**, а не синхронную заглушку. В готовой карточке ровно 8 ISS + 7 рисковых полей. Swagger: /api/docs, /api/openapi.json. Примеры синтетические, кроме демо в DATA.
+Реализованы этапы 2–3: issues/collect/documents/jobs, асинхронные карточки/правки/PDF и Markdown и admin API. POST /api/cards теперь возвращает **202 с card_id/job_id**, а не синхронную заглушку. В готовой карточке ровно 8 ISS + 7 рисковых полей. Swagger: /api/docs, /api/openapi.json. Примеры синтетические, кроме демо в DATA.
 
 Контракт этапов 2–3 используется SPA этапа 4; локальный код бэкенда — источник истины. Изменения пагинации, вложенных value и ошибок должны синхронно отражаться во фронтенде и его тестах.
 
@@ -13,7 +13,7 @@
 - Источник документа: физическая `page` с 1, `clause` строка или null. `document_id` обязан принадлежать входному snapshot карточки.
 - Пагинация списков (предложение): `limit=20`, максимум 100, `offset=0`, ответ `{items,limit,offset,total}`, порядок `created_at DESC, id DESC`.
 - Остальные методы открыты; admin защищён `X-Admin-Token`. Общий демо-доступ означает, что правки не атрибутируются аутентифицированному пользователю.
-- Ограничения этапа 2: 30 МиБ/PDF, 5 файлов/запрос, общий лимит тела = MAX_UPLOAD_BYTES × MAX_UPLOAD_FILES + 1 МиБ, включая chunked; nginx 160 МиБ. Rate limit в PostgreSQL: окно 60 с, cards=5, uploads=10, collect=5 на ASGI-адрес клиента; 429 с Retry-After. Поддельный X-Forwarded-For самостоятельно не учитывается.
+- Ограничения этапа 2: 30 МиБ/PDF, 100 МиБ/ZIP, 5 PDF/ZIP на запрос, общий лимит тела = max(MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES × MAX_UPLOAD_FILES) + 1 МиБ, включая chunked; nginx 160 МиБ. Rate limit в PostgreSQL: окно 60 с, cards=5, uploads=10, collect=5 на ASGI-адрес клиента; 429 с Retry-After. Поддельный X-Forwarded-For самостоятельно не учитывается.
 
 ## Маршруты
 
@@ -24,7 +24,7 @@
 | POST | `/api/issues/{isin}/collect` | 202 | Job: ISS → ПРАЙМ → СКРИН → официальный Интерфакс |
 | GET | `/api/issues/{isin}/documents` | 200 | Документы, provenance, выбор, разбор и состояния источников |
 | PATCH | `/api/issues/{isin}/documents/{document_id}` | 200 | Включить/выключить документ для следующей сборки |
-| POST | `/api/issues/{isin}/documents` | 202 | Несколько PDF, ingest-job |
+| POST | `/api/issues/{isin}/documents` | 202 | PDF или ZIP с PDF, ingest-job |
 | GET | `/api/issues/{isin}` | 200 | Шапка, ISS со временем снимка, документы и ошибки |
 | POST | `/api/cards` | 202 | Создать версию карточки и build-job |
 | GET | `/api/jobs/{id}` | 200 | Состояние, шаг, прогресс, результат/ошибка |
@@ -32,6 +32,7 @@
 | GET | `/api/cards?isin=...` | 200 | Последние карточки, ISIN необязателен |
 | PATCH | `/api/cards/{id}/fields/{code}` | 200 | Подтвердить/исправить поле |
 | GET | `/api/cards/{id}/export.md` | 200 | Markdown готовой карточки |
+| GET | `/api/cards/{id}/export.pdf` | 200 | A4 PDF готовой карточки, application/pdf |
 | GET | `/api/admin/llm-calls` | 200 | Журнал попыток LLM/embedding, фильтры job_id, date, error |
 | GET | `/api/admin/stats` | 200 | UTC-дневной бюджет/расходы, ошибки и задачи |
 
@@ -86,7 +87,7 @@ Job `type=collect`: шаги `resolve_iss/prime/skrin/edisclosure/parse/finalize
 }
 ```
 
-URL null сокращает синтетический пример; в реализации коллекторы сохраняют проверенные source/download URL, реальные примеры — DATA. В реализованном коллекторе provenance обязан содержать реальные source/download URL; у upload они null. published_at неизвестна → null с подписью «дата публикации неизвестна», fetched_at её не заменяет. Для архива `archive={url,sha256,entry_name}`. Если один PDF найден в двух источниках, origins сохраняет оба, документ один. Статусы sources — результат последнего сбора с временем проверки в реализации, отсутствие сбора — sources пустой массив.
+URL null сокращает синтетический пример; в реализации коллекторы сохраняют проверенные source/download URL, реальные примеры — DATA. В реализованном коллекторе provenance обязан содержать реальные source/download URL; у upload они null. published_at неизвестна → null с подписью «дата публикации неизвестна», fetched_at её не заменяет. Для коллекторского архива `archive={url,sha256,entry_name}`, для пользовательского — `archive={url:null,filename,entry_name}`. Если один PDF найден в двух источниках, origins сохраняет оба, документ один. Статусы sources — результат последнего сбора с временем проверки в реализации, отсутствие сбора — sources пустой массив.
 
 На этапе 2 ассистированный режим возвращает https://www.e-disclosure.ru/poisk-po-kompaniyam и query=ИНН (либо название/ISIN). Автозаполнение параметром ИНН не заявляется; запрос нужно вставить в форму вручную. Если проверена только страница поиска — search_url на неё, query=ИНН для копирования, mode=manual_query. Если подтверждён deep link, mode=prefilled_query и URL содержит URL-encoded ИНН. ИНН отсутствует → query=название и предупреждение о необходимости проверки эмитента. Контракт не предполагает обход капчи или передачу её cookies backend.
 
@@ -186,14 +187,15 @@ Document DTO пока не содержит размер сохранённог�
 }
 ```
 
-`evidence` — объекты `{quote,document_id,page,clause,value_path}` для составных полей/графиков. Основная цитата относится к элементу 0, для остальных нужны JSON-pointer пути вида /events/1, /items/1, /payments/1. Недостаточное покрытие → needs_review, скрытое value. Поле reason содержит стабильный код, reason_message — русский текст. Экстрактор также возвращает ambiguous: true при замеченном противоречии редакций; это даёт needs_review/conflicting_sources. Все проходят ту же проверку; основной quote покрывает основное утверждение, массив — остальные. `confidence` число 0–1 или null, не калиброванная вероятность. `not_found` сохраняет результат извлечения; статус назначается правилами. Причины показываются пользователю с русским текстом, коды стабильны.
+`evidence` — объекты `{quote,document_id,page,clause,value_path}` для составных полей/графиков. Основная цитата относится к элементу 0, для остальных нужны JSON-pointer пути вида /events/1, /items/1, /payments/1. Недостаточное покрытие скрывает документальное значение; у рисков это needs_review, а у полей 1–8 при наличии ISS — extracted/moex_iss с iss_not_confirmed. Поле reason содержит стабильный код, reason_message — русский текст. Экстрактор также возвращает ambiguous: true при замеченном противоречии редакций; это даёт needs_review/conflicting_sources. `confidence` число 0–1 или null, не калиброванная вероятность. Сырой not_found=true с пустым контейнером нормализуется в value=null до валидации; публичный not_found=false у ISS-fallback означает доступное биржевое значение. CouponSchedule дополнен необязательным total_payments — явно указанным общим числом купонов.
 
 Варианты поведения той же оболочки:
 
 | Случай | Публичный результат |
 |---|---|
 | Несовпадение ISS | `status=mismatch_iss`, value документа и iss_value разные; оба показываются рядом с флагом |
-| Нет цитаты/цитата не на указанной странице | `value=null`, `status=needs_review`, `reason=quote_not_verified`; сомнительная цитата не оформляется как подтверждённый источник |
+| Нет цитаты/цитата не на указанной странице | Риски: `value=null`, needs_review/quote_not_verified. Поля 1–8 с доступным ISS: extracted/moex_iss, reason=iss_not_confirmed, без PDF-цитаты |
+| Подтверждено подмножество параметров графика | verified_iss/iss_partial_confirmation; это не проверка всех выплат. Полный iss_value показывается рядом с документальным результатом |
 | Условие не найдено | `value=null`, `not_found=true`, `status=not_found`, `reason=not_in_documents` |
 | Нет ключа LLM, текстовое поле | `value=null`, `status=not_found`, `reason=llm_not_configured` |
 | Прямой ISS без PDF | `status=extracted`, `source.kind=moex_iss`, source.url — путь снимка ISS, quote/document_id/page/clause/confidence = null; value из ISS |
@@ -268,7 +270,7 @@ curl http://127.0.0.1:18080/api/admin/stats -H "X-Admin-Token: ${ADMIN_TOKEN}"
 
 GET issue получает ISS только при первом обращении к отсутствующему локальному выпуску. Если issue уже создан загрузкой, GET возвращает сохранённое состояние без сети; обновление ISS запускается через collect. Так ручная загрузка и e2e работают без внешних API. Raw ответы: iss.description содержит полный ответ securities/{isin}, iss.emitter — emitters/{id}, iss.search — fallback поиска, iss.bondization — графики; normalized содержит fields и warnings. Это не плоский description-клиент старого прокси.
 
-Job ingest/collect может быть succeeded с ошибками отдельных документов/OCR: проверяйте job.result.documents/errors и parse status каждого PDF. Все готовые дубликаты дают немедленно succeeded ingest-job. sources содержит checked_at, errors и сообщения; collected document IDs уникальны. Для ссылок без поддерживаемого PDF/ZIP сохраняется ошибка источника. Ручная загрузка принимает только PDF, архивы поддерживаются только коллекторами; RAR возвращает rar_unsupported.
+Job ingest/collect может быть succeeded с ошибками отдельных документов/OCR: проверяйте job.result.documents/errors и parse status каждого PDF. Все готовые дубликаты дают немедленно succeeded ingest-job. sources содержит checked_at, errors и сообщения; collected document IDs уникальны. Для ссылок без поддерживаемого PDF/ZIP сохраняется ошибка источника. Ручная загрузка принимает PDF или ZIP с PDF внутри; RAR возвращает rar_unsupported.
 
 Включение/выключение, provenance и snapshot карточки реализованы. Build-job обновляет ISS (при сбое сохраняет прежний снимок с предупреждением), разбирает выбранные PDF, извлекает и проверяет поля. Отсутствие ключа не мешает готовности карточки: доступные ISS-поля extracted/moex_iss, рисковые not_found с reason=llm_not_configured и reason_message=«LLM не настроена».
 
@@ -279,3 +281,13 @@ Job ingest/collect может быть succeeded с ошибками отдел�
 После фиксации входов повтор воркера пропускает сохранённые результаты полей; сетевой вызов, прерванный до записи результата, может повториться, его резерв не теряется. Failed job переводит карточку в failed; экспорт/правки до ready возвращают 409. Journal хранит документы/страницы/OCR, модели, токены, known_cost_usd/cost_usd, unknown_cost_calls, время текущего исполнения и ошибки. Стоимость относится к вызовам данной build-job; предыдущая отдельная ingest-job не включается второй раз.
 
 Admin llm-calls дополнительно возвращает state/reserved_usd/cost_source/provider_response_id; ключи и промпты не выдаются. Неизвестная стоимость сохраняет резерв и не считается нулём. Бюджетная блокировка до транспорта не является модельным вызовом: причина есть у поля, а новая строка llm_calls не создаётся.
+
+## PDF-экспорт и пользовательские ZIP
+
+`GET /api/cards/{id}/export.pdf` возвращает `application/pdf` и `Content-Disposition: attachment; filename="card-<ISIN>-v<версия>.pdf"`. Для неготовой карточки — 409, неизвестной — 404. Генерация использует сохранённый snapshot и правки, не вызывает ISS, LLM или внешние ресурсы. Дата формирования — UTC. Полный график остаётся в карточке/Markdown, PDF содержит первые три и ближайшие пять выплат без дублей, число известных выплат и итог из источника. Дата в прошлом не доказывает факт оплаты.
+
+Multipart upload принимает `files` с PDF и ZIP, до пяти внешних файлов. `document_types` относится к внешним файлам по порядку: все PDF из одного ZIP наследуют его тип. ZIP проверяется общей функцией `archive_pdfs`, без записи путей архива на диск. До любых мутаций проверяется весь пакет. Не-PDF пропускаются после проверки безопасности всех записей; архив без PDF отклоняется. На пакет после распаковки — максимум `MAX_ARCHIVE_ENTRIES` PDF и `MAX_ARCHIVE_UNPACKED_BYTES`; отдельный PDF — `MAX_UPLOAD_BYTES`. Для ZIP также действуют ограничения числа всех записей, коэффициента сжатия, вложенных архивов, traversal, symlink, шифрования и целостности. Ошибки — 413 для размера тела/внешнего ZIP/PDF и совокупного лимита пакета, 422 для внутренних лимитов распаковки и небезопасных записей, 415 для неподдерживаемого/повреждённого архива. Origins: `source=upload`, `archive={url:null, filename:<имя ZIP>, entry_name:<путь PDF внутри>}`; дедупликация PDF по sha256 сохранена.
+
+## Режим demo (по умолчанию)
+
+Health дополнен `llm_mode: demo|live`; в demo значение `llm: demo`. Настройка наличия ключа проверяется только в live. Это не меняет проверку БД и HTTP-коды ошибок. Готовая демо-карточка содержит `journal.llm_mode=demo`, `models=["demo"]`, нулевую стоимость и предупреждение llm_demo_mode. В source полей добавлен engine=demo_recorded/demo_heuristic. Статусы назначает прежний verify, маркер демо не означает подтверждения условий. Подробнее — раздел «Режимы LLM» в OPERATIONS.

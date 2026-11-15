@@ -8,6 +8,7 @@ import {
   IssueHeader,
   JobProgress,
   StatusBadge,
+  Skeleton,
 } from "./components";
 import { formatDate, sourceName, warningText } from "./fields";
 import type {
@@ -21,17 +22,25 @@ import type {
 
 export function validateFiles(files: File[]): string | null {
   if (files.length < 1 || files.length > 5)
-    return "Выберите от 1 до 5 PDF за один раз.";
+    return "Выберите от 1 до 5 PDF или ZIP за один раз.";
+  if (files.some((file) => !/\.(pdf|zip)$/i.test(file.name)))
+    return "Можно загрузить только PDF или ZIP с PDF внутри.";
+  if (files.some((file) => file.size === 0))
+    return "Каждый файл должен быть непустым.";
   if (
     files.some(
-      (file) =>
-        !/\.pdf$/i.test(file.name) ||
-        (file.type && file.type !== "application/pdf"),
+      (file) => /\.pdf$/i.test(file.name) && file.size > 30 * 1024 * 1024,
     )
   )
-    return "Можно загрузить только PDF. Архивы и другие форматы не поддерживаются.";
-  if (files.some((file) => file.size === 0 || file.size > 30 * 1024 * 1024))
-    return "Каждый PDF должен быть непустым и не больше 30 МиБ.";
+    return "Каждый PDF должен быть не больше 30 МиБ.";
+  if (
+    files.some(
+      (file) => /\.zip$/i.test(file.name) && file.size > 100 * 1024 * 1024,
+    )
+  )
+    return "Каждый ZIP должен быть не больше 100 МиБ.";
+  if (files.reduce((total, file) => total + file.size, 0) > 150 * 1024 * 1024)
+    return "Общий размер загрузки не должен превышать 150 МиБ.";
   return null;
 }
 function readPending(isin: string) {
@@ -100,49 +109,68 @@ function SourceList({
     </div>
   );
 }
-function AssistedBlock({
+export function AssistedBlock({
   assisted,
   inn,
+  registration,
 }: {
   assisted: Assisted;
   inn?: string | null;
+  registration?: string | null;
 }) {
   const [copy, setCopy] = useState("");
   const query = inn || assisted.query;
-  async function copyQuery() {
+  async function copyText(text: string, label: string) {
     try {
-      await navigator.clipboard.writeText(query);
-      setCopy("Скопировано");
+      await navigator.clipboard.writeText(text);
+      setCopy(`${label}: скопировано`);
     } catch {
-      setCopy("Не удалось скопировать. Выделите и скопируйте текст вручную.");
+      setCopy("Не удалось скопировать. Выделите текст и скопируйте вручную.");
     }
   }
   return (
     <aside className="assisted">
-      <div className="section-heading">
-        <h3>Документы e-disclosure вручную</h3>
-        <span className="caption">Ассистированный режим</span>
-      </div>
-      <p>Капча не обходится — скачайте PDF и загрузите его ниже.</p>
-      <div className="actions">
-        <ExternalLink url={assisted.search_url}>
-          Открыть поиск e-disclosure
-        </ExternalLink>
-        <span className="copy-value">
-          {inn ? "ИНН" : "Поисковый запрос"}: <code>{query}</code>
-        </span>
-        <button
-          type="button"
-          className="small secondary"
-          onClick={() => void copyQuery()}
-        >
-          Скопировать {inn ? "ИНН" : "запрос"}
-        </button>
-      </div>
-      <p className="caption">
-        Вставьте запрос в форму поиска и проверьте эмитента и выпуск перед
-        скачиванием.
-      </p>
+      <h3>Документы e-disclosure вручную</h3>
+      <ol className="assisted-steps">
+        <li>
+          <ExternalLink url={assisted.search_url}>
+            Откройте поиск e-disclosure
+          </ExternalLink>{" "}
+          и найдите эмитента по {inn ? "ИНН" : "запросу"}: <code>{query}</code>{" "}
+          <button
+            className="small secondary"
+            onClick={() => void copyText(query, "ИНН / запрос")}
+          >
+            Скопировать {inn ? "ИНН" : "запрос"}
+          </button>
+        </li>
+        <li>Откройте «Документация», затем «Эмиссионные документы».</li>
+        <li>
+          Найдите «Решение о выпуске» и «Условия размещения» с регистрационным
+          номером{" "}
+          {registration ? (
+            <>
+              <code>{registration}</code>{" "}
+              <button
+                className="small secondary"
+                onClick={() =>
+                  void copyText(registration, "Регистрационный номер")
+                }
+              >
+                Скопировать номер
+              </button>
+            </>
+          ) : (
+            "выпуска из ISS (пока недоступен)"
+          )}
+          . При наличии добавьте «Программу облигаций», сверив номер программы в
+          условиях выпуска.
+        </li>
+        <li>
+          Скачайте ZIP и перетащите сюда как есть. Проверьте эмитента и номер
+          выпуска перед загрузкой.
+        </li>
+      </ol>
       <p className="caption" role="status">
         {copy}
       </p>
@@ -372,10 +400,12 @@ export function Workspace({ isin }: { isin: string }) {
                 </details>
               )}
             </>
-          ) : (
+          ) : issError ? (
             <p className="caption">
-              {isin}; Шапка выпуска будет доступна после ответа ISS.
+              Шапка выпуска недоступна. Ручная загрузка остаётся доступна.
             </p>
+          ) : (
+            <Skeleton label="Загружаем параметры выпуска" />
           )}
         </aside>
         <div className="workspace-process">
@@ -423,12 +453,20 @@ export function Workspace({ isin }: { isin: string }) {
                 Обновить список
               </button>
             </div>
-            {!listing?.items.length ? (
+            {!listing ? (
+              error ? (
+                <p className="caption">
+                  Список документов недоступен. Нажмите «Обновить список».
+                </p>
+              ) : (
+                <Skeleton />
+              )
+            ) : !listing.items.length ? (
               <div className="empty-state">
                 <PaperIllustration />
                 <p>Пока нет документов</p>
                 <p className="caption">
-                  Запустите поиск или загрузите PDF ниже.
+                  Запустите поиск или загрузите PDF или ZIP ниже.
                 </p>
               </div>
             ) : (
@@ -492,7 +530,11 @@ export function Workspace({ isin }: { isin: string }) {
                 Показать ещё документы
               </button>
             )}
-            <AssistedBlock assisted={assisted} inn={issue?.header.inn} />
+            <AssistedBlock
+              assisted={assisted}
+              inn={issue?.header.inn}
+              registration={issue?.header.registration_number}
+            />
             <div
               className={`dropzone ${drag ? "dragging" : ""}`}
               onDragOver={(e) => {
@@ -506,28 +548,27 @@ export function Workspace({ isin }: { isin: string }) {
                 if (!locked) choose(Array.from(e.dataTransfer.files));
               }}
             >
-              <span className="upload-icon" aria-hidden="true">
-                ↑
-              </span>
-              <h3>Загрузите свои PDF</h3>
+              <PaperIllustration kind="upload" />
+              <h3>PDF или ZIP с e-disclosure — можно загружать как есть</h3>
               <p className="muted">
                 Перетащите сюда документы или выберите файлы
               </p>
               <label
                 className={`button secondary file-button ${locked ? "disabled" : ""}`}
               >
-                Выбрать PDF
+                Выбрать PDF или ZIP
                 <input
                   ref={fileInput}
                   type="file"
                   multiple
-                  accept=".pdf,application/pdf"
+                  accept=".pdf,.zip,application/pdf,application/zip,application/x-zip-compressed"
                   disabled={locked}
                   onChange={(e) => choose(Array.from(e.target.files ?? []))}
                 />
               </label>
               <p className="caption">
-                До 5 файлов за раз; не более 30 МиБ каждый; только PDF
+                До 5 файлов: PDF до 30 МиБ, ZIP до 100 МиБ; всего до 150 МиБ. Из
+                архивов извлекаются только PDF (до 100 файлов и 150 МиБ).
               </p>
             </div>
             <ErrorNotice message={fileError} />
@@ -544,7 +585,7 @@ export function Workspace({ isin }: { isin: string }) {
                   ))}
                 </ul>
                 <button disabled={locked} onClick={() => void upload()}>
-                  Загрузить {files.length} PDF
+                  Загрузить файлы ({files.length})
                 </button>
               </div>
             )}
@@ -553,7 +594,7 @@ export function Workspace({ isin }: { isin: string }) {
                 <progress
                   value={uploadPercent}
                   max={100}
-                  aria-label="Загрузка PDF"
+                  aria-label="Загрузка документов"
                 />
                 <p className="caption">
                   {uploadPercent < 100

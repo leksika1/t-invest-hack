@@ -6,6 +6,13 @@ SYSTEM = """Ты извлекаешь факты об облигации из п
 Верни только JSON по схеме указанного поля. Цитата дословная, документ/страница/пункт
 только из фрагментов. Не придумывай даты, суммы, номера пунктов, исключения.
 Если данных нет: not_found=true, value=null, quote=null, document_id=null, page=null.
+Пустые items/grounds/conditions/procedures означают отсутствие найденных условий:
+верни not_found=true и value=null, а не положительное условие с пустым списком.
+«Указывается...», «Для облигаций с ипотечным покрытием указываются...» и другие
+шаблонные указания формы ЦБ — инструкции составителю, а не условия этого выпуска.
+Не применяй положения о других видах облигаций без подтверждения их применимости.
+Если релевантных пунктов несколько, перечисли все элементы, сохраняя субъект действия.
+not_found=true только когда условие действительно не найдено в переданном тексте.
 Сохрани все исключения, условия, сроки и отсылки; неполные условия не дополняй.
 Для нескольких элементов массива: основной источник относится к элементу 0;
 для остальных дай evidence с value_path, например /items/1 или /events/1.
@@ -17,5 +24,7 @@ ambiguous=true, сохрани подтверждённые цитаты, не �
 
 def messages(spec, context):
     return [{'role': 'system', 'content': SYSTEM},
-            {'role': 'user', 'content': json.dumps({'field_code': spec.code, 'definition': spec.title,
-              'search_hints': spec.hints, 'fragments': context}, ensure_ascii=False)}]
+            {'role': 'user', 'content': json.dumps({'fragments': context, 'field_code': spec.code, 'definition': spec.definition or spec.title,
+              'pitfalls': spec.pitfalls,
+              'schedule_rule': 'total_payments — только явно указанное общее число купонов; не число строк в отрывке. Не придумывай даты отсутствующих выплат.' if spec.code == 'coupon_schedule' else None,
+              'search_hints': spec.hints}, ensure_ascii=False)}]

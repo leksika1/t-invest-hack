@@ -5,7 +5,10 @@ import { CouponRibbon } from "./CouponRibbon";
 import { Rosette, rosettePaths } from "./art/guilloche";
 import { FieldCard } from "./CardView";
 import { CouponBrief, ValueView } from "./components";
-import { mismatch } from "./test/fixtures";
+import scheduleFixture from "./test/aeroflot-schedule.json";
+import { displayValue, sourceUrl } from "./cardPresentation";
+import { CardSummary } from "./CardSummary";
+import { card, mismatch } from "./test/fixtures";
 
 describe("Гильош и купоны", () => {
   it("показывает текущую ставку ISS без выдуманного номера купона", () => {
@@ -140,4 +143,118 @@ describe("Гильош и купоны", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText("ISS недоступен")).toBeVisible();
   });
+});
+
+it("Аэрофлот: пустой график документа не скрывает 60 выплат ISS в ленте, сводке и поле", () => {
+  const field = {
+    ...mismatch,
+    code: "coupon_schedule" as const,
+    value: scheduleFixture.document_value,
+    iss_value: scheduleFixture.iss_value,
+    status: "verified_iss" as const,
+  };
+  const view = render(
+    <CouponRibbon
+      schedule={displayValue(field)}
+      rate={null}
+      today="2026-11-15"
+    />,
+  );
+  expect(screen.getByRole("list").children).toHaveLength(60);
+  expect(screen.queryByText(/График пока не найден/)).not.toBeInTheDocument();
+  view.unmount();
+  const summary = render(
+    <CardSummary
+      card={{
+        ...card,
+        iss_fields: { ...card.iss_fields, coupon_schedule: field },
+      }}
+    />,
+  );
+  expect(screen.getByText("График: 60 выплат")).toBeVisible();
+  expect(screen.getByText("13.12.2026")).toBeVisible();
+  summary.unmount();
+  render(
+    <dl>
+      <FieldCard
+        field={field}
+        cardId="test"
+        documents={[]}
+        onChange={vi.fn()}
+      />
+    </dl>,
+  );
+  expect(screen.getByText(/60 купонных выплат/)).toBeVisible();
+  expect(screen.queryByText("Список пуст")).not.toBeInTheDocument();
+});
+it("не заменяет непустой документный график биржевым и безопасно открывает страницу источника", () => {
+  const field = {
+    ...mismatch,
+    code: "coupon_schedule" as const,
+    value: { payments: [{ number: 1, payment_date: "2027-01-01" }] },
+    iss_value: scheduleFixture.iss_value,
+  };
+  expect(displayValue(field)).toBe(field.value);
+  expect(sourceUrl("https://example.org/report.pdf#old", 17)).toBe(
+    "https://example.org/report.pdf#page=17",
+  );
+  expect(sourceUrl("javascript:alert(1)", 1)).toBeUndefined();
+});
+it("рисковая цитата сразу видна, выделение не меняет её текст, ссылка содержит страницу", () => {
+  const quote =
+    "Эмитент вправе досрочно погасить облигации по своему усмотрению.";
+  render(
+    <dl>
+      <FieldCard
+        field={{
+          ...mismatch,
+          code: "issuer_call_option",
+          status: "extracted",
+          value: { conditions: [{ trigger: "по своему усмотрению" }] },
+          quote,
+          source: {
+            kind: "document",
+            name: "Условия выпуска.pdf",
+            url: "https://example.org/terms.pdf",
+          },
+          page: 12,
+          clause: "6.4",
+        }}
+        cardId="test"
+        documents={[]}
+        onChange={vi.fn()}
+      />
+    </dl>,
+  );
+  expect(
+    screen.getByText("по своему усмотрению", { selector: "mark" }),
+  ).toBeVisible();
+  expect(document.querySelector("blockquote")).toHaveTextContent(quote);
+  expect(
+    screen.getByRole("link", { name: /Условия выпуска.pdf, стр. 12, п. 6.4/ }),
+  ).toHaveAttribute("href", "https://example.org/terms.pdf#page=12");
+});
+
+it("частично подтверждённый график сохраняет полный календарь ISS в деталях", async () => {
+  const field = {
+    ...mismatch,
+    code: "coupon_schedule" as const,
+    status: "verified_iss" as const,
+    value: { payments: [{ number: 1, payment_date: "2025-10-19" }] },
+    iss_value: scheduleFixture.iss_value,
+  };
+  render(
+    <dl>
+      <FieldCard
+        field={field}
+        cardId="test"
+        documents={[]}
+        onChange={vi.fn()}
+      />
+    </dl>,
+  );
+  expect(
+    screen.getByRole("heading", { name: "Данные MOEX ISS" }),
+  ).toBeVisible();
+  expect(screen.getByText("Показать полный график (60 записей)")).toBeVisible();
 });
