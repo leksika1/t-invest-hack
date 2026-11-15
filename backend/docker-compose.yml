@@ -26,10 +26,62 @@ services:
       - "8000"
     environment:
       DATABASE_URL: postgresql+psycopg://bonds:${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD}@db:5432/bonds
-      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      LLM_PROXY_URL: ${LLM_PROXY_URL:-http://tinvest-llm-proxy:7890}
       LLM_API_KEY: ${LLM_API_KEY:-}
-      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_MODEL: ${LLM_MODEL:-google/gemini-2.5-flash}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      LLM_DAILY_BUDGET_USD: ${LLM_DAILY_BUDGET_USD:-1}
+      # Пусто -> Settings выбирает тариф по LLM_MODEL (Gemini Flash: 0.30/2.50).
+      # Числовой fallback здесь присвоил бы эти тарифы также другой модели.
+      LLM_INPUT_PRICE_PER_1M_USD: ${LLM_INPUT_PRICE_PER_1M_USD:-}
+      LLM_OUTPUT_PRICE_PER_1M_USD: ${LLM_OUTPUT_PRICE_PER_1M_USD:-}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-45}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-2}
+      LLM_MAX_OUTPUT_TOKENS: ${LLM_MAX_OUTPUT_TOKENS:-4096}
+      EMBEDDING_INPUT_PRICE_PER_1M_USD: ${EMBEDDING_INPUT_PRICE_PER_1M_USD:-}
+      RETRIEVAL_TOP_K: ${RETRIEVAL_TOP_K:-8}
+      RETRIEVAL_MAX_TOKENS: ${RETRIEVAL_MAX_TOKENS:-10000}
+      QUOTE_FUZZY_THRESHOLD: ${QUOTE_FUZZY_THRESHOLD:-0.95}
+      EXTRACTION_MIN_CONFIDENCE: ${EXTRACTION_MIN_CONFIDENCE:-0.8}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
+      RATE_LIMIT_CARDS: ${RATE_LIMIT_CARDS:-5}
+      RATE_LIMIT_UPLOADS: ${RATE_LIMIT_UPLOADS:-10}
+      RATE_LIMIT_COLLECT: ${RATE_LIMIT_COLLECT:-5}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
+      ISS_BASE_URL: ${ISS_BASE_URL:-https://iss.moex.com/iss}
+      ISS_TIMEOUT: ${ISS_TIMEOUT:-10}
+      FILES_DIR: /data/files
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-31457280}
+      MAX_UPLOAD_FILES: ${MAX_UPLOAD_FILES:-5}
+      MAX_PDF_PAGES: ${MAX_PDF_PAGES:-1000}
+      MAX_PAGE_PIXELS: ${MAX_PAGE_PIXELS:-25000000}
+      MAX_ARCHIVE_BYTES: ${MAX_ARCHIVE_BYTES:-104857600}
+      MAX_ARCHIVE_UNPACKED_BYTES: ${MAX_ARCHIVE_UNPACKED_BYTES:-157286400}
+      MAX_ARCHIVE_ENTRIES: ${MAX_ARCHIVE_ENTRIES:-100}
+      MAX_ARCHIVE_RATIO: ${MAX_ARCHIVE_RATIO:-100}
+      OCR_TIMEOUT_SECONDS: ${OCR_TIMEOUT_SECONDS:-60}
+      OCR_DPI: ${OCR_DPI:-150}
+      DOCUMENT_PARSE_TIMEOUT_SECONDS: ${DOCUMENT_PARSE_TIMEOUT_SECONDS:-300}
+      COLLECTOR_USER_AGENT: ${COLLECTOR_USER_AGENT:-BondCardMVP/0.1 (+https://tinvest.leksika1.ru)}
+      COLLECTOR_DELAY_SECONDS: ${COLLECTOR_DELAY_SECONDS:-1}
+      COLLECTOR_TIMEOUT_SECONDS: ${COLLECTOR_TIMEOUT_SECONDS:-25}
+      COLLECTOR_CACHE_SECONDS: ${COLLECTOR_CACHE_SECONDS:-3600}
+      COLLECTOR_MAX_DOCUMENTS: ${COLLECTOR_MAX_DOCUMENTS:-20}
+      COLLECTOR_MAX_PAGES: ${COLLECTOR_MAX_PAGES:-12}
+      EDISCLOSURE_API_URL: ${EDISCLOSURE_API_URL:-}
+      EDISCLOSURE_API_KEY: ${EDISCLOSURE_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-1024}
+      WORKER_ENABLED: ${WORKER_ENABLED:-true}
+      JOB_POLL_SECONDS: ${JOB_POLL_SECONDS:-1}
+      JOB_LEASE_SECONDS: ${JOB_LEASE_SECONDS:-180}
+      JOB_MAX_ATTEMPTS: ${JOB_MAX_ATTEMPTS:-3}
+    volumes:
+      - files:/data/files
     depends_on:
       db:
         condition: service_healthy
@@ -43,6 +95,7 @@ services:
     cpus: 1.0
     networks:
       data: {}
+      llm: {}
       shared:
         aliases:
           - ${BACKEND_ALIAS:?Задайте BACKEND_ALIAS (tinvest-backend-dev / tinvest-backend-prod)}
@@ -65,14 +118,19 @@ services:
     networks: [data]
 
 networks:
+  # Только backend ↔ LLM proxy текущего окружения; создать заранее на сервере.
+  llm:
+    external: true
+    name: ${BACKEND_ALIAS}-llm
   # backend ↔ PostgreSQL. Внутренняя: без выхода наружу
   data:
     internal: true
   # Общая сеть Dokploy: через неё фронтенд находит backend по BACKEND_ALIAS, а backend выходит
-  # в интернет (MOEX ISS, LLM API)
+  # в интернет (MOEX ISS и коллекторы; LLM идёт в отдельный прокси)
   shared:
     external: true
     name: ${SHARED_NETWORK:-dokploy-network}
 
 volumes:
   pgdata:
+  files:

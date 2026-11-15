@@ -1,0 +1,28 @@
+{
+  "schema_version": "1",
+  "name": "Synthetic scorer smoke, not model quality",
+  "seed": 42,
+  "frozen": true,
+  "settings": {
+    "schema_version": "1",
+    "prompt_version": "1",
+    "baseline": "regex-v1",
+    "quote_fuzzy_threshold": 0.95
+  },
+  "issues": [
+    {
+      "isin": "RU000A10AXF7",
+      "gold": "gold/synthetic/RU000A10AXF7.json",
+      "split": "test",
+      "issuer_group": "synthetic-0",
+      "card_id": "a0f9f403-344f-5d75-94b2-f2eed97ad659"
+    },
+    {
+      "isin": "RU000A10ZZZ0",
+      "gold": "gold/synthetic/RU000A10ZZZ0.json",
+      "split": "test",
+      "issuer_group": "synthetic-1",
+      "card_id": "d9854831-abc0-5c66-b476-2042eb298c7b"
+    }
+  ]
+}

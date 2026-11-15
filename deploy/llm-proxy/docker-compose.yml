@@ -1,0 +1,69 @@
+# LLM-прокси T-Invest: только вызовы модели/эмбеддингов backend, не ISS/коллекторы.
+# Dokploy Compose Path: deploy/llm-proxy/docker-compose.yml.
+# Environment: SUBSCRIPTION_URL (секретный HTTP(S) URL Clash/mihomo-подписки),
+# LLM_NETWORK=tinvest-backend-dev-llm или tinvest-backend-prod-llm.
+# Если сети ещё нет: docker network create tinvest-backend-dev-llm
+# (для PROD: docker network create tinvest-backend-prod-llm).
+# К dokploy-network не подключать; домены и опубликованные порты не добавлять.
+services:
+  llm-proxy:
+    # Релиз/тег 2026-10-21, проверены 2026-11-15: старше двух недель.
+    # https://github.com/MetaCubeX/mihomo/releases/tag/v1.19.33
+    image: metacubex/mihomo:v1.19.33@sha256:9211361a3ed85305383288d38c05e85862d6d5a590c10007c37fc059cca82e9c
+    entrypoint: ["/bin/sh", "/opt/llm-proxy/entrypoint.sh"]
+    environment:
+      # Пустое значение допускается config -q, но entrypoint завершится с ошибкой.
+      SUBSCRIPTION_URL: ${SUBSCRIPTION_URL:-}
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+    volumes:
+      - type: bind
+        source: ./config.template.yaml
+        target: /etc/mihomo/config.template.yaml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./entrypoint.sh
+        target: /opt/llm-proxy/entrypoint.sh
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./render-config.sh
+        target: /opt/llm-proxy/render-config.sh
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./healthcheck.sh
+        target: /opt/llm-proxy/healthcheck.sh
+        read_only: true
+        bind:
+          create_host_path: false
+    tmpfs:
+      # Перекрывает VOLUME образа: конфиг с URL и кэш исчезают при пересоздании.
+      - /root/.config/mihomo:rw,noexec,nosuid,size=32m,mode=0700
+      - /tmp:rw,noexec,nosuid,size=8m,mode=1777
+    expose: ["7890"]
+    healthcheck:
+      # Alpine/BusyBox sh+cat+awk; чтение LISTEN в /proc, без curl/nc/envsubst.
+      test: ["CMD", "/bin/sh", "/opt/llm-proxy/healthcheck.sh"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+    networks:
+      llm:
+        aliases: [tinvest-llm-proxy]
+
+networks:
+  llm:
+    external: true
+    name: ${LLM_NETWORK:?Задайте LLM_NETWORK для Dev или PROD}

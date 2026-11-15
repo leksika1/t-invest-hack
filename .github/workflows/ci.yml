@@ -1,9 +1,11 @@
-# GitHub Actions для этого приватного репозитория выключены на аккаунте.
-# Проверки выполняются локально: scripts/ci.sh + .githooks/pre-push для dev/main.
-# Workflow начнёт запускаться автоматически, если Actions включат.
+# Все джобы идут на self-hosted раннере на сервере Dokploy (метка tinvest, сервис
+# actions.runner.leksika1-t-invest-hack.tinvest-server, пользователь gha-runner) — см. docs/OPERATIONS.md.
+# Локально те же проверки: scripts/ci.sh + .githooks/pre-push для dev/main.
 # Этапы ci.yml и scripts/ci.sh держать согласованными — меняете один, меняйте и другой.
-# Сейчас автодеплой идёт через прямые вебхуки GitHub → Dokploy (см. README).
-# Перед включением Actions отключите один из двух механизмов деплоя во избежание дублей.
+# Деплой — джоба deploy через секреты DOKPLOY_WEBHOOK_* в окружениях dev/prod.
+# Прямые вебхуки GitHub → Dokploy в Settings → Webhooks не добавлять — будут двойные деплои.
+# Репозиторий публичный: PR из форков на раннере не запускаются (условие if у джоб), для workflow из форков
+# включено ручное одобрение, а открывать PR/issues могут только коллабораторы (interaction limits).
 name: CI/CD
 
 on:
@@ -23,12 +25,25 @@ concurrency:
 jobs:
   backend-tests:
     name: backend tests
-    runs-on: ubuntu-latest
+    # Публичный репозиторий + self-hosted раннер: код из форков на раннере не выполняем.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, tinvest]
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: bonds_test
+          POSTGRES_USER: bonds
+          POSTGRES_PASSWORD: ci
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U bonds -d bonds_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
     defaults:
       run:
         working-directory: backend
-    # Unit-тесты базе не нужны. Когда появятся тесты с Postgres — добавить сюда services: postgres
-    # (pgvector/pgvector:pg16) и передать адрес через env
+    # Same PostgreSQL/pgvector db tests as scripts/ci.sh, using an ephemeral host port.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,10 +56,14 @@ jobs:
       - run: pip-audit -r requirements.txt
       # Все тесты из backend/tests подхватываются сами; e2e без E2E_BASE_URL пропускаются (их гоняет build)
       - run: pytest -q
+        env:
+          TEST_DATABASE_URL: postgresql+psycopg://bonds:ci@127.0.0.1:${{ job.services.postgres.ports[5432] }}/bonds_test
 
   frontend-checks:
     name: frontend checks
-    runs-on: ubuntu-latest
+    # Публичный репозиторий + self-hosted раннер: код из форков на раннере не выполняем.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, tinvest]
     defaults:
       run:
         working-directory: frontend
@@ -71,8 +90,7 @@ jobs:
           echo "::warning::npm audit не выполнен: сервис аудита npm недоступен. Уязвимости проверит следующий запуск."
       - run: npm run lint
       - run: npm run typecheck
-      # Когда появятся тесты фронтенда — добавить скрипт "test" в package.json и шаг здесь:
-      # - run: npm test
+      - run: npm test
       - run: npm run build
 
   # Собирает образы, поднимает весь стек (nginx → backend → Postgres)
@@ -81,10 +99,10 @@ jobs:
     # Имя "build" — его удобно сделать обязательной проверкой в правилах защиты веток; не переименовывать
     name: build
     needs: [backend-tests, frontend-checks]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, tinvest]
     env:
       POSTGRES_PASSWORD: bonds
-      COMPOSE: docker compose -f docker-compose.yml -f docker-compose.e2e.yml
+      COMPOSE: docker compose -f docker-compose.yml -f docker-compose.e2e.yml -f docker-compose.ci.yml
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -96,9 +114,11 @@ jobs:
       - name: Validate Dokploy compose files
         env:
           BACKEND_ALIAS: tinvest-backend-ci
+          LLM_NETWORK: tinvest-backend-ci-llm
         run: |
           docker compose -f backend/docker-compose.yml config -q
           docker compose -f frontend/docker-compose.yml config -q
+          docker compose -f deploy/llm-proxy/docker-compose.yml config -q
 
       - name: Build images
         run: $COMPOSE build
@@ -126,7 +146,7 @@ jobs:
     name: deploy
     needs: build
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, tinvest]
     # Окружения dev/prod в Settings → Environments, в каждом секреты
     # DOKPLOY_WEBHOOK_FRONTEND и DOKPLOY_WEBHOOK_BACKEND (Dokploy → сервис → Deployments → Webhook URL)
     environment: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}

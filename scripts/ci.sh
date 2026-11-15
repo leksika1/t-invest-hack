@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Локальный CI: те же проверки, что в .github/workflows/ci.yml (GitHub Actions для приватного репозитория
-# выключены). Этапы ci.yml и этого скрипта держать согласованными — меняете один, меняйте и другой.
+# Локальный CI: те же проверки, что в .github/workflows/ci.yml (они же идут на
+# self-hosted раннере на сервере). Этапы ci.yml и этого скрипта держать согласованными — меняете один, меняйте и другой.
 #
 #   scripts/ci.sh            всё: backend, frontend, compose-файлы Dokploy, e2e на поднятом стеке
 #   scripts/ci.sh --no-e2e   без e2e (Docker нужен только для проверки compose-файлов)
@@ -30,7 +30,7 @@ E2E_DB_PORT="${E2E_DB_PORT:-55434}"
 export E2E_PORT E2E_DB_PORT
 # Заглушки для compose; значения из окружения shell важнее файла .env
 export POSTGRES_PASSWORD=ci BACKEND_ALIAS=tinvest-backend-ci
-COMPOSE=(docker compose -p tinvest-ci -f docker-compose.yml -f docker-compose.e2e.yml)
+COMPOSE=(docker compose -p tinvest-ci -f docker-compose.yml -f docker-compose.e2e.yml -f docker-compose.ci.yml)
 
 if [ -t 1 ]; then
   BOLD=$'\e[1m'; RED=$'\e[31m'; GREEN=$'\e[32m'; YELLOW=$'\e[33m'; RESET=$'\e[0m'
@@ -138,7 +138,20 @@ backend_audit() {
 
 backend_tests() {
   # e2e без E2E_BASE_URL пропускаются сами
-  (cd backend && env -u E2E_BASE_URL "$(venv_bin)/python" -m pytest -q)
+  (cd backend && env -u E2E_BASE_URL -u TEST_DATABASE_URL "$(venv_bin)/python" -m pytest -q)
+}
+
+DB_TESTS_STARTED=0
+DB_COMPOSE=(docker compose -p tinvest-dbtests -f docker-compose.db-tests.yml)
+backend_db_tests() {
+  DB_TESTS_STARTED=1
+  "${DB_COMPOSE[@]}" up -d --wait || return 1
+  (cd backend && env -u E2E_BASE_URL TEST_DATABASE_URL="postgresql+psycopg://bonds:ci@127.0.0.1:${TEST_DB_PORT:-55435}/bonds_test" \
+    "$(venv_bin)/python" -m pytest -q -m db)
+  local result=$?
+  "${DB_COMPOSE[@]}" down -v || result=1
+  DB_TESTS_STARTED=0
+  return "$result"
 }
 
 # ── Frontend ─────────────────────────────────────────────────────────────────
@@ -190,7 +203,9 @@ docker_check() {
 
 compose_config() {
   docker compose -f backend/docker-compose.yml config -q && echo "backend/docker-compose.yml: ok" &&
-  docker compose -f frontend/docker-compose.yml config -q && echo "frontend/docker-compose.yml: ok"
+  docker compose -f frontend/docker-compose.yml config -q && echo "frontend/docker-compose.yml: ok" &&
+  LLM_NETWORK=tinvest-backend-ci-llm docker compose -f deploy/llm-proxy/docker-compose.yml config -q &&
+  echo "deploy/llm-proxy/docker-compose.yml: ok (сеть при config не создаётся)"
 }
 
 check_e2e_ports() {
@@ -224,6 +239,10 @@ PY
 
 STACK_UP=0
 stack_down() {
+  if [ "$DB_TESTS_STARTED" -eq 1 ]; then
+    "${DB_COMPOSE[@]}" down -v || return 1
+    DB_TESTS_STARTED=0
+  fi
   if [ "$STACK_UP" -eq 1 ]; then
     echo
     echo "${BOLD}━━━ Остановка e2e-стека ━━━${RESET}"
@@ -261,10 +280,12 @@ run_stage "frontend: npm ci" frontend_deps
 if [ "$FAST" -eq 0 ]; then run_stage "frontend: npm audit" frontend_audit; else skip_stage "frontend: npm audit" "--fast"; fi
 run_stage "frontend: lint" npm_run lint
 run_stage "frontend: typecheck" npm_run typecheck
+run_stage "frontend: tests" npm_run test
 run_stage "frontend: build" npm_run build
 
 run_stage "docker: доступен" docker_check
 run_stage "compose: файлы Dokploy" compose_config
+run_stage "backend: PostgreSQL tests" backend_db_tests
 
 if [ "$E2E" -eq 1 ]; then
   run_stage "e2e: сборка и подъём стека" e2e_up

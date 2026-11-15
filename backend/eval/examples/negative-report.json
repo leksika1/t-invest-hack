@@ -1,0 +1,1165 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-15T07:55:52.997470+00:00",
+  "status": "FAIL",
+  "systems": {
+    "pipeline": {
+      "label": "Synthetic fault injection (not LLM)",
+      "status": "FAIL",
+      "gates": {
+        "iss_accuracy_95": true,
+        "covenants_recall_85": true,
+        "call_recall_85": false,
+        "early_redemption_recall_85": true,
+        "put_recall_85": true,
+        "combined_recall_85": true,
+        "zero_uncited_hallucinations": false,
+        "zero_wrong_shown_values": true,
+        "complete_comparable_inputs": true
+      },
+      "mvp_quality_status": "FAIL",
+      "mvp_quality_note": "Требуется размеченный реальный test-корпус; синтетика проверяет только механику.",
+      "issue_count": 2,
+      "approved_issues": 2,
+      "field_count": 30,
+      "iss_accuracy": {
+        "correct": 16,
+        "total": 16,
+        "value": 1.0
+      },
+      "iss_only_accuracy": {
+        "correct": 0,
+        "total": 0,
+        "value": null
+      },
+      "mismatch": {
+        "correct": 1,
+        "total": 1
+      },
+      "risk": {
+        "covenants": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 0
+        },
+        "holder_early_redemption": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 0
+        },
+        "issuer_call_option": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.5,
+          "recall": 0.5,
+          "tn_fields": 0
+        },
+        "guarantee_security": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 1
+        },
+        "cross_default": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 1
+        },
+        "issuer_restrictions": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 1
+        },
+        "offer_procedure": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 0
+        }
+      },
+      "risk_micro": {
+        "tp": 12,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.9230769230769231,
+        "recall": 0.9230769230769231
+      },
+      "risk_macro_recall": 0.9285714285714286,
+      "risk_macro_precision": 0.9285714285714286,
+      "categories": {
+        "covenants": {
+          "tp": 4,
+          "fn": 0,
+          "recall": 1.0
+        },
+        "call": {
+          "tp": 1,
+          "fn": 1,
+          "recall": 0.5
+        },
+        "early_redemption": {
+          "tp": 2,
+          "fn": 0,
+          "recall": 1.0
+        },
+        "put": {
+          "tp": 2,
+          "fn": 0,
+          "recall": 1.0
+        },
+        "combined": {
+          "tp": 9,
+          "fn": 1,
+          "recall": 0.9
+        }
+      },
+      "hallucinations": {
+        "hallucinations": 1,
+        "hallucinations_without_citation": 1,
+        "hallucinations_wrong_value": 0
+      },
+      "needs_review": {
+        "count": 0,
+        "total": 30,
+        "value": 0.0
+      },
+      "coverage": {
+        "count": 25,
+        "total": 30,
+        "value": 0.8333333333333334
+      },
+      "not_found": 4,
+      "all_needs_review": 0,
+      "all_shown": 26,
+      "human_edits_ignored": 0,
+      "modes": {
+        "synthetic-oracle": 2
+      },
+      "models": [],
+      "cost": {
+        "total_usd": "0",
+        "known_usd": "0",
+        "unknown_issues": 0
+      },
+      "duration": {
+        "total_ms": 0.0,
+        "known_ms": 0.0,
+        "unknown_issues": 0
+      },
+      "issues": [
+        {
+          "isin": "RU000A10AXF7",
+          "kind": "synthetic",
+          "approved": true,
+          "card_id": "a0f9f403-344f-5d75-94b2-f2eed97ad659",
+          "version": 1,
+          "field_results": [
+            {
+              "code": "face_value",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "placement_date",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "maturity_date",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_type",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_rate",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_schedule",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "offers",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "amortization",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "covenants",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "holder_early_redemption",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "issuer_call_option",
+              "eligible": true,
+              "status": "extracted",
+              "correct": false,
+              "shown": true,
+              "tp": 0,
+              "fp": 1,
+              "fn": 1,
+              "quote_confirmed": false
+            },
+            {
+              "code": "guarantee_security",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "cross_default",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "issuer_restrictions",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "offer_procedure",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            }
+          ],
+          "collection": {
+            "complete_corpus": true,
+            "source": "synthetic"
+          },
+          "mode": "synthetic-oracle",
+          "cost_usd": "0",
+          "known_cost_usd": "0",
+          "duration_ms": 0,
+          "documents": 1,
+          "pages": 2,
+          "ocr_pages": 0,
+          "models": []
+        },
+        {
+          "isin": "RU000A10ZZZ0",
+          "kind": "synthetic",
+          "approved": true,
+          "card_id": "d9854831-abc0-5c66-b476-2042eb298c7b",
+          "version": 1,
+          "field_results": [
+            {
+              "code": "face_value",
+              "eligible": true,
+              "status": "mismatch_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "placement_date",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "maturity_date",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_type",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_rate",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_schedule",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "offers",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "amortization",
+              "eligible": true,
+              "status": "not_found",
+              "correct": true,
+              "shown": false,
+              "quote_confirmed": false
+            },
+            {
+              "code": "covenants",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "holder_early_redemption",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "issuer_call_option",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "guarantee_security",
+              "eligible": true,
+              "status": "not_found",
+              "correct": true,
+              "shown": false,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": false
+            },
+            {
+              "code": "cross_default",
+              "eligible": true,
+              "status": "not_found",
+              "correct": true,
+              "shown": false,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": false
+            },
+            {
+              "code": "issuer_restrictions",
+              "eligible": true,
+              "status": "not_found",
+              "correct": true,
+              "shown": false,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": false
+            },
+            {
+              "code": "offer_procedure",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            }
+          ],
+          "collection": {
+            "complete_corpus": true,
+            "source": "synthetic"
+          },
+          "mode": "synthetic-oracle",
+          "cost_usd": "0",
+          "known_cost_usd": "0",
+          "duration_ms": 0,
+          "documents": 1,
+          "pages": 2,
+          "ocr_pages": 0,
+          "models": []
+        }
+      ],
+      "exclusions": [],
+      "errors": [
+        {
+          "isin": "RU000A10AXF7",
+          "code": "issuer_call_option",
+          "reason": "risk_atom_missed_or_false_positive",
+          "expected_status": "extracted",
+          "actual_status": "extracted",
+          "document_id": "6947517d-9561-590c-ab3f-1e84adaa3b2c",
+          "page": 2
+        }
+      ]
+    },
+    "baseline": {
+      "label": "Baseline regex-v1",
+      "status": "FAIL",
+      "gates": {
+        "iss_accuracy_95": false,
+        "covenants_recall_85": true,
+        "call_recall_85": false,
+        "early_redemption_recall_85": false,
+        "put_recall_85": true,
+        "combined_recall_85": false,
+        "zero_uncited_hallucinations": true,
+        "zero_wrong_shown_values": false,
+        "complete_comparable_inputs": true
+      },
+      "mvp_quality_status": "FAIL",
+      "mvp_quality_note": "Требуется размеченный реальный test-корпус; синтетика проверяет только механику.",
+      "issue_count": 2,
+      "approved_issues": 2,
+      "field_count": 30,
+      "iss_accuracy": {
+        "correct": 15,
+        "total": 16,
+        "value": 0.9375
+      },
+      "iss_only_accuracy": {
+        "correct": 0,
+        "total": 0,
+        "value": null
+      },
+      "mismatch": {
+        "correct": 1,
+        "total": 1
+      },
+      "risk": {
+        "covenants": {
+          "tp": 4,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.8,
+          "recall": 1.0,
+          "tn_fields": 0
+        },
+        "holder_early_redemption": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "tn_fields": 0
+        },
+        "issuer_call_option": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "tn_fields": 0
+        },
+        "guarantee_security": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 1
+        },
+        "cross_default": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 1
+        },
+        "issuer_restrictions": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 1
+        },
+        "offer_procedure": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn_fields": 0
+        }
+      },
+      "risk_micro": {
+        "tp": 11,
+        "fp": 1,
+        "fn": 2,
+        "precision": 0.9166666666666666,
+        "recall": 0.8461538461538461
+      },
+      "risk_macro_recall": 0.8571428571428571,
+      "risk_macro_precision": 0.9714285714285714,
+      "categories": {
+        "covenants": {
+          "tp": 4,
+          "fn": 0,
+          "recall": 1.0
+        },
+        "call": {
+          "tp": 1,
+          "fn": 1,
+          "recall": 0.5
+        },
+        "early_redemption": {
+          "tp": 1,
+          "fn": 1,
+          "recall": 0.5
+        },
+        "put": {
+          "tp": 2,
+          "fn": 0,
+          "recall": 1.0
+        },
+        "combined": {
+          "tp": 8,
+          "fn": 2,
+          "recall": 0.8
+        }
+      },
+      "hallucinations": {
+        "hallucinations": 1,
+        "hallucinations_without_citation": 0,
+        "hallucinations_wrong_value": 1
+      },
+      "needs_review": {
+        "count": 0,
+        "total": 30,
+        "value": 0.0
+      },
+      "coverage": {
+        "count": 22,
+        "total": 30,
+        "value": 0.7333333333333333
+      },
+      "not_found": 7,
+      "all_needs_review": 0,
+      "all_shown": 23,
+      "human_edits_ignored": 0,
+      "modes": {
+        "regex-v1": 2
+      },
+      "models": [],
+      "cost": {
+        "total_usd": "0",
+        "known_usd": "0",
+        "unknown_issues": 0
+      },
+      "duration": {
+        "total_ms": 71.0,
+        "known_ms": 71.0,
+        "unknown_issues": 0
+      },
+      "issues": [
+        {
+          "isin": "RU000A10AXF7",
+          "kind": "synthetic",
+          "approved": true,
+          "card_id": "bfee8c5e-c1e2-562e-bc71-e1f0fcc8c95f",
+          "version": 1,
+          "field_results": [
+            {
+              "code": "face_value",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "placement_date",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "maturity_date",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_type",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_rate",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_schedule",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "offers",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "amortization",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "covenants",
+              "eligible": true,
+              "status": "extracted",
+              "correct": false,
+              "shown": true,
+              "tp": 2,
+              "fp": 1,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "holder_early_redemption",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "issuer_call_option",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "guarantee_security",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "cross_default",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "issuer_restrictions",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "offer_procedure",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            }
+          ],
+          "collection": {
+            "complete_corpus": true,
+            "source": "synthetic"
+          },
+          "mode": "regex-v1",
+          "cost_usd": "0",
+          "known_cost_usd": "0",
+          "duration_ms": 50,
+          "documents": 1,
+          "pages": 2,
+          "ocr_pages": 0,
+          "models": []
+        },
+        {
+          "isin": "RU000A10ZZZ0",
+          "kind": "synthetic",
+          "approved": true,
+          "card_id": "2f424af9-f5ff-5187-b787-d911fb706af6",
+          "version": 1,
+          "field_results": [
+            {
+              "code": "face_value",
+              "eligible": true,
+              "status": "mismatch_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "placement_date",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "maturity_date",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_type",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "coupon_rate",
+              "eligible": true,
+              "status": "not_found",
+              "correct": false,
+              "shown": false,
+              "quote_confirmed": false,
+              "reason": "value_source_or_status_mismatch"
+            },
+            {
+              "code": "coupon_schedule",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "offers",
+              "eligible": true,
+              "status": "verified_iss",
+              "correct": true,
+              "shown": true,
+              "quote_confirmed": true
+            },
+            {
+              "code": "amortization",
+              "eligible": true,
+              "status": "not_found",
+              "correct": true,
+              "shown": false,
+              "quote_confirmed": false
+            },
+            {
+              "code": "covenants",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            },
+            {
+              "code": "holder_early_redemption",
+              "eligible": true,
+              "status": "not_found",
+              "correct": false,
+              "shown": false,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1,
+              "quote_confirmed": false
+            },
+            {
+              "code": "issuer_call_option",
+              "eligible": true,
+              "status": "not_found",
+              "correct": false,
+              "shown": false,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1,
+              "quote_confirmed": false
+            },
+            {
+              "code": "guarantee_security",
+              "eligible": true,
+              "status": "not_found",
+              "correct": true,
+              "shown": false,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": false
+            },
+            {
+              "code": "cross_default",
+              "eligible": true,
+              "status": "not_found",
+              "correct": true,
+              "shown": false,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": false
+            },
+            {
+              "code": "issuer_restrictions",
+              "eligible": true,
+              "status": "not_found",
+              "correct": true,
+              "shown": false,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": false
+            },
+            {
+              "code": "offer_procedure",
+              "eligible": true,
+              "status": "extracted",
+              "correct": true,
+              "shown": true,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "quote_confirmed": true
+            }
+          ],
+          "collection": {
+            "complete_corpus": true,
+            "source": "synthetic"
+          },
+          "mode": "regex-v1",
+          "cost_usd": "0",
+          "known_cost_usd": "0",
+          "duration_ms": 21,
+          "documents": 1,
+          "pages": 2,
+          "ocr_pages": 0,
+          "models": []
+        }
+      ],
+      "exclusions": [],
+      "errors": [
+        {
+          "isin": "RU000A10AXF7",
+          "code": "covenants",
+          "reason": "risk_atom_missed_or_false_positive",
+          "expected_status": "extracted",
+          "actual_status": "extracted",
+          "document_id": "a46d162a-c8a9-550f-a29e-aabd8b5f8649",
+          "page": 2
+        },
+        {
+          "isin": "RU000A10ZZZ0",
+          "code": "coupon_rate",
+          "reason": "value_source_or_status_mismatch",
+          "expected_status": "extracted",
+          "actual_status": "not_found",
+          "document_id": null,
+          "page": null
+        },
+        {
+          "isin": "RU000A10ZZZ0",
+          "code": "holder_early_redemption",
+          "reason": "risk_atom_missed_or_false_positive",
+          "expected_status": "extracted",
+          "actual_status": "not_found",
+          "document_id": null,
+          "page": null
+        },
+        {
+          "isin": "RU000A10ZZZ0",
+          "code": "issuer_call_option",
+          "reason": "risk_atom_missed_or_false_positive",
+          "expected_status": "extracted",
+          "actual_status": "not_found",
+          "document_id": null,
+          "page": null
+        }
+      ]
+    }
+  },
+  "corpus": {
+    "name": "Synthetic scorer smoke, not model quality",
+    "seed": 42,
+    "frozen": true,
+    "split": "test",
+    "selected_count": 2,
+    "manifest_count": 2,
+    "kinds": {
+      "synthetic": 2
+    },
+    "settings": {
+      "schema_version": "1",
+      "prompt_version": "1",
+      "baseline": "regex-v1",
+      "quote_fuzzy_threshold": 0.95
+    },
+    "manifest_sha256": "44253c5b0cea39f39f80d03af3f6e8a99268dc6f03ae340bab98a58ab50f4877",
+    "issues": [
+      {
+        "isin": "RU000A10AXF7",
+        "kind": "synthetic",
+        "split": "test",
+        "issuer_group": "synthetic-0",
+        "gold_sha256": "621170c00293bb4714a598271776bae027032d6c00caa3b4612fcb302ad8b995",
+        "iss_sha256": "e5d00f0ccca10f1db06048aaca9326ccbfe890d388689e192e31b5d481fda259",
+        "as_of": "2026-11-15",
+        "documents": [
+          {
+            "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+            "filename": "synthetic-decision.pdf",
+            "path": "data/synthetic/RU000A10AXF7/decision.pdf",
+            "sha256": "0fbb62a14022eb7549d7e719b86c9586f67f8d6222cefc1d4417255332b61eb9",
+            "enabled": true,
+            "type": "decision",
+            "origins": [
+              {
+                "source": "synthetic",
+                "published_at": null,
+                "fetched_at": "2026-11-15T00:00:00Z"
+              }
+            ],
+            "pages_file": null,
+            "pages_sha256": null
+          }
+        ],
+        "ocr_pages": 0,
+        "page_errors": [],
+        "review": {
+          "annotators": [
+            "synthetic-generator",
+            "synthetic-test-oracle"
+          ],
+          "resolved": true,
+          "adjudicator": null,
+          "disagreements": [],
+          "resolution": null,
+          "verified_by": "codex",
+          "needs_human_check": false
+        },
+        "collection": {
+          "complete_corpus": true,
+          "source": "synthetic"
+        }
+      },
+      {
+        "isin": "RU000A10ZZZ0",
+        "kind": "synthetic",
+        "split": "test",
+        "issuer_group": "synthetic-1",
+        "gold_sha256": "0fad9780226be3feebd65d7df9f1a303db21ba1fcb361052dc9a3e511f09ccf4",
+        "iss_sha256": "d361add96a17b67872e5a69102e5fc982140a6de3d1544554b39e2c38d86f25e",
+        "as_of": "2026-11-15",
+        "documents": [
+          {
+            "document_id": "285cf2ad-0859-5197-bb08-59c6957bf0dd",
+            "filename": "synthetic-decision.pdf",
+            "path": "data/synthetic/RU000A10ZZZ0/decision.pdf",
+            "sha256": "d32b38d12594e8f641f1915dacaced516e739bfd3d32036348849cb0e0554b88",
+            "enabled": true,
+            "type": "decision",
+            "origins": [
+              {
+                "source": "synthetic",
+                "published_at": null,
+                "fetched_at": "2026-11-15T00:00:00Z"
+              }
+            ],
+            "pages_file": null,
+            "pages_sha256": null
+          }
+        ],
+        "ocr_pages": 0,
+        "page_errors": [],
+        "review": {
+          "annotators": [
+            "synthetic-generator",
+            "synthetic-test-oracle"
+          ],
+          "resolved": true,
+          "adjudicator": null,
+          "disagreements": [],
+          "resolution": null,
+          "verified_by": "codex",
+          "needs_human_check": false
+        },
+        "collection": {
+          "complete_corpus": true,
+          "source": "synthetic"
+        }
+      }
+    ]
+  },
+  "selections": [
+    {
+      "isin": "RU000A10AXF7",
+      "card_id": "a0f9f403-344f-5d75-94b2-f2eed97ad659",
+      "version": 1,
+      "selection": "json"
+    },
+    {
+      "isin": "RU000A10ZZZ0",
+      "card_id": "d9854831-abc0-5c66-b476-2042eb298c7b",
+      "version": 1,
+      "selection": "json"
+    }
+  ],
+  "unmeasured": {
+    "collector_precision_recall": null,
+    "ocr_accuracy": null,
+    "retrieval_recall": null
+  },
+  "mvp_corpus_ready": false
+}

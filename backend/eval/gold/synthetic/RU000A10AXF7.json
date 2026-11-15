@@ -1,0 +1,495 @@
+{
+  "schema_version": "1",
+  "isin": "RU000A10AXF7",
+  "kind": "synthetic",
+  "as_of": "2026-11-15",
+  "issuer_group": "synthetic-0",
+  "documents": [
+    {
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "filename": "synthetic-decision.pdf",
+      "path": "data/synthetic/RU000A10AXF7/decision.pdf",
+      "sha256": "0fbb62a14022eb7549d7e719b86c9586f67f8d6222cefc1d4417255332b61eb9",
+      "enabled": true,
+      "type": "decision",
+      "origins": [
+        {
+          "source": "synthetic",
+          "published_at": null,
+          "fetched_at": "2026-11-15T00:00:00Z"
+        }
+      ]
+    }
+  ],
+  "iss_fixture": "data/synthetic/RU000A10AXF7/iss.json",
+  "fields": {
+    "face_value": {
+      "value": {
+        "amount": "1000",
+        "currency": "RUB"
+      },
+      "not_found": false,
+      "quote": "3.1. Номинальная стоимость облигации составляет 1 000 рублей.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 1,
+      "clause": "3.1",
+      "evidence": [],
+      "atoms": [],
+      "iss_value": {
+        "amount": "1000",
+        "currency": "RUB"
+      },
+      "expected_status": "verified_iss"
+    },
+    "placement_date": {
+      "value": {
+        "date": "2026-01-10"
+      },
+      "not_found": false,
+      "quote": "3.2. Дата размещения: 10.01.2026.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 1,
+      "clause": "3.2",
+      "evidence": [],
+      "atoms": [],
+      "iss_value": {
+        "date": "2026-01-10"
+      },
+      "expected_status": "verified_iss"
+    },
+    "maturity_date": {
+      "value": {
+        "date": "2028-01-10"
+      },
+      "not_found": false,
+      "quote": "3.3. Дата погашения: 10.01.2028.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 1,
+      "clause": "3.3",
+      "evidence": [],
+      "atoms": [],
+      "iss_value": {
+        "date": "2028-01-10"
+      },
+      "expected_status": "verified_iss"
+    },
+    "coupon_type": {
+      "value": {
+        "type": "fixed",
+        "description": null
+      },
+      "not_found": false,
+      "quote": "3.4. Тип купона: фиксированный.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 1,
+      "clause": "3.4",
+      "evidence": [],
+      "atoms": [],
+      "iss_value": {
+        "type": "fixed",
+        "description": null
+      },
+      "expected_status": "verified_iss"
+    },
+    "coupon_rate": {
+      "value": {
+        "periods": [
+          {
+            "from": 1,
+            "to": 2,
+            "rate_percent": "12",
+            "amount": null
+          }
+        ],
+        "formula": null
+      },
+      "not_found": false,
+      "quote": "3.5. Ставка купона с 1 по 2 купон составляет 12 процентов годовых.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 1,
+      "clause": "3.5",
+      "evidence": [],
+      "atoms": [],
+      "iss_value": {
+        "periods": [
+          {
+            "from": 1,
+            "to": 2,
+            "rate_percent": "12",
+            "amount": null
+          }
+        ],
+        "formula": null
+      },
+      "expected_status": "verified_iss"
+    },
+    "coupon_schedule": {
+      "value": {
+        "frequency_per_year": null,
+        "period_days": null,
+        "payments": [
+          {
+            "number": 1,
+            "start": null,
+            "end": null,
+            "payment_date": "2026-07-10"
+          },
+          {
+            "number": 2,
+            "start": null,
+            "end": null,
+            "payment_date": "2027-01-10"
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "3.6. Купонные выплаты: 10.07.2026; 10.01.2027.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 1,
+      "clause": "3.6",
+      "evidence": [
+        {
+          "quote": "3.6. Купонные выплаты: 10.07.2026; 10.01.2027.",
+          "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+          "page": 1,
+          "clause": "3.6",
+          "value_path": "/payments/1"
+        }
+      ],
+      "atoms": [],
+      "iss_value": {
+        "frequency_per_year": null,
+        "period_days": null,
+        "payments": [
+          {
+            "number": 1,
+            "start": null,
+            "end": null,
+            "payment_date": "2026-07-10"
+          },
+          {
+            "number": 2,
+            "start": null,
+            "end": null,
+            "payment_date": "2027-01-10"
+          }
+        ]
+      },
+      "expected_status": "verified_iss"
+    },
+    "offers": {
+      "value": {
+        "events": [
+          {
+            "date": "2027-01-10",
+            "type": "put",
+            "price_percent": "100"
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "3.7. Оферта put 10.01.2027 по цене 100 процентов номинала.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 1,
+      "clause": "3.7",
+      "evidence": [],
+      "atoms": [],
+      "iss_value": {
+        "events": [
+          {
+            "date": "2027-01-10",
+            "type": "put",
+            "price_percent": "100"
+          }
+        ]
+      },
+      "expected_status": "verified_iss"
+    },
+    "amortization": {
+      "value": {
+        "events": [
+          {
+            "date": "2028-01-10",
+            "amount": null,
+            "percent": "100",
+            "percent_base": "initial_face_value"
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "3.8. Амортизация 10.01.2028: 100 процентов первоначального номинала.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 1,
+      "clause": "3.8",
+      "evidence": [],
+      "atoms": [],
+      "iss_value": {
+        "events": [
+          {
+            "date": "2028-01-10",
+            "amount": null,
+            "percent": "100",
+            "percent_base": "initial_face_value"
+          }
+        ]
+      },
+      "expected_status": "verified_iss"
+    },
+    "covenants": {
+      "value": {
+        "items": [
+          {
+            "condition": "Ковенант: отношение долга к EBITDA не более 3.",
+            "test_date_rule": null,
+            "consequence": null,
+            "exceptions": null
+          },
+          {
+            "condition": "Ковенант: выплата дивидендов допускается при отсутствии просроченной задолженности.",
+            "test_date_rule": null,
+            "consequence": null,
+            "exceptions": null
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "9.1. Ковенант: отношение долга к EBITDA не более 3.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 2,
+      "clause": "9.1",
+      "evidence": [
+        {
+          "quote": "9.2. Ковенант: выплата дивидендов допускается при отсутствии просроченной задолженности.",
+          "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+          "page": 2,
+          "clause": "9.2",
+          "value_path": "/items/1"
+        }
+      ],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "covenants-0",
+          "category": "covenants",
+          "alternatives": [],
+          "constraints": {
+            "condition": [
+              [
+                "долга",
+                "долг"
+              ],
+              [
+                "ebitda"
+              ],
+              [
+                "не более"
+              ]
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "condition_id": "covenants-1",
+          "category": "covenants",
+          "alternatives": [],
+          "constraints": {}
+        }
+      ],
+      "iss_value": null,
+      "expected_status": "extracted"
+    },
+    "holder_early_redemption": {
+      "value": {
+        "grounds": [
+          {
+            "trigger": "Владельцы вправе требовать досрочного погашения при нарушении ковенанта.",
+            "deadline": null,
+            "exceptions": null
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "9.3. Владельцы вправе требовать досрочного погашения при нарушении ковенанта.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 2,
+      "clause": "9.3",
+      "evidence": [],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "holder_early_redemption-0",
+          "category": "early_redemption",
+          "alternatives": [],
+          "constraints": {}
+        }
+      ],
+      "iss_value": null,
+      "expected_status": "extracted"
+    },
+    "issuer_call_option": {
+      "value": {
+        "conditions": [
+          {
+            "trigger": "Эмитент вправе досрочно погасить облигации по цене 100 процентов номинала, уведомив за 10 дней.",
+            "date_rule": null,
+            "price_rule": null,
+            "notice_rule": null
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "9.4. Эмитент вправе досрочно погасить облигации по цене 100 процентов номинала, уведомив за\n10 дней.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 2,
+      "clause": "9.4",
+      "evidence": [],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "issuer_call_option-0",
+          "category": "call",
+          "alternatives": [],
+          "constraints": {}
+        }
+      ],
+      "iss_value": null,
+      "expected_status": "extracted"
+    },
+    "guarantee_security": {
+      "value": {
+        "items": [
+          {
+            "type": "surety",
+            "party": null,
+            "scope": "Исполнение обеспечено поручительством ООО Пример в полном объёме.",
+            "expiry": null,
+            "exceptions": null
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "9.5. Исполнение обеспечено поручительством ООО Пример в полном объёме.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 2,
+      "clause": "9.5",
+      "evidence": [],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "guarantee_security-0",
+          "category": "other",
+          "alternatives": [],
+          "constraints": {}
+        }
+      ],
+      "iss_value": null,
+      "expected_status": "extracted"
+    },
+    "cross_default": {
+      "value": {
+        "items": [
+          {
+            "trigger": "Кросс-дефолт: неисполнение иных долговых обязательств свыше 1000000 рублей.",
+            "threshold": null,
+            "entities": null,
+            "grace_period": null,
+            "consequence": null,
+            "exceptions": null
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "9.6. Кросс-дефолт: неисполнение иных долговых обязательств свыше 1000000 рублей.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 2,
+      "clause": "9.6",
+      "evidence": [],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "cross_default-0",
+          "category": "other",
+          "alternatives": [],
+          "constraints": {}
+        }
+      ],
+      "iss_value": null,
+      "expected_status": "extracted"
+    },
+    "issuer_restrictions": {
+      "value": {
+        "items": [
+          {
+            "action": "Эмитенту запрещена выплата дивидендов при наличии просроченной задолженности.",
+            "restriction": "Эмитенту запрещена выплата дивидендов при наличии просроченной задолженности.",
+            "exceptions": null,
+            "consequence": null
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "9.7. Эмитенту запрещена выплата дивидендов при наличии просроченной задолженности.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 2,
+      "clause": "9.7",
+      "evidence": [],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "issuer_restrictions-0",
+          "category": "other",
+          "alternatives": [],
+          "constraints": {}
+        }
+      ],
+      "iss_value": null,
+      "expected_status": "extracted"
+    },
+    "offer_procedure": {
+      "value": {
+        "procedures": [
+          {
+            "offer_date": null,
+            "window_start": null,
+            "window_end": null,
+            "window_rule": null,
+            "via": null,
+            "submission": "Для участия в put-оферте владельцы предъявляют требования через депозитарий в течение 5 рабочих дней.",
+            "settlement_rule": null
+          }
+        ]
+      },
+      "not_found": false,
+      "quote": "9.8. Для участия в put-оферте владельцы предъявляют требования через депозитарий в течение 5\nрабочих дней.",
+      "document_id": "0b6c66ed-e84c-5fef-9917-140347e16d0a",
+      "page": 2,
+      "clause": "9.8",
+      "evidence": [],
+      "atoms": [
+        {
+          "index": 0,
+          "condition_id": "offer_procedure-0",
+          "category": "put",
+          "alternatives": [],
+          "constraints": {}
+        }
+      ],
+      "iss_value": null,
+      "expected_status": "extracted"
+    }
+  },
+  "review": {
+    "annotators": [
+      "synthetic-generator",
+      "synthetic-test-oracle"
+    ],
+    "resolved": true,
+    "verified_by": "codex",
+    "needs_human_check": false
+  },
+  "todo": [],
+  "collection": {
+    "complete_corpus": true,
+    "source": "synthetic"
+  }
+}

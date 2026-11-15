@@ -1,0 +1,17 @@
+# Isolated disposable PostgreSQL for scripts/ci.sh; no Dev/PROD volumes.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: bonds_test
+      POSTGRES_USER: bonds
+      POSTGRES_PASSWORD: ci
+    ports:
+      - "127.0.0.1:${TEST_DB_PORT:-55435}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U bonds -d bonds_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

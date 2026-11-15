@@ -1,0 +1,52 @@
+{
+  "isin": "RU000A10ZZZ0",
+  "fetched_at": "2026-11-15T00:00:00Z",
+  "source_url": "synthetic://iss",
+  "synthetic": true,
+  "fields": {
+    "face_value": {
+      "amount": "1900",
+      "currency": "RUB"
+    },
+    "placement_date": {
+      "date": "2026-01-10"
+    },
+    "maturity_date": {
+      "date": "2028-01-10"
+    },
+    "coupon_type": {
+      "type": "floating",
+      "description": null
+    },
+    "coupon_rate": null,
+    "coupon_schedule": {
+      "frequency_per_year": null,
+      "period_days": null,
+      "payments": [
+        {
+          "number": 1,
+          "start": null,
+          "end": null,
+          "payment_date": "2026-07-10"
+        },
+        {
+          "number": 2,
+          "start": null,
+          "end": null,
+          "payment_date": "2027-01-10"
+        }
+      ]
+    },
+    "offers": {
+      "events": [
+        {
+          "date": "2027-01-10",
+          "type": "put",
+          "price_percent": "100"
+        }
+      ]
+    },
+    "amortization": null
+  },
+  "raw": {}
+}

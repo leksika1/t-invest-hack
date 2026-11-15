@@ -1,0 +1,111 @@
+{
+  "schema_version": "1",
+  "isin": "RU000A10AXF7",
+  "kind": "real",
+  "as_of": "2026-11-15",
+  "issuer_group": "TODO-issuer-INN",
+  "documents": [],
+  "iss_fixture": "data/NEW-ISIN/iss.json",
+  "fields": {
+    "face_value": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "placement_date": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "maturity_date": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "coupon_type": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "coupon_rate": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "coupon_schedule": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "offers": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "amortization": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "covenants": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "holder_early_redemption": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "issuer_call_option": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "guarantee_security": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "cross_default": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "issuer_restrictions": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    },
+    "offer_procedure": {
+      "value": null,
+      "not_found": false,
+      "unscorable": true,
+      "reason": "TODO: value/цитата/страница/варианты или обоснованное not_found"
+    }
+  },
+  "review": {
+    "annotators": [],
+    "resolved": false,
+    "verified_by": "annotator-name",
+    "needs_human_check": true
+  },
+  "todo": [
+    "Добавить PDF, sha256, происхождение и ISS snapshot.",
+    "Два разметчика и арбитр; удалить TODO только после проверки."
+  ]
+}

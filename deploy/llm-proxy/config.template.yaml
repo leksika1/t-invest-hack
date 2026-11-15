@@ -1,0 +1,51 @@
+# URL подставляет render-config.sh как единственный YAML scalar; не eval/envsubst.
+mixed-port: 7890
+allow-lan: true
+bind-address: '*'
+mode: rule
+log-level: warning
+ipv6: false
+find-process-mode: 'off'
+external-controller: ''
+geo-auto-update: false
+profile:
+  store-selected: false
+  store-fake-ip: false
+dns:
+  enable: false
+tun:
+  enable: false
+
+proxy-providers:
+  subscription:
+    type: http
+    url: __SUBSCRIPTION_URL__
+    path: ./providers/subscription.yaml
+    # Саму подписку качаем напрямую: иначе запрос уходит по MATCH в пустую группу LLM и получает REJECT
+    proxy: DIRECT
+    interval: 3600
+    size-limit: 8388608
+    exclude-type: direct
+    health-check:
+      enable: true
+      url: https://openrouter.ai/api/v1/models
+      interval: 300
+      timeout: 10000
+      lazy: false
+      expected-status: '200'
+
+proxy-groups:
+  - name: LLM
+    type: url-test
+    use: [subscription]
+    url: https://openrouter.ai/api/v1/models
+    interval: 300
+    timeout: 10000
+    lazy: false
+    tolerance: 50
+    expected-status: '200'
+    # Пустой провайдер не должен включать стандартный COMPATIBLE/DIRECT.
+    empty-fallback: REJECT
+
+rules:
+  - MATCH,LLM

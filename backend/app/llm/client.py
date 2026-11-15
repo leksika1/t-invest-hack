@@ -1,46 +1,35 @@
-"""Тонкая обёртка над OpenAI-совместимым API.
+"""Transport only. All model requests are authorized/logged by LLMGateway."""
+from urllib.parse import urlsplit
 
-Остальной код работает только через LLMClient, чтобы провайдера можно было сменить
-в одном месте. Клиент создаётся лениво и только при заданном LLM_API_KEY.
-"""
+import httpx
 
-from openai import OpenAI
-
-from app.config import Settings, get_settings
-
-
-class LLMNotConfigured(RuntimeError):
-    pass
+from app.config import get_settings
 
 
 class LLMClient:
-    def __init__(self, settings: Settings | None = None) -> None:
-        self._settings = settings or get_settings()
-        self._client: OpenAI | None = None
+    def __init__(self, settings=None, client=None):
+        self.settings = settings or get_settings()
+        self.client = client
 
     @property
-    def configured(self) -> bool:
-        return bool(self._settings.llm_api_key)
+    def configured(self):
+        return bool(self.settings.llm_api_key)
 
-    def _get_client(self) -> OpenAI:
-        if not self.configured:
-            raise LLMNotConfigured("LLM_API_KEY is not set")
-        if self._client is None:
-            self._client = OpenAI(
-                api_key=self._settings.llm_api_key,
-                base_url=self._settings.llm_base_url or None,
-            )
-        return self._client
-
-    def complete_json(self, system: str, user: str) -> str:
-        """Запрос к модели с ответом в формате JSON. Возвращает сырой текст ответа."""
-        response = self._get_client().chat.completions.create(
-            model=self._settings.llm_model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0,
-        )
-        return response.choices[0].message.content or ""
+    def request(self, purpose, payload):
+        embedding = purpose == 'embedding'
+        base = (self.settings.embedding_base_url or self.settings.llm_base_url) if embedding else self.settings.llm_base_url
+        key = (self.settings.embedding_api_key or self.settings.llm_api_key) if embedding else self.settings.llm_api_key
+        headers = {'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json'}
+        if urlsplit(base).hostname == 'openrouter.ai':
+            headers['X-Title'] = 'Bond Card MVP'
+            if self.settings.public_base_url:
+                headers['HTTP-Referer'] = self.settings.public_base_url
+        path = '/embeddings' if embedding else '/chat/completions'
+        if self.client is None:
+            with httpx.Client(timeout=self.settings.llm_timeout_seconds,
+                              proxy=self.settings.llm_proxy_url or None, trust_env=False) as client:
+                response = client.post(base.rstrip('/') + path, headers=headers, json=payload)
+        else:
+            response = self.client.post(base.rstrip('/') + path, headers=headers, json=payload, timeout=self.settings.llm_timeout_seconds)
+        response.raise_for_status()
+        return response.json()

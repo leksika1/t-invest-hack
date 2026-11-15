@@ -1,0 +1,44 @@
+{
+  "log": {"loglevel": "warning", "access": "none", "dnsLog": false},
+  "inbounds": [
+    {
+      "tag": "llm-socks",
+      "listen": "0.0.0.0",
+      "port": 1080,
+      "protocol": "socks",
+      "settings": {
+        "auth": "password",
+        "accounts": [{"user": "REPLACE_PROXY_USER", "pass": "REPLACE_PROXY_PASSWORD"}],
+        "udp": false
+      }
+    },
+    {
+      "tag": "llm-http",
+      "listen": "0.0.0.0",
+      "port": 8080,
+      "protocol": "http",
+      "settings": {
+        "accounts": [{"user": "REPLACE_PROXY_USER", "pass": "REPLACE_PROXY_PASSWORD"}],
+        "allowTransparent": false
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "vpn",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [{
+          "address": "REPLACE_VLESS_SERVER.example.invalid",
+          "port": 443,
+          "users": [{"id": "REPLACE_VLESS_UUID", "encryption": "none"}]
+        }]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "tls",
+        "tlsSettings": {"serverName": "REPLACE_VLESS_SNI.example.invalid", "allowInsecure": false}
+      }
+    }
+  ]
+}

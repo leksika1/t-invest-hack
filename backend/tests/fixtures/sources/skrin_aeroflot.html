@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>&#x41F;&#x410;&#x41E; &quot;&#x410;&#x44D;&#x440;&#x43E;&#x444;&#x43B;&#x43E;&#x442;&quot; · СКРИН — Раскрытие информации</title>
+    <link rel="icon" href="/favicon.ico?v=A8noaQDQcvAqOvMrXDIDuZh32ouKw48Fe9ZJe9IlH14" sizes="16x16 32x32" />
+    <link rel="icon" type="image/png" href="/favicon.png?v=e1v12HLx5riL12M1PGfw7O0p3unrCIfGUHODzvHzpGQ" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=hQH6T1vyrA0sLTQfabUByYPUf-SG40R3iKAOEv-TMAQ" />
+    <script src="/js/error_reporter.js?v=-PAonhCUP-dByREmUA9UtgU5b3VPqlqPc44To2ondTw"></script>
+    <script src="/js/modal_guard.js?v=g8bKLLLJ3pspUnyx64OyBkAGktTtoQLv7yVxo8WKto8"></script>
+    <link rel="stylesheet" href="/css/app.css?v=o8xlrCETsMw4ErO6oiy_FrsyPDhWn8P27D776lBBtK8" />
+    <script defer src="/js/alpine.min.js"></script>
+    <script>
+        // Копирование ИНН из карточек сообщений (ViewHelpers.IssuerLinks): не даём клику уйти на ссылку-карточку, показываем «Скопировано»
+        function skrinCopyInn(e, el, inn) {
+            e.preventDefault(); e.stopPropagation();
+            var done = function () {
+                var m = el.parentNode.querySelector('.skrin-copied');
+                if (m) { m.classList.remove('hidden'); setTimeout(function () { m.classList.add('hidden'); }, 1500); }
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(inn).then(done, done);
+            else { var t = document.createElement('textarea'); t.value = inn; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (x) { } document.body.removeChild(t); done(); }
+            return false;
+        }
+    </script>
+    
+</head>
+<body class="min-h-screen bg-white text-slate-900 antialiased" x-data="{ auth: null, schedule: false }">
+
+    <header class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="flex items-center justify-between h-20 gap-3 whitespace-nowrap">
+            <div class="flex items-center gap-3 flex-shrink-0">
+                <a href="/"><img src="/img/main_logo.svg" alt="СКРИН" class="h-10 w-auto flex-shrink-0" /></a>
+                <div class="relative" x-data="{ apps: false }" @keydown.escape.window="apps = false">
+    <button type="button" @click="apps = !apps" title="Сервисы СКРИН" aria-label="Сервисы СКРИН" :aria-expanded="apps"
+            :class="apps ? 'border-blue-800 bg-blue-50 text-blue-800' : 'border-slate-300 text-slate-500 hover:border-blue-800 hover:bg-blue-50 hover:text-blue-800'"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-lg border bg-white transition">
+        <svg class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <circle cx="2.5" cy="2.5" r="1.6"/><circle cx="8" cy="2.5" r="1.6"/><circle cx="13.5" cy="2.5" r="1.6"/>
+            <circle cx="2.5" cy="8" r="1.6"/><circle cx="8" cy="8" r="1.6"/><circle cx="13.5" cy="8" r="1.6"/>
+            <circle cx="2.5" cy="13.5" r="1.6"/><circle cx="8" cy="13.5" r="1.6"/><circle cx="13.5" cy="13.5" r="1.6"/>
+        </svg>
+    </button>
+    <div x-show="apps" x-cloak @click.outside="apps = false"
+         x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+         class="absolute left-0 mt-2 w-72 z-30 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden whitespace-normal">
+        <p class="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Сервисы СКРИН</p>
+        <div class="py-1">
+                <a href="https://kontragent.skrin.ru" target=&quot;_blank&quot; rel=&quot;noopener&quot;
+                   class="flex items-center gap-3 px-4 py-2 text-sm transition text-slate-700 hover:bg-slate-50 hover:text-blue-800">
+                    <span class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-base font-bold text-white" style="background-color:#344f77">&#x41A;</span>
+                    <span class="whitespace-nowrap">&#x41A;&#x43E;&#x43D;&#x442;&#x440;&#x430;&#x433;&#x435;&#x43D;&#x442;</span>
+                </a>
+                <a href="https://podft.skrin.ru" target=&quot;_blank&quot; rel=&quot;noopener&quot;
+                   class="flex items-center gap-3 px-4 py-2 text-sm transition text-slate-700 hover:bg-slate-50 hover:text-blue-800">
+                    <span class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-base font-bold text-white" style="background-color:#af3230">&#x41F;</span>
+                    <span class="whitespace-nowrap">&#x41F;&#x41E;&#x414;/&#x424;&#x422;</span>
+                </a>
+                <a href="/" 
+                   class="flex items-center gap-3 px-4 py-2 text-sm transition bg-blue-50 text-blue-800 font-semibold">
+                    <span class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-base font-bold text-white" style="background-color:#3f2119">&#x420;</span>
+                    <span class="whitespace-nowrap">&#x420;&#x430;&#x441;&#x43A;&#x440;&#x44B;&#x442;&#x438;&#x435; &#x438;&#x43D;&#x444;&#x43E;&#x440;&#x43C;&#x430;&#x446;&#x438;&#x438;</span>
+                </a>
+                <a href="https://center.skrin.ru" target=&quot;_blank&quot; rel=&quot;noopener&quot;
+                   class="flex items-center gap-3 px-4 py-2 text-sm transition text-slate-700 hover:bg-slate-50 hover:text-blue-800">
+                    <span class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-base font-bold text-white" style="background-color:#3e9d42">&#x41E;</span>
+                    <span class="whitespace-nowrap">&#x41E;&#x431;&#x443;&#x447;&#x435;&#x43D;&#x438;&#x435;</span>
+                </a>
+                <a href="https://promo.skrin.ru/api" target=&quot;_blank&quot; rel=&quot;noopener&quot;
+                   class="flex items-center gap-3 px-4 py-2 text-sm transition text-slate-700 hover:bg-slate-50 hover:text-blue-800">
+                    <span class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-base font-bold text-white" style="background-color:#3399cc">A</span>
+                    <span class="whitespace-nowrap">API</span>
+                </a>
+        </div>
+        <a href="https://skrin.ru" target="_blank" rel="noopener"
+           class="flex items-center justify-between border-t border-slate-100 px-4 py-2.5 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-blue-800 transition">
+            Все сервисы на skrin.ru
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+        </a>
+    </div>
+</div>
+
+            </div>
+            <a href="https://olddisclosure.skrin.ru" rel="noopener" data-old-site
+               class="hidden md:inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-800 hover:border-blue-800 transition whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/></svg>
+                <span class="hidden 2xl:inline">Перейти на старую версию сайта</span><span class="2xl:hidden">Старая версия сайта</span>
+            </a>
+            <div class="flex items-center gap-5">
+                <nav class="hidden md:flex items-center gap-5 text-sm font-medium">
+                    <a href="/Disclosureprocedure/" class="py-1.5 transition underline-offset-8 decoration-2 text-slate-600 hover:text-blue-800 hover:underline hover:decoration-blue-800">Порядок раскрытия</a>
+                    <a href="/price/" class="py-1.5 transition underline-offset-8 decoration-2 text-slate-600 hover:text-blue-800 hover:underline hover:decoration-blue-800">Тарифы</a>
+                </nav>
+                <div class="flex gap-2 items-center text-sm">
+                        <button type="button" @click="auth = 'upload'"
+                                class="hidden xl:inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-blue-800 text-blue-800 rounded-lg hover:bg-blue-50 font-medium transition">
+                            Загрузить документ
+                        </button>
+                        <button type="button" @click="auth = 'publish'"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-800 text-white rounded-lg hover:bg-blue-900 font-semibold transition shadow-sm">
+                            <span class="hidden sm:inline">Опубликовать сообщение</span>
+                            <span class="sm:hidden">Сообщение</span>
+                        </button>
+                        <button type="button" @click="auth = 'login'"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition">
+                            Войти
+                        </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+    <main>
+        
+<div class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-6 py-4">
+            <nav class="flex items-center flex-wrap gap-2 mb-3 text-sm text-slate-500" aria-label="Навигация">
+                <a href="/" class="hover:text-blue-800 transition">&#x413;&#x43B;&#x430;&#x432;&#x43D;&#x430;&#x44F;</a>
+                <span class="text-slate-300">/</span>
+                <a href="/Firms" class="hover:text-blue-800 transition">&#x42D;&#x43C;&#x438;&#x442;&#x435;&#x43D;&#x442;&#x44B;</a>
+                <span class="text-slate-300">/</span>
+                <span class="text-slate-700 font-medium">&#x41F;&#x410;&#x41E; &quot;&#x410;&#x44D;&#x440;&#x43E;&#x444;&#x43B;&#x43E;&#x442;&quot;</span>
+    </nav>
+
+        <div class="flex items-center gap-4 flex-wrap">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                    <h1 class="text-lg font-bold text-slate-900">&#x41F;&#x410;&#x41E; &quot;&#x410;&#x44D;&#x440;&#x43E;&#x444;&#x43B;&#x43E;&#x442;&quot;</h1>
+                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 12.75 2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+                        Раскрытие информации
+                    </span>
+                </div>
+                    <p class="text-xs text-slate-500 truncate mb-1.5">&#x41F;&#x443;&#x431;&#x43B;&#x438;&#x447;&#x43D;&#x43E;&#x435; &#x430;&#x43A;&#x446;&#x438;&#x43E;&#x43D;&#x435;&#x440;&#x43D;&#x43E;&#x435; &#x43E;&#x431;&#x449;&#x435;&#x441;&#x442;&#x432;&#x43E; &quot;&#x410;&#x44D;&#x440;&#x43E;&#x444;&#x43B;&#x43E;&#x442;-&#x440;&#x43E;&#x441;&#x441;&#x438;&#x439;&#x441;&#x43A;&#x438;&#x435;  &#x430;&#x432;&#x438;&#x430;&#x43B;&#x438;&#x43D;&#x438;&#x438;&quot;</p>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                        <span>ИНН: <span class="font-semibold text-slate-700">7712040126</span></span>
+                        <span>ОГРН: <span class="font-semibold text-slate-700">1027700092661</span></span>
+                        <span>Код эмитента: <span class="font-semibold text-slate-700">00010-A</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="bg-slate-50">
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row">
+
+        <aside class="lg:w-64 flex-shrink-0 bg-white lg:border-r lg:border-slate-200">
+            
+<nav class="flex flex-col py-2 lg:py-0">
+
+    <div class="py-2">
+        <a href="/disclosure/7712040126"
+           class="w-full flex items-center justify-between px-4 py-2.5 border-l-2 group transition bg-blue-50 border-blue-800">
+            <span class="flex items-center gap-2.5 min-w-0 text-blue-800">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"/></svg>
+                <span class="text-xs leading-snug text-blue-900 font-semibold">&#x41F;&#x440;&#x43E;&#x444;&#x438;&#x43B;&#x44C; &#x44D;&#x43C;&#x438;&#x442;&#x435;&#x43D;&#x442;&#x430;</span>
+            </span>
+        </a>
+
+            <a href="/disclosure/7712040126/5"
+               class="w-full flex items-center justify-between px-4 py-2.5 border-l-2 group transition border-transparent hover:bg-slate-50">
+                <span class="flex items-center gap-2.5 min-w-0 text-slate-400 group-hover:text-slate-600">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 0 0-4-5.66V5a2 2 0 1 0-4 0v.34A6 6 0 0 0 6 11v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9"/></svg>
+                    <span class="text-xs leading-snug text-slate-600 group-hover:text-slate-900">&#x421;&#x43E;&#x43E;&#x431;&#x449;&#x435;&#x43D;&#x438;&#x44F; &#x43E; &#x441;&#x443;&#x449;&#x435;&#x441;&#x442;&#x432;&#x435;&#x43D;&#x43D;&#x44B;&#x445; &#x444;&#x430;&#x43A;&#x442;&#x430;&#x445;, &#x434;&#x43E;&#x43F;&#x43E;&#x43B;&#x43D;&#x438;&#x442;&#x435;&#x43B;&#x44C;&#x43D;&#x44B;&#x435; &#x441;&#x432;&#x435;&#x434;&#x435;&#x43D;&#x438;&#x44F;</span>
+                </span>
+                    <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-1.5 bg-slate-200 text-slate-500">95</span>
+            </a>
+    </div>
+
+    <div class="border-t border-slate-100">
+        <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400 px-4 pt-3 pb-1.5">Документы</p>
+                <a href="/disclosure/7712040126/1"
+                   class="w-full flex items-center justify-between px-4 py-2.5 border-l-2 group transition border-transparent hover:bg-slate-50">
+                    <span class="flex items-center gap-2.5 min-w-0 text-slate-400 group-hover:text-slate-600">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 0 0 2-2V9.414a1 1 0 0 0-.293-.707l-5.414-5.414A1 1 0 0 0 12.586 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/></svg>
+                        <span class="text-xs leading-snug text-slate-600 group-hover:text-slate-900">&#x423;&#x441;&#x442;&#x430;&#x432; &#x438; &#x438;&#x43D;&#x44B;&#x435; &#x432;&#x43D;&#x443;&#x442;&#x440;&#x435;&#x43D;&#x43D;&#x438;&#x435; &#x434;&#x43E;&#x43A;&#x443;&#x43C;&#x435;&#x43D;&#x442;&#x44B;</span>
+                    </span>
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-1.5 bg-slate-200 text-slate-500">71</span>
+                </a>
+                <span class="w-full flex items-center gap-2.5 px-4 py-2.5 border-l-2 border-transparent text-slate-300 cursor-default">
+                    <span class="text-slate-300"><svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87m6-1.13a4 4 0 1 0-4 0M17 8a3 3 0 1 0 0-.001"/></svg></span>
+                    <span class="text-xs leading-snug">&#x421;&#x43F;&#x438;&#x441;&#x43A;&#x438; &#x430;&#x444;&#x444;&#x438;&#x43B;&#x438;&#x440;&#x43E;&#x432;&#x430;&#x43D;&#x43D;&#x44B;&#x445; &#x43B;&#x438;&#x446;</span>
+                </span>
+                <a href="/disclosure/7712040126/3"
+                   class="w-full flex items-center justify-between px-4 py-2.5 border-l-2 group transition border-transparent hover:bg-slate-50">
+                    <span class="flex items-center gap-2.5 min-w-0 text-slate-400 group-hover:text-slate-600">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/></svg>
+                        <span class="text-xs leading-snug text-slate-600 group-hover:text-slate-900">&#x41E;&#x442;&#x447;&#x435;&#x442;&#x44B; &#x44D;&#x43C;&#x438;&#x442;&#x435;&#x43D;&#x442;&#x430; / &#x415;&#x436;&#x435;&#x43A;&#x432;&#x430;&#x440;&#x442;&#x430;&#x43B;&#x44C;&#x43D;&#x44B;&#x435; &#x43E;&#x442;&#x447;&#x435;&#x442;&#x44B;</span>
+                    </span>
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-1.5 bg-slate-200 text-slate-500">23</span>
+                </a>
+                <a href="/disclosure/7712040126/6"
+                   class="w-full flex items-center justify-between px-4 py-2.5 border-l-2 group transition border-transparent hover:bg-slate-50">
+                    <span class="flex items-center gap-2.5 min-w-0 text-slate-400 group-hover:text-slate-600">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15l3-3 3 3 5-6"/></svg>
+                        <span class="text-xs leading-snug text-slate-600 group-hover:text-slate-900">&#x412;&#x44B;&#x43F;&#x443;&#x441;&#x43A;&#x438; &#x446;&#x435;&#x43D;&#x43D;&#x44B;&#x445; &#x431;&#x443;&#x43C;&#x430;&#x433;</span>
+                    </span>
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-1.5 bg-slate-200 text-slate-500">43</span>
+                </a>
+                <a href="/disclosure/7712040126/7"
+                   class="w-full flex items-center justify-between px-4 py-2.5 border-l-2 group transition border-transparent hover:bg-slate-50">
+                    <span class="flex items-center gap-2.5 min-w-0 text-slate-400 group-hover:text-slate-600">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 0 0 2-2V9.414a1 1 0 0 0-.293-.707l-5.414-5.414A1 1 0 0 0 12.586 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/></svg>
+                        <span class="text-xs leading-snug text-slate-600 group-hover:text-slate-900">&#x413;&#x43E;&#x434;&#x43E;&#x432;&#x43E;&#x439; &#x43E;&#x442;&#x447;&#x435;&#x442;</span>
+                    </span>
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-1.5 bg-slate-200 text-slate-500">9</span>
+                </a>
+                <a href="/disclosure/7712040126/8"
+                   class="w-full flex items-center justify-between px-4 py-2.5 border-l-2 group transition border-transparent hover:bg-slate-50">
+                    <span class="flex items-center gap-2.5 min-w-0 text-slate-400 group-hover:text-slate-600">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 0 0 2-2V9.414a1 1 0 0 0-.293-.707l-5.414-5.414A1 1 0 0 0 12.586 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/></svg>
+                        <span class="text-xs leading-snug text-slate-600 group-hover:text-slate-900">&#x411;&#x443;&#x445;&#x433;&#x430;&#x43B;&#x442;&#x435;&#x440;&#x441;&#x43A;&#x430;&#x44F; (&#x444;&#x438;&#x43D;&#x430;&#x43D;&#x441;&#x43E;&#x432;&#x430;&#x44F;) &#x43E;&#x442;&#x447;&#x435;&#x442;&#x43D;&#x43E;&#x441;&#x442;&#x44C;</span>
+                    </span>
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-1.5 bg-slate-200 text-slate-500">13</span>
+                </a>
+                <a href="/disclosure/7712040126/9"
+                   class="w-full flex items-center justify-between px-4 py-2.5 border-l-2 group transition border-transparent hover:bg-slate-50">
+                    <span class="flex items-center gap-2.5 min-w-0 text-slate-400 group-hover:text-slate-600">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 0 0 2-2V9.414a1 1 0 0 0-.293-.707l-5.414-5.414A1 1 0 0 0 12.586 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/></svg>
+                        <span class="text-xs leading-snug text-slate-600 group-hover:text-slate-900">&#x421;&#x432;&#x43E;&#x434;&#x43D;&#x430;&#x44F; &#x431;&#x443;&#x445;&#x433;&#x430;&#x43B;&#x442;&#x435;&#x440;&#x441;&#x43A;&#x430;&#x44F; (&#x43A;&#x43E;&#x43D;&#x441;&#x43E;&#x43B;&#x438;&#x434;&#x438;&#x440;&#x43E;&#x432;&#x430;&#x43D;&#x43D;&#x430;&#x44F; &#x444;&#x438;&#x43D;&#x430;&#x43D;&#x441;&#x43E;&#x432;&#x430;&#x44F;) &#x43E;&#x442;&#x447;&#x435;&#x442;&#x43D;&#x43E;&#x441;&#x442;&#x44C;</span>
+                    </span>
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-1.5 bg-slate-200 text-slate-500">14</span>
+                </a>
+                <a href="/disclosure/7712040126/4"
+                   class="w-full flex items-center justify-between px-4 py-2.5 border-l-2 group transition border-transparent hover:bg-slate-50">
+                    <span class="flex items-center gap-2.5 min-w-0 text-slate-400 group-hover:text-slate-600">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
+                        <span class="text-xs leading-snug text-slate-600 group-hover:text-slate-900">&#x414;&#x440;&#x443;&#x433;&#x438;&#x435; &#x434;&#x43E;&#x43A;&#x443;&#x43C;&#x435;&#x43D;&#x442;&#x44B;</span>
+                    </span>
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-1.5 bg-slate-200 text-slate-500">24</span>
+                </a>
+    </div>
+</nav>
+
+        </aside>
+
+        <main class="flex-1 min-w-0 p-6">
+
+                <div class="card overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-blue-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"/></svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-900">&#x41F;&#x440;&#x43E;&#x444;&#x438;&#x43B;&#x44C; &#x44D;&#x43C;&#x438;&#x442;&#x435;&#x43D;&#x442;&#x430;</h3>
+                    </div>
+                    <div class="divide-y divide-slate-100">
+                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-6 px-6 py-3.5 hover:bg-slate-50/60 transition">
+                                    <span class="text-sm text-slate-500 flex-shrink-0 sm:w-72">&#x41F;&#x43E;&#x43B;&#x43D;&#x43E;&#x435; &#x43D;&#x430;&#x438;&#x43C;&#x435;&#x43D;&#x43E;&#x432;&#x430;&#x43D;&#x438;&#x435;</span>
+                                    <span class="text-sm text-slate-900 font-medium leading-relaxed break-words">&#x41F;&#x443;&#x431;&#x43B;&#x438;&#x447;&#x43D;&#x43E;&#x435; &#x430;&#x43A;&#x446;&#x438;&#x43E;&#x43D;&#x435;&#x440;&#x43D;&#x43E;&#x435; &#x43E;&#x431;&#x449;&#x435;&#x441;&#x442;&#x432;&#x43E; &quot;&#x410;&#x44D;&#x440;&#x43E;&#x444;&#x43B;&#x43E;&#x442;-&#x440;&#x43E;&#x441;&#x441;&#x438;&#x439;&#x441;&#x43A;&#x438;&#x435;  &#x430;&#x432;&#x438;&#x430;&#x43B;&#x438;&#x43D;&#x438;&#x438;&quot;</span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-6 px-6 py-3.5 hover:bg-slate-50/60 transition">
+                                    <span class="text-sm text-slate-500 flex-shrink-0 sm:w-72">&#x41A;&#x440;&#x430;&#x442;&#x43A;&#x43E;&#x435; &#x43D;&#x430;&#x438;&#x43C;&#x435;&#x43D;&#x43E;&#x432;&#x430;&#x43D;&#x438;&#x435;</span>
+                                    <span class="text-sm text-slate-900 font-medium leading-relaxed break-words">&#x41F;&#x410;&#x41E; &quot;&#x410;&#x44D;&#x440;&#x43E;&#x444;&#x43B;&#x43E;&#x442;&quot;</span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-6 px-6 py-3.5 hover:bg-slate-50/60 transition">
+                                    <span class="text-sm text-slate-500 flex-shrink-0 sm:w-72">&#x418;&#x41D;&#x41D;</span>
+                                    <span class="text-sm text-slate-900 font-medium leading-relaxed break-words">7712040126</span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-6 px-6 py-3.5 hover:bg-slate-50/60 transition">
+                                    <span class="text-sm text-slate-500 flex-shrink-0 sm:w-72">&#x41E;&#x41A;&#x41F;&#x41E;</span>
+                                    <span class="text-sm text-slate-900 font-medium leading-relaxed break-words">29063984</span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-6 px-6 py-3.5 hover:bg-slate-50/60 transition">
+                                    <span class="text-sm text-slate-500 flex-shrink-0 sm:w-72">&#x41E;&#x413;&#x420;&#x41D;</span>
+                                    <span class="text-sm text-slate-900 font-medium leading-relaxed break-words">1027700092661</span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-6 px-6 py-3.5 hover:bg-slate-50/60 transition">
+                                    <span class="text-sm text-slate-500 flex-shrink-0 sm:w-72">&#x41A;&#x43E;&#x434; &#x44D;&#x43C;&#x438;&#x442;&#x435;&#x43D;&#x442;&#x430;</span>
+                                    <span class="text-sm text-slate-900 font-medium leading-relaxed break-words">00010-A</span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-6 px-6 py-3.5 hover:bg-slate-50/60 transition">
+                                    <span class="text-sm text-slate-500 flex-shrink-0 sm:w-72">&#x41C;&#x435;&#x441;&#x442;&#x43E; &#x43D;&#x430;&#x445;&#x43E;&#x436;&#x434;&#x435;&#x43D;&#x438;&#x44F;</span>
+                                    <span class="text-sm text-slate-900 font-medium leading-relaxed break-words">&#x433;. &#x41C;&#x43E;&#x441;&#x43A;&#x432;&#x430;</span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-6 px-6 py-3.5 hover:bg-slate-50/60 transition">
+                                    <span class="text-sm text-slate-500 flex-shrink-0 sm:w-72">&#x41F;&#x43E;&#x447;&#x442;&#x43E;&#x432;&#x44B;&#x439; &#x430;&#x434;&#x440;&#x435;&#x441;</span>
+                                    <span class="text-sm text-slate-900 font-medium leading-relaxed break-words">&#x420;&#x43E;&#x441;&#x441;&#x438;&#x439;&#x441;&#x43A;&#x430;&#x44F; &#x424;&#x435;&#x434;&#x435;&#x440;&#x430;&#x446;&#x438;&#x44F;, 119019, &#x433;. &#x41C;&#x43E;&#x441;&#x43A;&#x432;&#x430;, &#x443;&#x43B;. &#x410;&#x440;&#x431;&#x430;&#x442;, &#x434;. 1</span>
+                                </div>
+                    </div>
+                </div>
+
+        </main>
+    </div>
+</div>
+
+<div x-data="{ open:false, loading:false, html:'', title:'Электронная подпись',
+        async show(d){ var url = (d && d.url) ? d.url : d; this.title = (d && d.title) ? d.title : 'Электронная подпись'; this.open=true; this.loading=true; this.html='';
+            try{ const r=await fetch(url); this.html = r.ok ? await r.text() : '<div class=\'p-6 text-sm text-slate-500\'>Сведения о подписи недоступны.</div>'; }
+            catch(e){ this.html='<div class=\'p-6 text-sm text-red-600\'>Не удалось загрузить сведения о подписи.</div>'; }
+            this.loading=false; },
+        close(){ this.open=false; this.html=''; } }"
+     @open-docsign.window="show($event.detail)" @keydown.escape.window="close()">
+    <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background-color: rgba(15,23,42,0.65);" @click.self="close()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest" x-text="title"></span>
+                <button type="button" @click="close()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="overflow-y-auto flex-1">
+                <div x-show="loading" class="p-12 text-center text-slate-400 text-sm">Загрузка…</div>
+                <div x-html="html"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    </main>
+
+    <footer>
+    <div class="bg-[#25307a] text-blue-50">
+        <div class="max-w-7xl mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="space-y-4">
+                    <h3 class="text-white font-semibold text-sm uppercase tracking-wide mb-3">Компания</h3>
+                    <p class="text-sm text-blue-100 leading-relaxed">СКРИН — информационное агентство, аккредитованное Банком России для раскрытия информации на рынке ценных бумаг.</p>
+                    <a href="/company/contacts" class="inline-flex items-center gap-1.5 text-sm font-medium text-white hover:text-blue-100 transition group w-fit">
+                        О компании
+                        <svg class="w-4 h-4 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                    </a>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold text-sm uppercase tracking-wide mb-4">Контакты</h3>
+                    <div class="space-y-3">
+                        <a href="tel:+74957871767" class="flex items-center gap-2.5 text-sm text-blue-50 hover:text-white transition">
+                            <svg class="w-4 h-4 text-blue-200 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"/></svg> +7 (495) 787-17-67
+                        </a>
+                        <a href="tel:+74951473497" class="flex items-center gap-2.5 text-sm text-blue-50 hover:text-white transition">
+                            <svg class="w-4 h-4 text-blue-200 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"/></svg> +7 (495) 147-34-97
+                        </a>
+                        <a href="mailto:sales@skrin.ru" class="flex items-start gap-2.5 text-sm text-blue-50 hover:text-white transition">
+                            <svg class="w-4 h-4 text-blue-200 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
+                            <span><span class="text-blue-200/80 text-xs block leading-tight">Отдел продаж и маркетинга</span>sales@skrin.ru</span>
+                        </a>
+                        <a href="mailto:disclosure@skrin.ru" class="flex items-start gap-2.5 text-sm text-blue-50 hover:text-white transition">
+                            <svg class="w-4 h-4 text-blue-200 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
+                            <span><span class="text-blue-200/80 text-xs block leading-tight">Отдел обработки корпоративной информации</span>disclosure@skrin.ru</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="md:col-span-2">
+                    <h3 class="text-white font-semibold text-sm mb-4 uppercase tracking-wide">Документы и информация</h3>
+                    <ul class="grid sm:grid-cols-2 gap-2.5">
+                            <li>
+                                <a href="/docs/&#x41F;&#x43E;&#x43B;&#x438;&#x442;&#x438;&#x43A;&#x430; &#x43A;&#x43E;&#x43D;&#x444;&#x438;&#x434;&#x435;&#x43D;&#x446;&#x438;&#x430;&#x43B;&#x44C;&#x43D;&#x43E;&#x441;&#x442;&#x438; - &#x440;&#x430;&#x441;&#x43A;&#x440;&#x44B;&#x442;&#x438;&#x435; &#x438;&#x43D;&#x444;&#x43E;&#x440;&#x43C;&#x430;&#x446;&#x438;&#x438;.doc?v=dZ4rRDuGRwyEIZuVCETeP-Cv6ZgN8-T_pt0aEBm8MVA" target=_blank rel="noopener" class="text-sm text-blue-50 hover:text-white transition leading-snug flex items-start gap-2 group">
+                                    <span class="text-blue-200 mt-0.5 group-hover:text-white flex-shrink-0">›</span>
+                                    &#x41F;&#x43E;&#x43B;&#x438;&#x442;&#x438;&#x43A;&#x430; &#x43A;&#x43E;&#x43D;&#x444;&#x438;&#x434;&#x435;&#x43D;&#x446;&#x438;&#x430;&#x43B;&#x44C;&#x43D;&#x43E;&#x441;&#x442;&#x438; - &#x440;&#x430;&#x441;&#x43A;&#x440;&#x44B;&#x442;&#x438;&#x435; &#x438;&#x43D;&#x444;&#x43E;&#x440;&#x43C;&#x430;&#x446;&#x438;&#x438;
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/docs/&#x41F;&#x43E;&#x43B;&#x438;&#x442;&#x438;&#x43A;&#x430; &#x421;&#x41A;&#x420;&#x418;&#x41D; - &#x440;&#x430;&#x441;&#x43F;&#x440;&#x43E;&#x441;&#x442;&#x440;&#x430;&#x43D;&#x435;&#x43D;&#x438;&#x435; &#x438;&#x43D;&#x444;&#x43E;&#x440;&#x43C;&#x430;&#x446;&#x438;&#x438;.doc?v=mVRGXibxioufZ7sDsKR1SpUxN_AfSRQb6eHRR2lMjGc" target=_blank rel="noopener" class="text-sm text-blue-50 hover:text-white transition leading-snug flex items-start gap-2 group">
+                                    <span class="text-blue-200 mt-0.5 group-hover:text-white flex-shrink-0">›</span>
+                                    &#x41F;&#x43E;&#x43B;&#x438;&#x442;&#x438;&#x43A;&#x430; &#x421;&#x41A;&#x420;&#x418;&#x41D; - &#x440;&#x430;&#x441;&#x43F;&#x440;&#x43E;&#x441;&#x442;&#x440;&#x430;&#x43D;&#x435;&#x43D;&#x438;&#x435; &#x438;&#x43D;&#x444;&#x43E;&#x440;&#x43C;&#x430;&#x446;&#x438;&#x438;
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/Technicalconditions/" target=_blank rel="noopener" class="text-sm text-blue-50 hover:text-white transition leading-snug flex items-start gap-2 group">
+                                    <span class="text-blue-200 mt-0.5 group-hover:text-white flex-shrink-0">›</span>
+                                    &#x422;&#x435;&#x445;&#x43D;&#x438;&#x447;&#x435;&#x441;&#x43A;&#x438;&#x435; &#x443;&#x441;&#x43B;&#x43E;&#x432;&#x438;&#x44F; &#x43E;&#x441;&#x443;&#x449;&#x435;&#x441;&#x442;&#x432;&#x43B;&#x435;&#x43D;&#x438;&#x44F; &#x434;&#x435;&#x439;&#x441;&#x442;&#x432;&#x438;&#x439; &#x43F;&#x43E; &#x440;&#x430;&#x441;&#x43A;&#x440;&#x44B;&#x442;&#x438;&#x44E; &#x438;&#x43D;&#x444;&#x43E;&#x440;&#x43C;&#x430;&#x446;&#x438;&#x438;
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/docs/&#x418;&#x43D;&#x444;&#x43E;&#x440;&#x43C;&#x430;&#x446;&#x438;&#x44F; &#x43E; &#x442;&#x435;&#x445;&#x43D;&#x438;&#x447;&#x435;&#x441;&#x43A;&#x438;&#x445; &#x441;&#x431;&#x43E;&#x44F;&#x445;.xls?v=BkARp5ZVcvPl25Ourrmsz2KhVFyp2E0KCndgnRaON84" target=_blank rel="noopener" class="text-sm text-blue-50 hover:text-white transition leading-snug flex items-start gap-2 group">
+                                    <span class="text-blue-200 mt-0.5 group-hover:text-white flex-shrink-0">›</span>
+                                    &#x418;&#x43D;&#x444;&#x43E;&#x440;&#x43C;&#x430;&#x446;&#x438;&#x44F; &#x43E; &#x442;&#x435;&#x445;&#x43D;&#x438;&#x447;&#x435;&#x441;&#x43A;&#x438;&#x445; &#x441;&#x431;&#x43E;&#x44F;&#x445;
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/Disclosureprocedure/" target=_blank rel="noopener" class="text-sm text-blue-50 hover:text-white transition leading-snug flex items-start gap-2 group">
+                                    <span class="text-blue-200 mt-0.5 group-hover:text-white flex-shrink-0">›</span>
+                                    &#x41F;&#x43E;&#x440;&#x44F;&#x434;&#x43E;&#x43A; &#x440;&#x430;&#x441;&#x43A;&#x440;&#x44B;&#x442;&#x438;&#x44F; &#x438;&#x43D;&#x444;&#x43E;&#x440;&#x43C;&#x430;&#x446;&#x438;&#x438;
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/Law/?id=52" target=_blank rel="noopener" class="text-sm text-blue-50 hover:text-white transition leading-snug flex items-start gap-2 group">
+                                    <span class="text-blue-200 mt-0.5 group-hover:text-white flex-shrink-0">›</span>
+                                    &#x417;&#x430;&#x43A;&#x43E;&#x43D;&#x43E;&#x434;&#x430;&#x442;&#x435;&#x43B;&#x44C;&#x441;&#x442;&#x432;&#x43E;
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/price/" target=_blank rel="noopener" class="text-sm text-blue-50 hover:text-white transition leading-snug flex items-start gap-2 group">
+                                    <span class="text-blue-200 mt-0.5 group-hover:text-white flex-shrink-0">›</span>
+                                    &#x422;&#x430;&#x440;&#x438;&#x444;&#x44B;
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-slate-900">
+        <div class="max-w-7xl mx-auto px-6 py-6 space-y-4">
+            <div class="flex flex-wrap gap-4 text-xs text-slate-500">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-600 inline-block"></span>
+                    Цифровой код агентства: <span class="text-slate-400 font-medium ml-1">7</span>
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-600 inline-block"></span>
+                    Идентификационный код: <span class="text-slate-400 font-medium ml-1">SCRIN</span>
+                </span>
+                <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-error-report'))"
+                        class="sm:ml-auto flex items-center gap-1.5 text-slate-400 hover:text-white transition">
+                    Нашли ошибку? Сообщите нам
+                    <kbd class="hidden sm:inline border border-slate-700 rounded px-1 text-[10px] text-slate-500">Ctrl</kbd><kbd class="hidden sm:inline border border-slate-700 rounded px-1 text-[10px] text-slate-500">Enter</kbd>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed max-w-4xl">
+                ООО «СКРИН» аккредитовано Банком России на проведение
+                действий по раскрытию информации о ценных бумагах и об иных финансовых инструментах — решение Банка России
+                от 23.09.2015 № РБ-52-5/1799 (Положение Банка России от 13.10.2014 № 435-П).
+            </p>
+            <p class="text-xs text-slate-500 leading-relaxed max-w-4xl">
+                Сетевое издание «Сайт раскрытия информации СКРИН». Свидетельство о регистрации СМИ Эл № ФС77-51251
+                выдано Федеральной службой по надзору в сфере связи, информационных технологий и массовых коммуникаций
+                (Роскомнадзор) 20 сентября 2012 года.
+            </p>
+            <p class="text-xs text-slate-600">© 2026 ООО «СКРИН». Все права защищены.</p>
+        </div>
+    </div>
+</footer>
+
+    <div x-cloak x-show="auth"
+     x-data="{
+        tab: 'cert',
+        intents: {
+            upload:  { label: 'Загрузка документа',    description: 'После входа вы перейдёте к загрузке документа на страницу компании', color: 'bg-blue-50 text-blue-800 border-blue-200' },
+            publish: { label: 'Публикация сообщения',   description: 'После входа вы перейдёте к форме публикации сообщения', color: 'bg-blue-50 text-blue-800 border-blue-200' },
+            login:   { label: 'Личный кабинет',         description: 'Войдите для доступа к личному кабинету Субъекта раскрытия информации', color: 'bg-slate-50 text-slate-700 border-slate-200' }
+        }
+     }"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+     style="background-color: rgba(15,23,42,0.6); backdrop-filter: blur(4px);"
+     @keydown.escape.window="auth = null" @click.self="auth = null">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative overflow-y-auto max-h-[95vh]">
+
+        <button type="button" @click="auth = null"
+                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition z-10">✕</button>
+
+        <div class="mx-6 mt-6 flex items-start gap-3 border rounded-xl p-4" :class="intents[auth] ? intents[auth].color : ''">
+            <div>
+                <p class="font-semibold text-sm" x-text="intents[auth] ? intents[auth].label : ''"></p>
+                <p class="text-xs mt-0.5 opacity-80" x-text="intents[auth] ? intents[auth].description : ''"></p>
+            </div>
+        </div>
+
+        <div class="px-6 pt-5 pb-2">
+            <h2 class="text-xl font-bold text-slate-900">Вход в систему</h2>
+            <p class="text-sm text-slate-500 mt-1">Выберите способ аутентификации</p>
+        </div>
+
+        <div class="px-6">
+            <div class="flex bg-slate-100 rounded-xl p-1 gap-1" data-login-tabs="cert,password">
+        <button type="button" @click="tab='cert'" class="flex-1 py-2.5 rounded-lg text-sm font-medium transition"
+                :class="tab==='cert' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'">&#x421;&#x435;&#x440;&#x442;&#x438;&#x444;&#x438;&#x43A;&#x430;&#x442;</button>
+        <button type="button" @click="tab='password'" class="flex-1 py-2.5 rounded-lg text-sm font-medium transition"
+                :class="tab==='password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'">&#x418;&#x41D;&#x41D; &#x438; &#x43F;&#x430;&#x440;&#x43E;&#x43B;&#x44C;</button>
+</div>
+
+        </div>
+
+        <div class="px-6 pt-5 pb-4">
+            <form action="/Account/Login" method="post" x-show="tab==='password'" class="space-y-4">
+                <div>
+                    <label class="field-label">Имя пользователя</label>
+                    <input type="text" name="login" class="input" placeholder="Логин / ИНН" autocomplete="username" />
+                </div>
+                <div>
+                    <label class="field-label">Пароль</label>
+                    <div class="relative" x-data="{ show: false }">
+                        <input :type="show ? 'text' : 'password'" type="password" name="pswd" class="input pr-11" placeholder="Введите пароль" autocomplete="current-password" />
+                        <button type="button" @click="show = !show" :title="show ? 'Скрыть пароль' : 'Показать пароль'" :aria-label="show ? 'Скрыть пароль' : 'Показать пароль'" tabindex="-1"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition" data-pswd-eye>
+                            <svg x-show="!show" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.04 12.32a1.01 1.01 0 0 1 0-.64C3.42 7.51 7.36 4.5 12 4.5s8.58 3.01 9.96 7.18c.07.21.07.43 0 .64C20.58 16.49 16.64 19.5 12 19.5S3.42 16.49 2.04 12.32Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+                            <svg x-show="show" x-cloak class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.22A10.48 10.48 0 0 0 2.04 11.68a1.01 1.01 0 0 0 0 .64C3.42 16.49 7.36 19.5 12 19.5c.99 0 1.95-.14 2.86-.4M6.23 6.23A9.98 9.98 0 0 1 12 4.5c4.64 0 8.58 3.01 9.96 7.18.07.21.07.43 0 .64a10.5 10.5 0 0 1-4.29 5.08M6.23 6.23 3 3m3.23 3.23 3.65 3.65m7.89 7.89L21 21m-3.23-3.23-3.65-3.65m0 0a3 3 0 1 0-4.24-4.24m4.24 4.24L8.88 9.88"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="cmdSub" value="cmdSub" />
+                <input type="hidden" name="goto" :value="(auth === 'upload' || auth === 'publish') ? auth : ''" />
+                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Войти</button>
+            </form>
+
+            <div x-show="tab==='cert'" x-cloak class="space-y-4">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center text-sm text-slate-600">
+                    Вход по квалифицированной электронной подписи (ЭЦП).<br />
+                    После нажатия кнопки откроется окно выбора сертификата, установленного на этом компьютере или на носителе.
+                </div>
+                <a href="/Account/Login?tab=cert&auto=1" :href="'/Account/Login?tab=cert&auto=1' + ((auth === 'upload' || auth === 'publish') ? '&goto=' + auth : '')"
+                   class="w-full py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2 shadow-sm bg-blue-800 text-white hover:bg-blue-900">Войти по сертификату →</a>
+                <p class="text-xs text-slate-500 text-center">Требуется квалифицированная ЭЦП и установленный КриптоПро ЭЦП Browser plug-in.</p>
+            </div>
+        </div>
+
+        <div class="mx-6 border-t border-slate-100"></div>
+        <div class="px-6 py-4">
+            <a href="/Account/Login?reg=1" @click.prevent="auth = null; window.dispatchEvent(new CustomEvent('open-register'))"
+               class="w-full flex items-center justify-center gap-2 py-3 border-2 border-blue-800 text-blue-800 rounded-xl hover:bg-blue-50 font-semibold transition text-sm">
+                Регистрация субъекта раскрытия информации
+            </a>
+        </div>
+    </div>
+</div>
+
+    <div x-data="{ open: false, inn: '', busy: false, err: '',
+               show() { this.open = true; this.inn = ''; this.err = ''; this.$nextTick(() => this.$refs.inn && this.$refs.inn.focus()); },
+               async go() {
+                   var v = (this.inn || '').replace(/\s/g, '');
+                   if (!/^\d{10}$/.test(v)) { this.err = 'ИНН организации состоит из 10 цифр.'; return; }
+                   this.busy = true; this.err = '';
+                   try {
+                       var r = await fetch('/Registry/CheckINN/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: 'inn=' + encodeURIComponent(v) });
+                       if (!r.ok) throw new Error('HTTP ' + r.status);
+                       var j = await r.json();
+                       if (j.res_code == 2) { location.href = '/Registry/?inn=' + v; return; }
+                       this.err = j.res_code == 1 ? 'Анкета субъекта раскрытия информации с таким ИНН уже имеется. Войдите в личный кабинет или воспользуйтесь восстановлением пароля.' : (j.res_msg || 'Не удалось проверить ИНН.');
+                   } catch (e) { this.err = 'Не удалось проверить ИНН: ' + e.message; }
+                   this.busy = false;
+               } }"
+     @open-register.window="show()" @keydown.escape.window="open = false">
+    <div x-show="open" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="background-color: rgba(15,23,42,0.6); backdrop-filter: blur(4px);" @click.self="open = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-left">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <h3 class="text-lg font-semibold text-slate-900 leading-snug">Регистрация субъекта раскрытия информации</h3>
+                <button type="button" @click="open = false" class="text-slate-400 hover:text-slate-600 transition flex-shrink-0" title="Закрыть">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <p class="text-sm text-slate-500 mb-4">Введите ИНН организации, чтобы перейти к заполнению идентификационного бланка.</p>
+            <label class="field-label" for="regInn">ИНН организации</label>
+            <input type="text" id="regInn" x-ref="inn" x-model="inn" maxlength="10" inputmode="numeric" pattern="\d{10}" class="input w-full" placeholder="10 цифр" autocomplete="off" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)" @keydown.enter.prevent="go()" />
+            <div x-show="err" x-cloak class="mt-3 rounded-lg border border-red-200 bg-red-50 text-red-800 px-4 py-2.5 text-sm" x-text="err"></div>
+            <div class="flex items-center justify-end gap-2 mt-6">
+                <button type="button" @click="open = false" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition">Отмена</button>
+                <button type="button" @click="go()" :disabled="busy" class="btn-primary" x-text="busy ? 'Проверка…' : 'Заполнить бланк'"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div x-cloak x-show="schedule"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+     style="background-color: rgba(15,23,42,0.6); backdrop-filter: blur(4px);"
+     @keydown.escape.window="schedule = false" @click.self="schedule = false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl relative">
+        <button type="button" @click="schedule = false"
+                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">✕</button>
+        <div class="px-8 pt-8 pb-2">
+            <h2 class="text-xl font-bold text-slate-900 leading-tight">Период публикации Публичной информации в ООО «СКРИН»</h2>
+        </div>
+        <div class="px-8 pb-8 space-y-4 text-sm text-slate-700 leading-relaxed">
+            <div class="bg-blue-50 border-l-4 border-blue-700 rounded-r-xl px-5 py-4">
+                <p class="text-slate-800 font-medium">
+                    В ООО «СКРИН» установлен Период публикации Публичной информации с 8:30 до 19:00 по московскому
+                    времени ежедневно по рабочим дням, кроме предпраздничных дней. В рабочие предпраздничные дни —
+                    с 8:30 до 18:00 по московскому времени.
+                </p>
+            </div>
+            <p>Публикация в выходные и праздничные дни не производится. Моментом получения Публичной информации является момент её поступления на сервер ООО «СКРИН».</p>
+            <p>При получении Публичной информации вне Периода публикации действия по её раскрытию производятся в ближайший следующий Период публикации.</p>
+        </div>
+    </div>
+</div>
+
+    <div x-data="errorReport()" x-init="init()" @keydown.window="hotkey($event)" @paste.window="paste($event)" @open-error-report.window="open()">
+
+    <div x-cloak x-show="show" class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style="background-color: rgba(15,23,42,0.6);" @keydown.escape.window="close()" @click.self="close()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <div>
+                    <div class="text-base font-bold text-slate-900">Нашли ошибку? Расскажите нам</div>
+                    <div class="text-xs text-slate-400 mt-0.5">Опишите, что пошло не так — мы разберёмся и ответим на e-mail.</div>
+                </div>
+                <button type="button" @click="close()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition" title="Закрыть">✕</button>
+            </div>
+
+            <div class="overflow-y-auto px-6 py-4 space-y-3 text-sm">
+                <template x-if="done">
+                    <div class="rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3">
+                        Спасибо! Сообщение отправлено. Мы свяжемся с вами по указанному e-mail.
+                    </div>
+                </template>
+                <template x-if="!done">
+                    <div class="space-y-3">
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="field-label" for="er_fio">ФИО <span class="text-red-600">*</span></label>
+                                <input id="er_fio" type="text" x-model="fio" class="input" maxlength="200" autocomplete="name">
+                            </div>
+                            <div>
+                                <label class="field-label" for="er_email">E-mail <span class="text-red-600">*</span></label>
+                                <input id="er_email" type="email" x-model="email" class="input" maxlength="200" autocomplete="email">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label" for="er_phone">Телефон</label>
+                            <input id="er_phone" type="tel" x-model="phone" class="input" maxlength="50" autocomplete="tel">
+                        </div>
+                        <div>
+                            <label class="field-label" for="er_comment">Описание ошибки <span class="text-red-600">*</span></label>
+                            <textarea id="er_comment" x-model="comment" rows="4" class="input" maxlength="4000" placeholder="Что вы делали, что ожидали увидеть и что произошло"></textarea>
+                        </div>
+                        <div>
+                            <div class="field-label">Скриншот <span class="font-normal text-slate-400">(до двух; можно вставить из буфера Ctrl+V)</span></div>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <template x-for="(img, i) in images" :key="i">
+                                    <div class="relative">
+                                        <img :src="img" class="h-20 w-auto rounded-lg border border-slate-200 object-contain bg-slate-50" alt="скриншот">
+                                        <button type="button" @click="images.splice(i, 1)" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-slate-300 text-slate-500 hover:text-red-600 text-xs shadow" title="Убрать">✕</button>
+                                    </div>
+                                </template>
+                                <label x-show="images.length < 2" class="inline-flex items-center gap-2 text-sm text-blue-800 hover:underline cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13"/></svg>
+                                    Прикрепить файл
+                                    <input type="file" accept="image/*" class="sr-only" @change="addFile($event)">
+                                </label>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400">Адрес страницы добавится к сообщению автоматически: <span class="text-slate-500 break-all" x-text="page"></span></p>
+                        <div x-show="error" class="rounded-lg bg-red-50 border border-red-200 text-red-700 px-3 py-2 text-xs" x-text="error"></div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
+                <button type="button" @click="close()" class="btn-ghost" x-text="done ? 'Закрыть' : 'Отмена'"></button>
+                <button type="button" x-show="!done" @click="send()" :disabled="sending" class="btn-primary disabled:opacity-60">
+                    <span x-text="sending ? 'Отправка…' : 'Отправить'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function errorReport() {
+        return {
+            show: false, sending: false, done: false, error: '',
+            fio: '', email: '', phone: '', comment: '', page: '', images: [],
+            init() {
+                try {
+                    this.fio = localStorage.getItem('er_fio') || '';
+                    this.email = localStorage.getItem('er_email') || '';
+                    this.phone = localStorage.getItem('er_phone') || '';
+                } catch (e) { }
+            },
+            open(selected) {
+                this.page = location.href;
+                this.done = false; this.error = '';
+                if (selected) this.comment = (this.comment ? this.comment + '\n' : '') + 'Фрагмент страницы: «' + selected + '»';
+                this.show = true;
+                var self = this;
+                setTimeout(function () { var el = document.getElementById(self.comment ? 'er_fio' : 'er_comment'); if (el) el.focus(); }, 50);
+            },
+            close() { this.show = false; if (this.done) { this.comment = ''; this.images = []; this.done = false; } },
+            hotkey(e) {
+                // Ctrl+Enter — как на старом сайте: открыть форму с выделенным текстом
+                if (e.ctrlKey && e.key === 'Enter' && !this.show) {
+                    var sel = (window.getSelection ? window.getSelection().toString() : '').trim();
+                    e.preventDefault();
+                    this.open(sel.length > 500 ? sel.substring(0, 500) + '…' : sel);
+                }
+            },
+            paste(e) {
+                if (!this.show || this.done || this.images.length >= 2 || !e.clipboardData) return;
+                var items = e.clipboardData.items || [];
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].type && items[i].type.indexOf('image/') === 0) {
+                        e.preventDefault();
+                        this.readImage(items[i].getAsFile());
+                        return;
+                    }
+                }
+            },
+            addFile(e) {
+                var f = e.target.files && e.target.files[0];
+                e.target.value = '';
+                if (f) this.readImage(f);
+            },
+            readImage(file) {
+                if (!file || this.images.length >= 2) return;
+                if (file.size > 5 * 1024 * 1024) { this.error = 'Скриншот больше 5 МБ — уменьшите изображение.'; return; }
+                var self = this, r = new FileReader();
+                r.onload = function () { self.images.push(r.result); self.error = ''; };
+                r.readAsDataURL(file);
+            },
+            send() {
+                this.error = '';
+                var Re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+                if (!this.fio.trim()) { this.error = 'Укажите ФИО.'; return; }
+                if (!this.email.trim() || !Re.test(this.email.trim())) { this.error = 'Укажите корректный e-mail.'; return; }
+                if (!this.comment.trim()) { this.error = 'Опишите ошибку.'; return; }
+                this.sending = true;
+                try {
+                    localStorage.setItem('er_fio', this.fio); localStorage.setItem('er_email', this.email); localStorage.setItem('er_phone', this.phone);
+                } catch (e) { }
+                var self = this;
+                var body = new URLSearchParams({ fio: this.fio, email: this.email, phone: this.phone, comment: this.comment, page: this.page,
+                    image1: this.images[0] || '', image2: this.images[1] || '', ua: navigator.userAgent });
+                fetch('/Home/SendErrorReport', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: body.toString()
+                }).then(function (r) { return r.json(); })
+                  .then(function (d) {
+                      self.sending = false;
+                      if (d && d.res === 1) { self.done = true; }
+                      else { self.error = (d && d.msg) || 'Не удалось отправить сообщение.'; }
+                  })
+                  .catch(function () { self.sending = false; self.error = 'Ошибка сети — попробуйте ещё раз.'; });
+            }
+        };
+    }
+</script>
+
+
+    <div hidden></div>
+
+    <script type="text/javascript">
+        var test_inn = '7714268990';
+        var testing_inns = ['7712095950','9719011583'];
+        var fns_ecp_creators = ['Федеральная налоговая служба'];
+        var testers = ['gpss@skrin.ru','shishkov@skrin.ru'];
+    </script>
+    
+</body>
+</html>

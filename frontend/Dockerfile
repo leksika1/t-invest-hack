@@ -37,10 +37,11 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    client_max_body_size 1m;
+    # Stage 2: five PDF files of 30 MiB plus multipart overhead.
+    client_max_body_size 160m;
 
-    # Заголовки безопасности. style-src 'unsafe-inline' — React пишет стили в атрибут style
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+    # Все стили SPA находятся в локальном CSS-файле; inline стили не нужны.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
@@ -71,7 +72,10 @@ server {
         try_files $uri =404;
     }
 
+    # index.html (и SPA-маршруты) — всегда перепроверять, иначе после деплоя браузер держит старую сборку.
+    # Именно expires, а не add_header: add_header в location отменил бы заголовки безопасности уровня server.
     location / {
+        expires -1;
         try_files $uri $uri/ /index.html;
     }
 }
