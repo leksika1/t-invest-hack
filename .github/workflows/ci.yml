@@ -97,7 +97,7 @@ jobs:
     runs-on: [self-hosted, tinvest]
     env:
       POSTGRES_PASSWORD: bonds
-      COMPOSE: docker compose -f docker-compose.yml -f docker-compose.e2e.yml
+      COMPOSE: docker compose -f docker-compose.yml -f docker-compose.e2e.yml -f docker-compose.ci.yml
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

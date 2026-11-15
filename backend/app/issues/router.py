@@ -6,14 +6,14 @@ from pydantic import BaseModel, ConfigDict, StrictBool
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.cards.schema import CardRequest
+from app.cards.schema import CardRequest, FIELDS
 from app.config import get_settings
 from app.db import get_sessionmaker
 from app.documents.sources import Identity, MoexIssSource, UploadSource, assisted
 from app.errors import ProcessingError
 from app.iss.client import IssError
 from app.issues.service import document_json, ensure_issue, new_job, put_document, update_iss
-from app.models import Document, Issue, Job
+from app.models import Document, Issue, Job, CardField
 
 router = APIRouter(prefix="/api", tags=["issues", "documents", "jobs"])
 TYPES = {"decision", "prospectus", "amendment", "material_fact", "other"}
@@ -147,6 +147,13 @@ def get_job(job_id: uuid.UUID, session: Session = Depends(database)):
     job = session.get(Job, job_id)
     if job is None:
         raise HTTPException(404, detail="Задача не найдена")
+    processed = None
+    if job.type == 'build_card' and job.payload.get('card_id'):
+        processed = session.scalar(select(func.count()).select_from(CardField).where(
+            CardField.card_id == uuid.UUID(job.payload['card_id']),
+            (CardField.reason.is_(None) | (CardField.reason != 'processing'))))
     return {"id": job.id, "type": job.type, "status": job.status, "step": job.step, "progress": job.progress,
+            "card_id": job.payload.get('card_id'),
+            'processed_fields': processed, 'total_fields': len(FIELDS) if job.type == 'build_card' else None,
             "error": job.error, "result": job.result, "attempts": job.attempts,
             "created_at": job.created_at, "started_at": job.started_at, "finished_at": job.finished_at}

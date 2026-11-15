@@ -20,6 +20,7 @@ from app.llm.embeddings import DisabledEmbeddingGateway
 from app.models import Chunk, Document, Issue, Job, Page
 
 _owner = ContextVar("job_owner", default=None)
+_progress_range = ContextVar('job_progress_range', default=(0, 100))
 
 
 def parse_document(factory, document_id, settings, gateway=None):
@@ -67,7 +68,7 @@ def _parse_document(factory, document_id, settings, gateway=None):
                     for chunk, vector in zip(embedded, vectors):
                         chunk.embedding, chunk.embedding_model = vector, settings.embedding_model
                 elif settings.embedding_model:
-                    warning = "embeddings_disabled_until_budget_gateway"
+                    warning = "embeddings_not_configured_fts_only"
             except Exception:
                 warning = "embeddings_failed_fts_only"
             document = session.get(Document, document_id)
@@ -87,17 +88,20 @@ def progress(factory, job_id, step, percent, result=None):
         statement = update(Job).where(Job.id == job_id)
         if _owner.get():
             statement = statement.where(Job.worker_id == _owner.get(), Job.status == "running")
-        values = {"step": step, "progress": percent}
+        low, high = _progress_range.get()
+        values = {"step": step, "progress": low + int((high - low) * percent / 100)}
         if result is not None:
             values["result"] = result
         session.execute(statement.values(**values))
 
 
 def ingest(factory, job_id, payload, settings, start=0, span=95):
+    from app.llm.gateway import LLMGateway
+    gateway = LLMGateway(factory=factory, settings=settings, job_id=job_id)
     outcomes = []
     for index, identifier in enumerate(payload["document_ids"]):
         try:
-            result = parse_document(factory, uuid.UUID(identifier), settings)
+            result = parse_document(factory, uuid.UUID(identifier), settings, gateway=gateway)
             outcomes.append({"document_id": identifier, **(result or {})})
         except ProcessingError as exc:
             outcomes.append({"document_id": identifier, "error": exc.as_dict()})
@@ -172,6 +176,9 @@ def handle(factory, job):
             return ingest(factory, job.id, job.payload, settings)
         if job.type == "collect":
             return collect(factory, job.id, job.payload, settings)
+        if job.type == 'build_card':
+            from app.cards.service import build_card
+            return build_card(factory, job)
         raise ProcessingError("unknown_job_type", "Неизвестный тип фоновой задачи")
     finally:
         _owner.reset(token)

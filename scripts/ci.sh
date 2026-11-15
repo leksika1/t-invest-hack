@@ -30,7 +30,7 @@ E2E_DB_PORT="${E2E_DB_PORT:-55434}"
 export E2E_PORT E2E_DB_PORT
 # Заглушки для compose; значения из окружения shell важнее файла .env
 export POSTGRES_PASSWORD=ci BACKEND_ALIAS=tinvest-backend-ci
-COMPOSE=(docker compose -p tinvest-ci -f docker-compose.yml -f docker-compose.e2e.yml)
+COMPOSE=(docker compose -p tinvest-ci -f docker-compose.yml -f docker-compose.e2e.yml -f docker-compose.ci.yml)
 
 if [ -t 1 ]; then
   BOLD=$'\e[1m'; RED=$'\e[31m'; GREEN=$'\e[32m'; YELLOW=$'\e[33m'; RESET=$'\e[0m'

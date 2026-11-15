@@ -1,0 +1,26 @@
+# CI-only overlay: recorded ISS and explicitly no model credentials.
+services:
+  iss-fixture:
+    image: python:3.12-alpine
+    command: ["python", "/server.py"]
+    volumes:
+      - ./backend/tests/iss_server.py:/server.py:ro
+      - ./backend/tests/fixtures/iss:/fixtures:ro
+    networks: [edge]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+  backend:
+    environment:
+      ISS_BASE_URL: http://iss-fixture:8000/iss
+      LLM_API_KEY: ""
+      EMBEDDING_API_KEY: ""
+      EMBEDDING_MODEL: ""
+      ADMIN_TOKEN: ci-admin
+      RATE_LIMIT_CARDS: "50"
+      RATE_LIMIT_UPLOADS: "100"
+    depends_on:
+      iss-fixture:
+        condition: service_healthy

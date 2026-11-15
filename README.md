@@ -4,7 +4,7 @@
 
 Факты из документов эмитента, не инвестиционная рекомендация. LLM-значение без подтверждённой цитаты скрывается; прямое значение ISS помечается источником MOEX ISS и extracted.
 
-**Реализован этап 2:** Alembic/БД, ISS с эмитентом и графиками, автосбор ПРАЙМ/СКРИН, загрузка PDF и ZIP коллекторов, OCR, FTS, jobs и API документов/выбора. e-disclosure — заглушка официального API и ссылка на ручной поиск. Интерфейс пока прежний; LLM/сборка карточки — этап 3. Существующий POST карточки остаётся синхронным: 16 совместимых полей, not_found с причиной extraction_pending_stage3.
+**Реализованы этапы 2–3:** ISS и документы, автосбор/OCR/FTS, асинхронная карточка из 15 типизированных полей, OpenRouter-шлюз с UTC-бюджетом и журналом, гибридный поиск, проверка цитат/ISS, правки, Markdown и защищённый admin API. Без ключа LLM: доступные поля ISS напрямую, рисковые not_found с причиной «LLM не настроена». Веб-интерфейс пока прежний, обновление — этап 4. POST /api/cards теперь возвращает 202 с card_id/job_id.
 
 ## Быстрый старт
 
@@ -33,7 +33,7 @@ curl http://127.0.0.1:18080/api/health
 
 ## Переменные окружения
 
-В Dokploy ключ LLM задаётся в **Environment сервиса Backend**. «План» — настройка этапа 3, ещё не поддерживаемая кодом/Compose. Настройки этапа 2 ниже передаются в оба backend-определения Compose; подробности — OPERATIONS.
+В Dokploy ключ LLM задаётся в **Environment сервиса Backend**. Для платных вызовов также нужны актуальные тарифы и положительный бюджет; стоимость usage.cost приоритетна. Файл .env* в рамках задания не изменяется. Все перечисленные настройки реализованы и передаются обоими backend Compose.
 
 | Переменная | Где / статус | Значение и назначение |
 |---|---|---|
@@ -43,26 +43,28 @@ curl http://127.0.0.1:18080/api/health
 | `SHARED_NETWORK` | Dokploy, сейчас | Общая сеть, по умолчанию `dokploy-network` |
 | `CORS_ORIGINS` | Backend, сейчас | Домены через запятую, если API на другом origin |
 | `ISS_BASE_URL`, `ISS_TIMEOUT` | Backend, этап 2 | `https://iss.moex.com/iss`, 10 с |
-| `LLM_BASE_URL` | Backend, принимается сейчас | Целевой default `https://openrouter.ai/api/v1`; в каркасе указать явно |
-| `LLM_MODEL` | Backend, принимается сейчас | Целевой default `google/gemini-2.5-flash`; в каркасе указать явно |
+| `LLM_BASE_URL` | Backend, этап 3 | По умолчанию `https://openrouter.ai/api/v1` |
+| `LLM_MODEL` | Backend, этап 3 | По умолчанию `google/gemini-2.5-flash` |
 | `LLM_API_KEY` | Backend, сейчас | Ключ OpenRouter; без ключа целевой MVP работает в деградированном режиме |
-| `PUBLIC_BASE_URL` | Backend, план | URL сайта для HTTP-Referer; X-Title фиксирован: Bond Card MVP |
-| `LLM_DAILY_BUDGET_USD` | Backend, план | Положительный дневной бюджет, UTC |
-| `LLM_INPUT_PRICE_PER_1M_USD`, `LLM_OUTPUT_PRICE_PER_1M_USD` | Backend, план | Резерв и fallback при отсутствии usage.cost; тарифы проверить |
-| `LLM_TIMEOUT_SECONDS`, `LLM_MAX_RETRIES` | Backend, план | Таймаут и ограниченные повторы 429/5xx |
-| `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`, `EMBEDDING_DIM` | Backend, этап 2 | Интерфейс; DIM=1024 (1–2000). Платные вызовы выключены до шлюза этапа 3, используется FTS |
-| `EMBEDDING_INPUT_PRICE_PER_1M_USD` | Backend, план | Тариф для бюджета и fallback стоимости эмбеддингов |
+| `PUBLIC_BASE_URL` | Backend, этап 3 | URL сайта для HTTP-Referer; X-Title: Bond Card MVP |
+| `LLM_DAILY_BUDGET_USD` | Backend, этап 3 | 1 USD/UTC-день по умолчанию; 0 блокирует модель. Учитываются расходы и незакрытые резервы |
+| `LLM_INPUT_PRICE_PER_1M_USD`, `LLM_OUTPUT_PRICE_PER_1M_USD` | Backend, этап 3 | Тарифы для резерва/fallback: задать явно по выбранной модели; пусто → платный вызов заблокирован |
+| `LLM_TIMEOUT_SECONDS`, `LLM_MAX_RETRIES`, `LLM_MAX_OUTPUT_TOKENS` | Backend, этап 3 | 45 с, 2 повтора временной ошибки, 4096 выходных токенов |
+| `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`, `EMBEDDING_DIM` | Backend, этап 3 | Опционально, base/key наследуют LLM; DIM=1024 (1–2000), не настроено/ошибка → FTS |
+| `EMBEDDING_INPUT_PRICE_PER_1M_USD` | Backend, этап 3 | Явный тариф эмбеддингов для общего бюджета; /embeddings конкретной модели проверить |
 | `EDISCLOSURE_API_URL`, `EDISCLOSURE_API_KEY` | Backend, этап 2 | Без пары official_access_required, с парой adapter_not_implemented; нужен договорной API |
 | `COLLECTOR_USER_AGENT` | Backend, этап 2 | `BondCardMVP/0.1 (+https://tinvest.leksika1.ru)` |
 | `COLLECTOR_DELAY_SECONDS`, `COLLECTOR_TIMEOUT_SECONDS`, `COLLECTOR_CACHE_SECONDS` | Backend, этап 2 | 1 с (минимум), 25 с, 3600 с |
 | `COLLECTOR_MAX_DOCUMENTS`, `COLLECTOR_MAX_PAGES` | Backend, этап 2 | 20 кандидатов/источник, 12 страниц СКРИН |
-| `ADMIN_TOKEN` | Backend, план | Защита admin API через X-Admin-Token; пусто → закрыт |
+| `ADMIN_TOKEN` | Backend, этап 3 | Защита admin API через X-Admin-Token; пусто → закрыт (503) |
 | `FILES_DIR`, `MAX_UPLOAD_BYTES`, `MAX_UPLOAD_FILES` | Backend, этап 2 | `/data/files` в volume, 31457280 байт/PDF, 5 файлов/запрос |
 | `MAX_PDF_PAGES`, `MAX_PAGE_PIXELS`, `OCR_DPI`, `OCR_TIMEOUT_SECONDS`, `DOCUMENT_PARSE_TIMEOUT_SECONDS` | Backend, этап 2 | 1000 страниц, 25 млн пикселей, 150 dpi, 60 с/страницу, 300 с/документ |
 | `MAX_ARCHIVE_BYTES`, `MAX_ARCHIVE_UNPACKED_BYTES`, `MAX_ARCHIVE_ENTRIES`, `MAX_ARCHIVE_RATIO` | Backend, этап 2 | 100 МиБ, 150 МиБ, 100 элементов, коэффициент 100; ZIP, RAR не поддерживается |
 | `WORKER_ENABLED`, `JOB_POLL_SECONDS`, `JOB_LEASE_SECONDS`, `JOB_MAX_ATTEMPTS` | Backend, этап 2 | true, 1 с, 180 с, 3 попытки |
-| `QUOTE_FUZZY_THRESHOLD`, `EXTRACTION_MIN_CONFIDENCE` | Backend, план | Зафиксировать на dev-выборке перед оценкой |
+| `QUOTE_FUZZY_THRESHOLD`, `EXTRACTION_MIN_CONFIDENCE` | Backend, этап 3 | 0.95 и 0.8; пороги пока не калиброваны реальным экспериментом |
+| `RETRIEVAL_TOP_K`, `RETRIEVAL_MAX_TOKENS` | Backend, этап 3 | 8 фрагментов, консервативный предел контекста 10000 UTF-8 байт |
+| `RATE_LIMIT_WINDOW_SECONDS`, `RATE_LIMIT_CARDS`, `RATE_LIMIT_UPLOADS`, `RATE_LIMIT_COLLECT` | Backend, этап 3 | PostgreSQL-лимит: 60 с, 5 карточек, 10 загрузок, 5 автосборов на адрес клиента |
 | `E2E_PORT`, `E2E_DB_PORT` | Локально, сейчас | HTTP/БД: overlay 18080/55433; scripts/ci.sh 28080/55434 |
 | `TEST_DATABASE_URL`, `TEST_DB_PORT` | Тесты | Отдельная БД *_test; scripts/ci.sh поднимает bonds_test на 55435; без URL db-тесты пропускаются |
 
-Стоимость и заголовки OpenRouter — план этапа 3. Демо автосбора: RU000A10ATW2 («Балтийский лизинг», ПРАЙМ) и RU000A10CS75 («Аэрофлот», СКРИН). Живое скачивание проверено 15.11.2026; ссылки и ограничения — [DATA](docs/DATA.md).
+Шлюз использует usage.cost, иначе токены/тарифы конфига. Реальные модельные вызовы в разработке этапа 3 не выполнялись. Демо автосбора: RU000A10ATW2 («Балтийский лизинг», ПРАЙМ) и RU000A10CS75 («Аэрофлот», СКРИН). Живое скачивание проверено 15.11.2026; ссылки и ограничения — [DATA](docs/DATA.md).

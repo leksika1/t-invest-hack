@@ -1,6 +1,7 @@
 from functools import lru_cache
+from decimal import Decimal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,9 +11,31 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     database_url: str = "postgresql+psycopg://bonds:bonds@db:5432/bonds"
 
-    llm_base_url: str = ""
+    llm_base_url: str = "https://openrouter.ai/api/v1"
     llm_api_key: str = ""
-    llm_model: str = ""
+    llm_model: str = "google/gemini-2.5-flash"
+    public_base_url: str = ""
+    llm_daily_budget_usd: Decimal = Field(Decimal("1"), ge=0)
+    llm_input_price_per_1m_usd: Decimal | None = Field(None, ge=0)
+    llm_output_price_per_1m_usd: Decimal | None = Field(None, ge=0)
+    embedding_input_price_per_1m_usd: Decimal | None = Field(None, ge=0)
+    llm_timeout_seconds: float = Field(45, gt=0)
+    llm_max_retries: int = Field(2, ge=0, le=5)
+    llm_max_output_tokens: int = Field(4096, ge=64, le=16384)
+    retrieval_top_k: int = Field(8, ge=1, le=30)
+    retrieval_max_tokens: int = Field(10000, ge=256, le=32000)
+    quote_fuzzy_threshold: float = Field(0.95, ge=0.9, le=1)
+    extraction_min_confidence: float = Field(0.8, ge=0, le=1)
+    admin_token: str = ""
+    rate_limit_window_seconds: int = Field(60, ge=1)
+    rate_limit_cards: int = Field(5, ge=1)
+    rate_limit_uploads: int = Field(10, ge=1)
+    rate_limit_collect: int = Field(5, ge=1)
+
+    @field_validator('llm_input_price_per_1m_usd', 'llm_output_price_per_1m_usd', 'embedding_input_price_per_1m_usd', mode='before')
+    @classmethod
+    def blank_price(cls, value):
+        return None if value == '' else value
 
     iss_base_url: str = "https://iss.moex.com/iss"
     iss_timeout: float = 10.0

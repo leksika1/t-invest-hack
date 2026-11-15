@@ -10,11 +10,12 @@ from app.cards.router import router as cards_router
 from app.config import get_settings
 from app.db import check_db
 from app.iss.router import router as iss_router
-from app.llm.client import LLMClient
 from app.errors import ProcessingError
 from app.issues.router import router as issues_router
 from app.jobs.worker import run_worker
 from app.middleware import UploadLimitMiddleware
+from app.rate_limit import RateLimitMiddleware
+from app.admin.router import router as admin_router
 
 settings = get_settings()
 
@@ -39,6 +40,7 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
     lifespan=lifespan,
 )
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(UploadLimitMiddleware, max_bytes=settings.max_upload_bytes * settings.max_upload_files + 1024 * 1024)
 if settings.cors_origin_list:
     app.add_middleware(
@@ -50,6 +52,7 @@ if settings.cors_origin_list:
 app.include_router(cards_router)
 app.include_router(iss_router)
 app.include_router(issues_router)
+app.include_router(admin_router)
 
 
 @app.exception_handler(ProcessingError)
@@ -68,6 +71,6 @@ def health() -> dict:
     return {
         "status": "ok" if db_ok else "degraded",
         "db": "ok" if db_ok else "error",
-        "llm": "configured" if LLMClient(settings).configured else "not_configured",
+        "llm": "configured" if settings.llm_api_key else "not_configured",
         "version": settings.app_version,
     }

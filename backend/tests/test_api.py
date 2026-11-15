@@ -25,13 +25,9 @@ def test_health_db_down(monkeypatch):
 
 @pytest.mark.parametrize("isin", ["RU000A10AXF7", "ru000a10axf7", " RU000A0JX0J2 "])
 def test_card_valid_isin(isin):
-    r = client.post("/api/cards", json={"isin": isin})
-    assert r.status_code == 200
-    body = r.json()
-    assert body["isin"] == isin.strip().upper()
-    fields = list(body["iss_fields"].values()) + list(body["risk_fields"].values())
-    assert len(fields) == 16
-    assert all(f["status"] == "not_found" and f["reason"] == "extraction_pending_stage3" for f in fields)
+    from app.cards.schema import CardRequest, FIELDS
+    assert CardRequest(isin=isin).isin == isin.strip().upper()
+    assert len(FIELDS) == 15
 
 
 @pytest.mark.parametrize(

@@ -3,7 +3,8 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Boolean, Computed, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, Computed, DateTime, Float, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint, func
+from decimal import Decimal
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -87,6 +88,8 @@ class Card(Entity, Base):
     version: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(24))
     input_snapshot: Mapped[dict] = mapped_column(JSONB, default=dict)
+    journal: Mapped[dict] = mapped_column(JSONB, default=dict)
+    job_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("jobs.id"))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
@@ -106,6 +109,10 @@ class CardField(Entity, Base):
     evidence: Mapped[list] = mapped_column(JSONB, default=list)
     user_status: Mapped[str | None] = mapped_column(String(24))
     user_value: Mapped[dict | None] = mapped_column(JSONB)
+    reason: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[dict] = mapped_column(JSONB, default=dict)
+    not_found: Mapped[bool] = mapped_column(Boolean, default=False)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Job(Entity, Base):
@@ -126,6 +133,7 @@ class Job(Entity, Base):
 
 class LLMCall(Entity, Base):
     __tablename__ = "llm_calls"
+    __table_args__ = (Index('ix_llm_calls_created_at', 'created_at'), Index('ix_llm_calls_job_id', 'job_id'))
     job_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("jobs.id"))
     field_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("card_fields.id"))
     purpose: Mapped[str] = mapped_column(String(32))
@@ -137,4 +145,12 @@ class LLMCall(Entity, Base):
     usage: Mapped[dict | None] = mapped_column(JSONB)
     provider_response_id: Mapped[str | None] = mapped_column(Text)
     duration_ms: Mapped[int] = mapped_column(Integer)
-    error: Mapped[dict | None] = mapped_column(JSONB)
+    error: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
+    state: Mapped[str] = mapped_column(String(24), default="reserved")
+    reserved_usd: Mapped[Decimal] = mapped_column(Numeric(20, 10), default=Decimal("0"))
+    attempt: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class RateLimitEvent(Entity, Base):
+    __tablename__ = 'rate_limit_events'
+    key: Mapped[str] = mapped_column(String(64), index=True)

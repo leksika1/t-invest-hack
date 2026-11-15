@@ -10,6 +10,7 @@ import pytest
 def offline_unit_tests(request, monkeypatch):
     if request.node.get_closest_marker("db") or "tests/e2e" in request.node.nodeid.replace("\\", "/"):
         return
+    monkeypatch.setattr('app.rate_limit.consume', lambda *args: None)
 
     connect = socket.socket.connect
     def blocked(sock, address):
@@ -48,10 +49,15 @@ def db_factory(monkeypatch):
     from alembic import command
     from alembic.config import Config
     from app.config import get_settings
+    from app.db import get_engine
 
     assert make_url(url).database.endswith("_test"), "Use a dedicated *_test database"
     monkeypatch.setenv("DATABASE_URL", url)
+    monkeypatch.setenv('LLM_API_KEY', '')
+    monkeypatch.setenv('EMBEDDING_API_KEY', '')
+    monkeypatch.setenv('EMBEDDING_MODEL', '')
     get_settings.cache_clear()
+    get_engine.cache_clear()
     try:
         command.upgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "head")
         engine = create_engine(url)
@@ -61,4 +67,7 @@ def db_factory(monkeypatch):
         yield sessionmaker(engine, expire_on_commit=False)
         engine.dispose()
     finally:
+        if get_engine.cache_info().currsize:
+            get_engine().dispose()
+        get_engine.cache_clear()
         get_settings.cache_clear()

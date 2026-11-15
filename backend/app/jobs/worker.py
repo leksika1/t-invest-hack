@@ -9,7 +9,7 @@ from app.config import get_settings
 from app.db import get_sessionmaker
 from app.errors import ProcessingError
 from app.jobs.handlers import handle
-from app.models import Job
+from app.models import Job, Card
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +24,8 @@ def claim(factory, worker_id, settings):
             if job.attempts >= settings.job_max_attempts:
                 job.status, job.finished_at = "failed", now
                 job.error = {"code": "lease_expired", "message": "Исчерпаны попытки после рестарта воркера"}
+                if job.type == 'build_card':
+                    session.execute(update(Card).where(Card.job_id == job.id, Card.status != 'ready').values(status='failed', journal={'errors': [job.error]}))
             else:
                 job.status = "queued"
         session.flush()
@@ -47,9 +49,11 @@ def heartbeat(factory, job_id, worker_id, settings):
 
 def finish(factory, job_id, worker_id, result=None, error=None):
     with factory.begin() as session:
-        session.execute(update(Job).where(Job.id == job_id, Job.worker_id == worker_id, Job.status == "running")
+        changed = session.execute(update(Job).where(Job.id == job_id, Job.worker_id == worker_id, Job.status == "running")
                         .values(status="failed" if error else "succeeded", step="finalize", progress=100,
                                 result=result or {}, error=error, finished_at=datetime.now(timezone.utc), lease_until=None))
+        if changed.rowcount and error:
+            session.execute(update(Card).where(Card.job_id == job_id, Card.status != 'ready').values(status='failed', journal={'errors': [error]}))
 
 
 async def run_worker(stop: asyncio.Event):
@@ -73,7 +77,7 @@ async def run_worker(stop: asyncio.Event):
                     await asyncio.to_thread(finish, factory, job.id, worker_id, result)
                 except Exception as exc:
                     error = exc.as_dict() if isinstance(exc, ProcessingError) else {"code": "job_failed", "message": "Ошибка фоновой обработки"}
-                    log.exception("Job failed: job_id=%s type=%s", job.id, job.type)
+                    log.error("Job failed: job_id=%s type=%s error=%s", job.id, job.type, type(exc).__name__)
                     await asyncio.to_thread(finish, factory, job.id, worker_id, error=error)
             else:
                 try:

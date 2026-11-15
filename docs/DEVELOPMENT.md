@@ -1,10 +1,10 @@
 # План разработки
 
-Этапы 1/1b — документация и её уборка: README, docs, перенос анкеты в contest; в workflow/корневом Compose актуализированы только комментарии со ссылкой на инструкции деплоя. Код приложения, тесты, зависимости, настройки Compose, Dockerfile, логика CI, `.env*` и `.git` не меняются. Реализация этапа 2 и фактические проверки описаны в конце документа; готовность этапов 3–5 не заявляется. Текущий приоритет решений — brief_stage1b поверх мастер-задания.
+Этапы 1/1b — документация и её уборка: README, docs, перенос анкеты в contest; в workflow/корневом Compose актуализированы только комментарии со ссылкой на инструкции деплоя. Код приложения, тесты, зависимости, настройки Compose, Dockerfile, логика CI, `.env*` и `.git` не меняются. Реализация этапа 2 и фактические проверки описаны в конце документа; реализация этапа 3 описана ниже; готовность этапов 4–5 не заявляется. Текущий приоритет решений — brief_stage1b поверх мастер-задания.
 
 ## Текущее состояние и будущая структура
 
-Прочитанный каркас: `app/main.py`, `config.py`, `db.py`, `cards/schema.py` и `router.py`, `iss/client.py` и `router.py`, `llm/client.py`; фронт `App.tsx`, `api.ts`, `main.tsx`. После этапа 2 текущий совместимый POST сохраняет 16 полей с not_found/reason=extraction_pending_stage3; not_implemented удалён из схемы и тестов. Они потребуют обновления на этапе 3, а не маскировки новым счётчиком полей в документации.
+После этапа 3 schema.py содержит SPECS/FIELDS: 15 типизированных значений вместо 16 прежних полей. POST /api/cards — асинхронный 202. Обработчик build_card, gateway, prompts, retriever, verification, export, admin и DB rate limiter реализованы; прежние routes health/ISS/issues/documents сохранены.
 
 Предлагаемая структура (существующие каталоги сохраняются; новые добавляются по этапам):
 
@@ -93,3 +93,15 @@ frontend/src/              поток загрузки/прогресса/кар
 Реализованы модели/явная миграция 0001 (9 таблиц + vector, GIN/HNSW), безопасное хранение/разбор PDF и ZIP, отключённый embedding-интерфейс с FTS fallback, in-process jobs, collect/issue/document/job API. Файлы сохраняются в volume, nginx принимает пакет 5 × 30 МиБ; лимит Traefik проверить на сервере. Полный gateway/карточки/admin/rate limits/новый UI не входят в этап 2.
 
 Живые discover/fetch/validate/parse проверки кода: Балтийский лизинг RU000A10ATW2 через ПРАЙМ, Аэрофлот RU000A10CS75 через СКРИН, см. DATA/live_capture.json. Локально: `57 passed, 11 skipped` (5 db + 6 e2e), pip check без конфликтов, SQL Alembic offline, compileall, четыре Compose config, Bash syntax и diff --check. Docker daemon недоступен (access denied), поэтому online upgrade/repeat, PostgreSQL-тесты, Tesseract внутри образа, e2e и полный scripts/ci.sh остаются проверками на машине с Docker; добавлены в оба CI-пути. Пропуски не означают успешный прогон БД.
+
+## Передача этапа 3
+
+Реализованы OpenRouter gateway/бюджет/usage журнал/ретраи/JSON repair и эмбеддинги через тот же шлюз; 15 Pydantic value-моделей с подсказками; извлечение по одному полю; FTS/vector retrieval с ограничением контекста; quote/числовые anchors/ISS checks; async build-card job и неизменяемый входной snapshot, режим без ключа, PATCH, Markdown, admin и PostgreSQL rate limits. Изменение модели пока не переиндексирует старые готовые chunks автоматически, они остаются доступны через FTS.
+
+Из ТЗ уточнены два места: ручная загрузка обрабатывается без принудительного автосбора (иначе offline e2e нарушал бы требование отсутствия внешней сети); без любых документов/истории автосбор выполняется внутри build-job. Для составных полей evidence дополнен value_path, чтобы не подтверждать целый график одной нерелевантной цитатой. Нераспознанные PDF повторно разбираются внутри job вместо отказа POST с 409; текущий отдельный collect всё ещё блокирует сборку до завершения.
+
+Миграция 0002; настройки синхронны в root/backend Compose. Добавлен docker-compose.ci.yml с локальным ISS mock на JSON fixtures и принудительно пустыми LLM/embedding ключами; scripts/ci.sh и self-hosted workflow используют один набор overlay. Формат stdout parse_worker.py (явные UTF-8 байты) сохранён. Модельные вызовы при разработке не выполнялись.
+
+Unit: FakeLLM по коду поля + сгенерированный русский PDF (ковенант/call/оферта/поручительство), выдуманная цитата скрывается; typed validation/ISS match-mismatch/неполные графики/low confidence/ambiguous, budget-before-call, usage.cost/fallback/unknown, errors/retries/JSON schema fallback, экспорт/токен/rate HTTP. DB-маркеры: полный FakeLLM pipeline, snapshot/правки/экспорт, без ключа/без calls, конкурентный UTC-бюджет, логи/admin, общий limiter, scoped vector retrieval. E2E: PDF → карточка на mock ISS без модели → PATCH/Markdown/list. Свежий полный Docker/Postgres/e2e прогон здесь не выполнен из-за доступа к daemon, это не заменяется результатами этапа 2.
+
+Фактические локальные проверки этапа 3: `85 passed, 19 skipped` (13 PostgreSQL + 6 e2e), pip check без конфликтов, compileall, SQL Alembic offline до 0002 (10 таблиц приложения + alembic_version), OpenAPI семи методов на шести маршрутах карточек/admin, четыре Compose config и равенство backend env, bash syntax, diff --check. В документации проверены 12 JSON-примеров, 28 локальных Markdown-ссылок и UTF-8. Отдельный DB regression проверяет порядок страниц в retrieval fallback, он входит в пропущенные PostgreSQL-тесты. Не выполнялись online migration/repeat, Docker OCR, полный CI, live gateway или деплой.
