@@ -22,7 +22,7 @@ export type Origin = {
   download_url: string | null;
   published_at: string | null;
   fetched_at: string;
-  archive: { url: string; entry_name: string } | null;
+  archive: { url: string | null; filename?: string; entry_name: string } | null;
 };
 export type DocumentInfo = {
   id: string;

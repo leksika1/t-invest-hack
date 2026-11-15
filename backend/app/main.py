@@ -41,7 +41,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.add_middleware(RateLimitMiddleware)
-app.add_middleware(UploadLimitMiddleware, max_bytes=settings.max_upload_bytes * settings.max_upload_files + 1024 * 1024)
+app.add_middleware(UploadLimitMiddleware, max_bytes=max(settings.max_archive_bytes, settings.max_upload_bytes * settings.max_upload_files) + 1024 * 1024)
 if settings.cors_origin_list:
     app.add_middleware(
         CORSMiddleware,

@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# ReportLab embeds the OFL TTF in app/cards/report/fonts; no Pango/GTK needed.
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini .

@@ -146,6 +146,8 @@ export const api = {
       `/cards/${code(id)}/fields/${code(field)}`,
       json("PATCH", body),
     ),
+  pdf: async (id: string) =>
+    (await checked(`/cards/${code(id)}/export.pdf`)).blob(),
   markdown: async (id: string) =>
     (await checked(`/cards/${code(id)}/export.md`)).blob(),
 };

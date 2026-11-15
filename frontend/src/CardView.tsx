@@ -1,3 +1,10 @@
+import { CardSummary, SectionLink } from "./CardSummary";
+import {
+  displayValue,
+  quoteParts,
+  sourceUrl,
+  shortValue,
+} from "./cardPresentation";
 import { CouponRibbon } from "./CouponRibbon";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
@@ -9,6 +16,7 @@ import {
   IssueHeader,
   JobProgress,
   StatusBadge,
+  Skeleton,
   ValueEditor,
   ValueView,
 } from "./components";
@@ -58,20 +66,34 @@ function FieldValue({
         </details>
       </>
     );
-  const rows =
-    field.code === "coupon_schedule"
-      ? field.value?.payments
-      : field.code === "amortization"
-        ? field.value?.events
-        : null;
+  if (field.code === "coupon_schedule") {
+    const graph = displayValue(field);
+    const payments = graph?.payments;
+    return Array.isArray(payments) && payments.length ? (
+      <>
+        <p>
+          {payments.length} купонных выплат
+          {graph?.frequency_per_year
+            ? `, ${graph.frequency_per_year} в год`
+            : ""}
+        </p>
+        <ValueView value={payments} />
+        {graph === field.iss_value && (
+          <p className="caption">
+            График MOEX ISS; даты не подтверждены документом.
+          </p>
+        )}
+      </>
+    ) : (
+      <p className="caption">График не найден. Загрузите условия выпуска.</p>
+    );
+  }
+  const rows = field.code === "amortization" ? field.value?.events : null;
   if (Array.isArray(rows) && rows.length > 6)
     return (
       <>
         <p>
-          {rows.length}{" "}
-          {field.code === "coupon_schedule"
-            ? "купонных выплат"
-            : "платежей амортизации"}
+          {rows.length} платежей амортизации
           {field.value?.frequency_per_year
             ? `, ${field.value.frequency_per_year} в год`
             : ""}
@@ -88,12 +110,14 @@ export function FieldCard({
   documents,
   onChange,
   variableCoupon = false,
+  compact = false,
 }: {
   field: CardField;
   cardId: string;
   documents: DocumentInfo[];
   onChange: (field: CardField) => void;
   variableCoupon?: boolean;
+  compact?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Json>(
@@ -119,23 +143,50 @@ export function FieldCard({
     if (isObject(draft))
       void save({ user_status: "corrected", user_value: draft });
   }
+  const risk = ![
+    "face_value",
+    "placement_date",
+    "maturity_date",
+    "coupon_type",
+    "coupon_rate",
+    "coupon_schedule",
+    "offers",
+    "amortization",
+  ].includes(field.code);
+  const parts = field.quote ? quoteParts(field.quote, field.value) : null;
   const document = documents.find((d) => d.id === field.document_id);
   return (
     <div
-      className={`field-row status-${field.status} ${field.status === "mismatch_iss" ? "has-mismatch" : ""}`}
+      className={`field-row ${risk ? "risk-detail" : ""} status-${field.status} ${field.status === "mismatch_iss" ? "has-mismatch" : ""}`}
       aria-labelledby={"field-" + field.code}
     >
       <dt className="field-title">
-        <h3 id={"field-" + field.code}>{title}</h3>
+        <h3 tabIndex={-1} id={"field-" + field.code}>
+          {title}
+        </h3>
       </dt>
       <dd className="field-content">
         <div className="field-status">
-          <StatusBadge status={field.status} />
+          <StatusBadge
+            status={
+              field.source.kind === "moex_iss" &&
+              field.reason === "iss_not_confirmed"
+                ? "iss_unconfirmed"
+                : field.status
+            }
+          />
         </div>
         {field.reason_message && (
           <p className="field-reason">{field.reason_message}</p>
         )}
-        {field.status === "mismatch_iss" ? (
+        {risk && ["not_found", "needs_review"].includes(field.status) && (
+          <p className="caption risk-next-step">
+            {field.status === "not_found"
+              ? "Проверьте полноту документов: решение о выпуске, условия размещения и программу."
+              : "Откройте документы и проверьте условие вручную. Подтвердите найденное значение или внесите исправление."}
+          </p>
+        )}
+        {!risk && field.status === "mismatch_iss" ? (
           <div className="comparison">
             <section>
               <h4>В документе</h4>
@@ -148,47 +199,73 @@ export function FieldCard({
           </div>
         ) : (
           <>
-            <FieldValue field={field} variableCoupon={variableCoupon} />
-            {field.iss_value != null && field.source.kind !== "moex_iss" && (
-              <section className="iss-reference">
-                <h4>Данные MOEX ISS</h4>
-                <ValueView value={field.iss_value} />
-              </section>
+            {(!risk || (!field.quote && field.value)) && (
+              <FieldValue field={field} variableCoupon={variableCoupon} />
             )}
+            {(field.code !== "coupon_schedule" ||
+              displayValue(field) !== field.iss_value) &&
+              field.iss_value != null &&
+              field.source.kind !== "moex_iss" && (
+                <section className="iss-reference">
+                  <h4>Данные MOEX ISS</h4>
+                  <ValueView value={field.iss_value} />
+                </section>
+              )}
           </>
         )}
-        {field.source.kind === "moex_iss" ? (
+        {!compact && field.source.kind === "moex_iss" ? (
           <p className="source-line">
             <ExternalLink url={field.source.url}>
               Источник: MOEX ISS
-            </ExternalLink>{" "}
-            ; Без сверки с документом
+            </ExternalLink>
+            <span> · Без сверки с документом</span>
           </p>
         ) : (
           field.document_id && (
             <p className="source-line">
-              <ExternalLink url={field.source.url}>
+              <ExternalLink
+                url={sourceUrl(
+                  field.source.url ||
+                    document?.origins.find((o) => o.download_url)?.download_url,
+                  field.page,
+                )}
+              >
                 {field.source.name || document?.filename || "Документ"}
+                {field.page ? `, стр. ${field.page}` : ""}
+                {field.clause ? `, п. ${field.clause}` : ""}
               </ExternalLink>
-              {field.page ? `, стр. ${field.page}` : ""}
-              {field.clause ? `, п. ${field.clause}` : ""}
             </p>
           )
         )}
         {(field.quote || field.evidence.length > 0) && (
-          <details className="quotes">
+          <details className="quotes" open={risk || undefined}>
             <summary>
               Цитаты и источники
               {field.evidence.length ? `; ${field.evidence.length + 1}` : ""}
             </summary>
-            {field.quote && <blockquote>{field.quote}</blockquote>}
+            {parts && (
+              <blockquote>
+                {parts[0]}
+                <mark>{parts[1]}</mark>
+                {parts[2]}
+              </blockquote>
+            )}
             {field.evidence.map((e, i) => (
               <div key={i}>
                 <p className="caption">
-                  {documents.find((d) => d.id === e.document_id)?.filename ||
-                    "Документ"}
-                  , стр. {e.page}
-                  {e.clause ? `, п. ${e.clause}` : ""}
+                  <ExternalLink
+                    url={sourceUrl(
+                      documents
+                        .find((d) => d.id === e.document_id)
+                        ?.origins.find((o) => o.download_url)?.download_url,
+                      e.page,
+                    )}
+                  >
+                    {documents.find((d) => d.id === e.document_id)?.filename ||
+                      "Документ"}
+                    , стр. {e.page}
+                    {e.clause ? `, п. ${e.clause}` : ""}
+                  </ExternalLink>
                   {e.value_path
                     ? `; элемент ${Number(e.value_path.split("/").at(-1)) + 1}`
                     : ""}
@@ -196,6 +273,12 @@ export function FieldCard({
                 <blockquote>{e.quote}</blockquote>
               </div>
             ))}
+          </details>
+        )}
+        {risk && field.quote && field.value && (
+          <details className="risk-value">
+            <summary>Распознанное условие полностью</summary>
+            <ValueView value={field.value} />
           </details>
         )}
         {field.user_status && (
@@ -283,7 +366,11 @@ export function FieldCard({
 function Journal({ card }: { card: Card }) {
   const j = card.journal;
   return (
-    <details className="panel journal">
+    <details
+      id="card-journal"
+      tabIndex={-1}
+      className="panel journal card-section"
+    >
       <summary>Журнал сборки и документы</summary>
       <dl className="metrics">
         <div>
@@ -426,15 +513,15 @@ export function CardPage({ id }: { id: string }) {
       ),
     [],
   );
-  async function download() {
+  async function download(format: "pdf" | "md") {
     setExporting(true);
     setError(null);
     try {
-      const blob = await api.markdown(id);
+      const blob = await (format === "pdf" ? api.pdf(id) : api.markdown(id));
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `bond-${card?.isin ?? id}-v${card?.version ?? 1}.md`;
+      link.download = `${format === "pdf" ? "card" : "bond"}-${card?.isin ?? id}-v${card?.version ?? 1}.${format}`;
       document.body.append(link);
       link.click();
       link.remove();
@@ -453,23 +540,33 @@ export function CardPage({ id }: { id: string }) {
           <p className="muted">
             {card
               ? `Версия ${card.version}; ${formatDate(card.created_at)}`
-              : "Загрузка сохранённой карточки…"}
+              : "Параметры, условия и источники выпуска"}
           </p>
         </div>
         <div className="actions">
+          {card?.status === "ready" && (
+            <>
+              <button disabled={exporting} onClick={() => void download("pdf")}>
+                {exporting ? "Скачивание…" : "Скачать PDF"}
+              </button>
+              <button
+                className="secondary"
+                disabled={exporting}
+                onClick={() => void download("md")}
+              >
+                Markdown
+              </button>
+            </>
+          )}
           {card && (
             <a className="button secondary" href={"#/issue/" + card.isin}>
               К документам
             </a>
           )}
-          {card?.status === "ready" && (
-            <button disabled={exporting} onClick={() => void download()}>
-              {exporting ? "Скачивание…" : "Скачать Markdown"}
-            </button>
-          )}
         </div>
       </div>
       <ErrorNotice message={error} retry={() => setRevision((n) => n + 1)} />
+      {!card && !error && <Skeleton label="Загружаем карточку" />}
       {card && (
         <>
           <IssueHeader
@@ -503,44 +600,103 @@ export function CardPage({ id }: { id: string }) {
           )}
           {card.status === "ready" && (
             <>
-              <CouponRibbon
-                schedule={card.iss_fields.coupon_schedule?.value}
-                rate={card.iss_fields.coupon_rate?.value}
-              />
-              {(["iss_fields", "risk_fields"] as const).map((group) => (
-                <section className="field-group" key={group}>
-                  <div className="group-heading">
-                    <div>
-                      <h2>
-                        {group === "iss_fields"
-                          ? "Параметры выпуска — сверка с MOEX ISS"
-                          : "Риски и условия — из документов"}
-                      </h2>
-                      <p className="caption">
-                        {group === "iss_fields"
-                          ? "8 полей; расхождения требуют проверки"
-                          : "7 полей; отсутствие ответа не доказывает отсутствие условия"}
-                      </p>
-                    </div>
-                  </div>
-                  <dl className="field-list">
-                    {Object.keys(fieldTitles)
-                      .filter((code) => code in card[group])
-                      .map((code) => (
-                        <FieldCard
-                          key={code}
-                          field={card[group][code as CardField["code"]]!}
-                          cardId={id}
-                          documents={card.documents}
-                          onChange={change}
-                          variableCoupon={["floating", "variable"].includes(
-                            String(card.iss_fields.coupon_type?.value?.type),
-                          )}
-                        />
-                      ))}
-                  </dl>
-                </section>
-              ))}
+              <nav className="card-nav" aria-label="Разделы карточки">
+                {[
+                  ["summary", "Сводка"],
+                  ["coupons", "Купоны"],
+                  ["parameters", "Параметры"],
+                  ["risks", "Риски"],
+                  ["journal", "Журнал"],
+                ].map(([section, title]) => (
+                  <SectionLink key={section} id={`card-${section}`}>
+                    {title}
+                  </SectionLink>
+                ))}
+              </nav>
+              <CardSummary card={card} />
+              <section id="card-coupons" className="card-section" tabIndex={-1}>
+                <CouponRibbon
+                  schedule={displayValue(card.iss_fields.coupon_schedule)}
+                  rate={displayValue(card.iss_fields.coupon_rate)}
+                />
+                {displayValue(card.iss_fields.coupon_schedule) ===
+                  card.iss_fields.coupon_schedule?.iss_value && (
+                  <p className="caption">
+                    График из MOEX ISS. Даты не подтверждены документами
+                    выпуска.
+                  </p>
+                )}
+              </section>
+              <section
+                id="card-parameters"
+                className="card-section field-group"
+                tabIndex={-1}
+              >
+                <h2>Параметры выпуска</h2>
+                <p className="caption">
+                  MOEX ISS — справочные данные биржи. Статус показывает
+                  результат сверки с документами; пустые значения не считаются
+                  подтверждением.
+                </p>
+                <div className="parameter-table">
+                  {Object.values(card.iss_fields)
+                    .filter((f) => f != null)
+                    .map((field) => (
+                      <details key={field.code} className="parameter-row">
+                        <summary>
+                          <strong>{fieldTitles[field.code]}</strong>
+                          <span>{shortValue(displayValue(field))}</span>
+                          <StatusBadge
+                            status={
+                              field.source.kind === "moex_iss" &&
+                              field.reason === "iss_not_confirmed"
+                                ? "iss_unconfirmed"
+                                : field.status
+                            }
+                          />
+                        </summary>
+                        <dl>
+                          <FieldCard
+                            field={field}
+                            cardId={id}
+                            documents={card.documents}
+                            onChange={change}
+                            compact
+                            variableCoupon={["floating", "variable"].includes(
+                              String(
+                                displayValue(card.iss_fields.coupon_type)?.type,
+                              ),
+                            )}
+                          />
+                        </dl>
+                      </details>
+                    ))}
+                </div>
+              </section>
+              <section
+                id="card-risks"
+                className="card-section field-group"
+                tabIndex={-1}
+              >
+                <h2>Рисковые условия</h2>
+                <p className="caption">
+                  Основа вывода — цитата из документа. Статус и ручная проверка
+                  сохраняются отдельно.
+                </p>
+                <dl className="field-list">
+                  {Object.values(card.risk_fields)
+                    .filter((f) => f != null)
+                    .map((field) => (
+                      <FieldCard
+                        key={field.code}
+                        field={field}
+                        cardId={id}
+                        documents={card.documents}
+                        onChange={change}
+                      />
+                    ))}
+                </dl>
+              </section>
             </>
           )}
           <Journal card={card} />

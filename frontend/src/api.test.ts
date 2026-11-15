@@ -113,3 +113,24 @@ it("загрузка передаёт FormData без ручного Content-Typ
   xhr!.onload?.();
   await expect(promise).resolves.toEqual({ job_id: "ingest-job" });
 });
+
+it("PDF API получает бинарный отчёт и сохраняет серверную ошибку 409", async () => {
+  const fetch = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response("%PDF-1.7", {
+        headers: { "Content-Type": "application/pdf" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: "Карточка ещё не готова" }), {
+        status: 409,
+      }),
+    );
+  vi.stubGlobal("fetch", fetch);
+  const blob = await api.pdf("report-id");
+  expect(blob.type).toBe("application/pdf");
+  expect(await blob.text()).toBe("%PDF-1.7");
+  expect(fetch).toHaveBeenCalledWith("/api/cards/report-id/export.pdf", {});
+  await expect(api.pdf("report-id")).rejects.toThrow("Карточка ещё не готова");
+});

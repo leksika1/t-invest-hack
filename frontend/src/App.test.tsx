@@ -91,11 +91,11 @@ it("проходит демо → документы → collect → выбор 
   await user.click(screen.getByRole("button", { name: "Собрать карточку" }));
   expect(
     await screen.findByRole("heading", {
-      name: "Параметры выпуска — сверка с MOEX ISS",
+      name: "Параметры выпуска",
     }),
   ).toBeVisible();
   expect(
-    screen.getByRole("heading", { name: "Риски и условия — из документов" }),
+    screen.getByRole("heading", { name: "Рисковые условия" }),
   ).toBeVisible();
   expect(
     fetch.mock.calls.filter(
@@ -154,10 +154,10 @@ it("ISS недоступен: ручная загрузка доступна и 
     await screen.findByText(/ISS недоступен.*Ручная загрузка/),
   ).toBeVisible();
   await user.upload(
-    screen.getByLabelText("Выбрать PDF"),
+    screen.getByLabelText("Выбрать PDF или ZIP"),
     new File(["%PDF-demo"], "manual.pdf", { type: "application/pdf" }),
   );
-  await user.click(screen.getByRole("button", { name: "Загрузить 1 PDF" }));
+  await user.click(screen.getByRole("button", { name: "Загрузить файлы (1)" }));
   await waitFor(() => expect(upload).toHaveBeenCalled());
   expect(upload.mock.calls[0][0]).toBe(isin);
   expect(fetch.mock.calls.some(([path]) => path.endsWith("/collect"))).toBe(
@@ -181,12 +181,10 @@ it("получение Markdown создаёт скачивание и обра�
     .mockResolvedValueOnce(new Blob(["# Карточка"], { type: "text/markdown" }))
     .mockRejectedValueOnce(new Error("Экспорт недоступен"));
   render(<App />);
-  await user.click(
-    await screen.findByRole("button", { name: /Скачать Markdown/ }),
-  );
+  await user.click(await screen.findByRole("button", { name: /^Markdown$/ }));
   expect(create).toHaveBeenCalled();
   expect(click).toHaveBeenCalled();
-  await user.click(screen.getByRole("button", { name: /Скачать Markdown/ }));
+  await user.click(screen.getByRole("button", { name: /^Markdown$/ }));
   expect(await screen.findByText("Экспорт недоступен")).toBeVisible();
   expect(markdown).toHaveBeenCalledTimes(2);
 });
@@ -208,4 +206,30 @@ it("смена маршрута отменяет polling старой задач
   });
   expect(signal?.aborted).toBe(true);
   pending.mockRestore();
+});
+
+it("скачивает PDF через API с ISIN и версией в имени файла", async () => {
+  mockApi();
+  window.location.hash = "/cards/" + cardId;
+  const create = vi.fn().mockReturnValue("blob:pdf");
+  vi.stubGlobal(
+    "URL",
+    Object.assign(URL, { createObjectURL: create, revokeObjectURL: vi.fn() }),
+  );
+  let filename = "";
+  vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+    this: HTMLAnchorElement,
+  ) {
+    filename = this.download;
+  });
+  const pdf = vi
+    .spyOn(client.api, "pdf")
+    .mockResolvedValue(new Blob(["%PDF-1.7"], { type: "application/pdf" }));
+  render(<App />);
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Скачать PDF" }),
+  );
+  expect(pdf).toHaveBeenCalledWith(cardId);
+  expect(create).toHaveBeenCalled();
+  expect(filename).toBe(`card-${isin}-v2.pdf`);
 });

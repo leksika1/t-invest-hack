@@ -80,3 +80,14 @@ def export_card(card_id: uuid.UUID, session: Session = Depends(database)):
         raise HTTPException(409, detail='Карточка ещё не готова')
     return Response(render_markdown(card_json(session, card)).encode('utf-8'), media_type='text/markdown; charset=utf-8',
                     headers={'Content-Disposition': f'attachment; filename="bond-{card_id}.md"'})
+
+
+@router.get('/{card_id}/export.pdf')
+def export_pdf(card_id: uuid.UUID, session: Session = Depends(database)):
+    from app.cards.report import render_pdf
+    card = required(session, card_id)
+    if card.status != 'ready':
+        raise HTTPException(409, detail='Карточка ещё не готова')
+    data = card_json(session, card)
+    return Response(render_pdf(data), media_type='application/pdf',
+                    headers={'Content-Disposition': f'attachment; filename="card-{data["isin"]}-v{card.version}.pdf"'})

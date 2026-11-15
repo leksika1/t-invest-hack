@@ -21,6 +21,7 @@ const statuses: Record<string, [string, string, string]> = {
   verified_iss: ["Сверено с ISS", "good", "✓"],
   mismatch_iss: ["Расхождение с ISS", "danger", "≠"],
   extracted: ["Извлечено", "info", "◆"],
+  iss_unconfirmed: ["Из ISS, без подтверждения", "info", "◆"],
   not_found: ["Не найдено", "neutral", "—"],
   needs_review: ["Нужна проверка", "warn", "!"],
   confirmed: ["Подтверждено человеком", "human", "✓"],
@@ -589,4 +590,20 @@ export function ValueEditor({
 }
 export function fieldEditor(code: keyof typeof editors) {
   return editors[code];
+}
+
+export function Skeleton({
+  label = "Загружаем документы",
+}: {
+  label?: string;
+}) {
+  return (
+    <div className="skeleton" role="status" aria-label={label}>
+      <span className="sr-only">{label}</span>
+      <i />
+      <i />
+      <i />
+      <i />
+    </div>
+  );
 }

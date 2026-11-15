@@ -31,6 +31,11 @@ def test_card_valid_isin(http):
     reviewed = http.patch(card_url + '/fields/face_value', json={'user_status': 'confirmed'})
     assert reviewed.status_code == 200 and reviewed.json()['user_status'] == 'confirmed'
     assert http.get(card_url + '/export.md').status_code == 200
+    report = http.get(card_url + '/export.pdf')
+    assert report.status_code == 200
+    assert report.headers['content-type'] == 'application/pdf'
+    with pymupdf.open(stream=report.content, filetype='pdf') as pdf:
+        assert body['isin'] in pdf[0].get_text()
     assert http.get('/api/cards?isin=RU000A10ATW2').json()['total'] >= 1
 
 

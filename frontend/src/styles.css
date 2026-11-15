@@ -958,7 +958,9 @@ progress {
   overflow-wrap: anywhere;
   max-width: 75ch;
 }
-.history-table td:first-child { white-space: nowrap; }
+.history-table td:first-child {
+  white-space: nowrap;
+}
 .comparison {
   clear: both;
   display: grid;
@@ -1356,6 +1358,321 @@ details[open] > summary {
   }
   .notice button {
     margin-left: 0;
+  }
+}
+.card-nav {
+  display: flex;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  gap: 8px 28px;
+  padding: 12px 0;
+  margin: 24px 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+.card-nav a {
+  padding: 8px 0;
+  text-decoration: none;
+}
+.card-section,
+.field-title h3 {
+  scroll-margin-top: 85px;
+}
+.card-section:focus,
+.field-title h3:focus {
+  outline: none;
+}
+.card-section:focus-visible,
+.field-title h3:focus-visible {
+  outline: 2px solid var(--intaglio);
+  outline-offset: 5px;
+}
+.card-summary {
+  margin: 28px 0 42px;
+}
+input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.card-section.field-group {
+  margin: 40px 0;
+}
+.summary-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.summary-counts strong {
+  color: var(--ink);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.key-facts {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 24px;
+  margin: 24px 0 12px;
+}
+.key-facts > div {
+  min-width: 0;
+  padding-right: 20px;
+  border-right: 1px solid var(--rule);
+}
+.key-facts > div:last-child {
+  border-right: 0;
+}
+.key-facts dt {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.key-facts dd {
+  margin: 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.key-facts small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+.summary-provenance {
+  margin-bottom: 24px;
+}
+.risk-summary {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+  border-top: 1px solid var(--rule);
+}
+.risk-summary li {
+  display: grid;
+  grid-template-columns: minmax(160px, 23%) 155px minmax(0, 1fr) 125px;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 1px solid var(--rule);
+  padding: 14px 0;
+  font-size: 12px;
+}
+.risk-summary p {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: var(--muted);
+}
+.risk-summary strong {
+  font-weight: 500;
+}
+.risk-summary a {
+  justify-self: end;
+}
+.risk-label {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.risk-label.good {
+  color: var(--good);
+}
+.risk-label.warn {
+  color: var(--warn);
+}
+.risk-label.neutral {
+  color: var(--muted);
+}
+.risk-label::before {
+  content: "●";
+  margin-right: 6px;
+  font-size: 8px;
+}
+.parameter-table {
+  margin-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+.parameter-row {
+  border-bottom: 1px solid var(--rule);
+}
+.parameter-row > summary {
+  display: grid;
+  grid-template-columns: minmax(130px, 23%) minmax(0, 1fr) auto;
+  gap: 22px;
+  align-items: baseline;
+  color: var(--ink);
+  padding: 16px 0;
+}
+.parameter-row > summary::before {
+  content: "+";
+  grid-column: 1;
+  grid-row: 1;
+  color: var(--intaglio);
+}
+.parameter-row[open] > summary::before {
+  content: "−";
+}
+.parameter-row > summary strong {
+  grid-column: 1;
+  grid-row: 1;
+  padding-left: 20px;
+  font-weight: 500;
+}
+.parameter-row > summary > span:not(.badge) {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.parameter-row > dl {
+  margin: 0 0 16px;
+  padding: 12px 18px;
+  background: var(--surface);
+}
+.parameter-row .field-row {
+  border: 0;
+  padding: 0;
+}
+.parameter-row .field-title {
+  display: none;
+}
+.parameter-row .field-content {
+  grid-column: 1 / -1;
+}
+.risk-detail {
+  padding-top: 28px;
+  padding-bottom: 28px;
+}
+.risk-next-step {
+  clear: both;
+  max-width: 68ch;
+  margin: 8px 0 14px;
+}
+.quotes blockquote {
+  padding: 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--guilloche);
+  font-family: "PT Serif", serif;
+  font-size: 19px;
+  line-height: 1.6;
+  max-width: 70ch;
+  margin: 14px 0;
+  overflow-wrap: anywhere;
+}
+.quotes mark {
+  color: var(--ink);
+  background: var(--warn-bg);
+  box-decoration-break: clone;
+}
+.assisted-steps {
+  margin: 12px 0 0;
+  padding-left: 20px;
+}
+.assisted-steps li {
+  padding: 6px 0 6px 4px;
+  font-size: 12px;
+}
+.assisted-steps code {
+  overflow-wrap: anywhere;
+}
+.assisted-steps button {
+  margin: 6px 0;
+}
+.skeleton {
+  display: grid;
+  gap: 14px;
+  padding: 28px 0;
+  min-height: 180px;
+}
+.skeleton i {
+  display: block;
+  background: var(--rule);
+  height: 15px;
+  border-radius: 2px;
+  animation: paper-pulse 1.6s ease-in-out infinite;
+}
+.skeleton i:nth-of-type(2) {
+  width: 80%;
+}
+.skeleton i:nth-of-type(3) {
+  width: 90%;
+}
+.skeleton i:nth-of-type(4) {
+  width: 65%;
+}
+@keyframes paper-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (max-width: 1000px) {
+  .risk-summary li {
+    grid-template-columns: minmax(150px, 1.1fr) 145px minmax(0, 1.5fr);
+  }
+  .risk-summary a {
+    grid-column: 3;
+  }
+  .key-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .card-nav {
+    position: static;
+    margin-left: 0;
+    width: 100%;
+    gap: 8px 22px;
+  }
+  .card-section,
+  .field-title h3 {
+    scroll-margin-top: 20px;
+  }
+  .key-facts {
+    gap: 20px;
+  }
+  .key-facts dd {
+    font-size: 14px;
+  }
+  .key-facts > div {
+    border-right: 0;
+    padding-right: 0;
+  }
+  .card-summary .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .risk-summary li {
+    grid-template-columns: 1fr auto;
+    gap: 7px 10px;
+  }
+  .risk-summary p {
+    grid-column: 1 / -1;
+  }
+  .risk-summary a {
+    grid-column: 1 / -1;
+    justify-self: start;
+    padding: 5px 0;
+  }
+  .parameter-row > summary {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .parameter-row > summary > span {
+    margin-left: 20px;
+    justify-self: start;
+  }
+  .parameter-row > dl {
+    padding: 12px;
+  }
+  .risk-detail .field-status {
+    float: none;
+    margin-left: 0;
+  }
+  .quotes blockquote {
+    padding: 16px;
+    font-size: 17px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -2,7 +2,7 @@ import { Rosette, PaperIllustration } from "./art/guilloche";
 import { useEffect, useState } from "react";
 import { api, errorMessage } from "./api";
 import { CardPage } from "./CardView";
-import { ErrorNotice, IsinForm, StatusBadge } from "./components";
+import { ErrorNotice, IsinForm, StatusBadge, Skeleton } from "./components";
 import { formatDate, validIsin } from "./fields";
 import type { CardSummary, Health } from "./types";
 import { Workspace } from "./Workspace";
@@ -56,7 +56,7 @@ function Home() {
           [
             "1",
             "Подготовьте документы",
-            "Автосбор из раскрытия или загрузка своих PDF. Вы сами выбираете источники для сборки.",
+            "Автосбор из раскрытия или загрузка своих PDF или ZIP. Вы сами выбираете источники для сборки.",
           ],
           [
             "2",
@@ -66,7 +66,7 @@ function Home() {
           [
             "3",
             "Проверьте и сохраните",
-            "Откройте цитаты, подтвердите или исправьте результат и скачайте Markdown.",
+            "Откройте цитаты, подтвердите или исправьте результат и сохраните PDF или Markdown.",
           ],
         ].map(([n, title, text]) => (
           <section key={n}>
@@ -130,9 +130,15 @@ function HistoryPage({ isin }: { isin: string }) {
             <a href="#/history">Все выпуски</a>
           </p>
         )}
-        <ErrorNotice message={error} retry={() => setRevision((n) => n + 1)} />
+        <ErrorNotice
+          message={error}
+          retry={() => {
+            setLoading(true);
+            setRevision((n) => n + 1);
+          }}
+        />
         {loading ? (
-          <p role="status">Загрузка истории…</p>
+          <Skeleton label="Загружаем историю карточек" />
         ) : !items.length && !error ? (
           <div className="empty-state">
             <p>Карточек пока нет</p>
@@ -142,7 +148,7 @@ function HistoryPage({ isin }: { isin: string }) {
                 : "Откройте выпуск и создайте первую карточку."}
             </p>
           </div>
-        ) : (
+        ) : error && !items.length ? null : (
           <div
             className="table-scroll"
             role="region"
