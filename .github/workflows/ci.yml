@@ -1,9 +1,9 @@
-# GitHub Actions для этого приватного репозитория выключены на аккаунте.
-# Проверки выполняются локально: scripts/ci.sh + .githooks/pre-push для dev/main.
-# Workflow начнёт запускаться автоматически, если Actions включат.
+# Все джобы идут на self-hosted раннере на сервере Dokploy (метка tinvest, сервис
+# actions.runner.leksika1-t-invest-hack.tinvest-server, пользователь gha-runner) — см. docs/OPERATIONS.md.
+# Локально те же проверки: scripts/ci.sh + .githooks/pre-push для dev/main.
 # Этапы ci.yml и scripts/ci.sh держать согласованными — меняете один, меняйте и другой.
-# Сейчас автодеплой идёт через прямые вебхуки GitHub → Dokploy (см. README).
-# Перед включением Actions отключите один из двух механизмов деплоя во избежание дублей.
+# Деплой — джоба deploy через секреты DOKPLOY_WEBHOOK_* в окружениях dev/prod.
+# Прямые вебхуки GitHub → Dokploy в Settings → Webhooks не добавлять — будут двойные деплои.
 name: CI/CD
 
 on:
@@ -23,7 +23,7 @@ concurrency:
 jobs:
   backend-tests:
     name: backend tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, tinvest]
     defaults:
       run:
         working-directory: backend
@@ -44,7 +44,7 @@ jobs:
 
   frontend-checks:
     name: frontend checks
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, tinvest]
     defaults:
       run:
         working-directory: frontend
@@ -81,7 +81,7 @@ jobs:
     # Имя "build" — его удобно сделать обязательной проверкой в правилах защиты веток; не переименовывать
     name: build
     needs: [backend-tests, frontend-checks]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, tinvest]
     env:
       POSTGRES_PASSWORD: bonds
       COMPOSE: docker compose -f docker-compose.yml -f docker-compose.e2e.yml
@@ -126,7 +126,7 @@ jobs:
     name: deploy
     needs: build
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, tinvest]
     # Окружения dev/prod в Settings → Environments, в каждом секреты
     # DOKPLOY_WEBHOOK_FRONTEND и DOKPLOY_WEBHOOK_BACKEND (Dokploy → сервис → Deployments → Webhook URL)
     environment: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}

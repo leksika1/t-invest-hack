@@ -1,5 +1,5 @@
 # Весь стек одной командой — для локального запуска и CI. В Dokploy — два сервиса из
-# backend/docker-compose.yml и frontend/docker-compose.yml (см. README, «Деплой в Dokploy").
+# backend/docker-compose.yml и frontend/docker-compose.yml (см. docs/OPERATIONS.md, «Деплой в Dokploy»).
 # Определения совпадают с backend/ и frontend/docker-compose.yml — меняйте оба. Отличие одно:
 # вместо внешней сети Dokploy здесь своя сеть edge, поэтому общая сеть на машине не нужна.
 #

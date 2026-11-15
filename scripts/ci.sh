@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Локальный CI: те же проверки, что в .github/workflows/ci.yml (GitHub Actions для приватного репозитория
-# выключены). Этапы ci.yml и этого скрипта держать согласованными — меняете один, меняйте и другой.
+# Локальный CI: те же проверки, что в .github/workflows/ci.yml (они же идут на
+# self-hosted раннере на сервере). Этапы ci.yml и этого скрипта держать согласованными — меняете один, меняйте и другой.
 #
 #   scripts/ci.sh            всё: backend, frontend, compose-файлы Dokploy, e2e на поднятом стеке
 #   scripts/ci.sh --no-e2e   без e2e (Docker нужен только для проверки compose-файлов)
